@@ -188,8 +188,16 @@ Setiap event `governance` berisi payload seperti:
       "detail": "ok",
       "server_time": "1712921005"
     },
+    "exchange_account": {
+      "provider": "bybit",
+      "enabled": true,
+      "configured": false,
+      "reachable": false,
+      "detail": "missing ORACLE_EXCHANGE_API_KEY",
+      "account_type": "UNIFIED"
+    },
     "ai_analyst": {
-      "provider": "grok",
+      "provider": "gemini",
       "enabled": true,
       "configured": true,
       "reachable": true,
@@ -216,6 +224,26 @@ Returns exchange adapter connectivity status (Phase 8 baseline).
   "reachable": true,
   "detail": "ok",
   "server_time": "1712921005"
+}
+```
+
+### Exchange Account Connectivity
+
+```http
+GET /api/v1/config/exchange/account
+```
+
+Returns exchange private account preflight status (read-only auth check, no order placement).
+
+**Response:**
+```json
+{
+  "provider": "bybit",
+  "enabled": true,
+  "configured": true,
+  "reachable": true,
+  "detail": "ok",
+  "account_type": "UNIFIED"
 }
 ```
 

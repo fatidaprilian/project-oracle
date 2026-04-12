@@ -226,6 +226,15 @@ class ExchangeConnectionResponse(BaseModel):
     server_time: str | None = None
 
 
+class ExchangeAccountConnectionResponse(BaseModel):
+    provider: str
+    enabled: bool
+    configured: bool
+    reachable: bool
+    detail: str
+    account_type: str | None = None
+
+
 class AIAnalystConnectionResponse(BaseModel):
     provider: str
     enabled: bool
@@ -426,6 +435,11 @@ def _check_exchange_connection() -> ExchangeConnectionResponse:
     return ExchangeConnectionResponse(**status.__dict__)
 
 
+def _check_exchange_account_connection() -> ExchangeAccountConnectionResponse:
+    status = build_exchange_adapter_from_env().check_account_connectivity()
+    return ExchangeAccountConnectionResponse(**status.__dict__)
+
+
 def _check_ai_analyst_connection() -> AIAnalystConnectionResponse:
     status = build_ai_analyst_adapter_from_env().check_connectivity()
     return AIAnalystConnectionResponse(**status.__dict__)
@@ -447,6 +461,11 @@ def config_connections() -> ConfigConnectionsResponse:
 @app.get("/api/v1/config/exchange", response_model=ExchangeConnectionResponse)
 def config_exchange() -> ExchangeConnectionResponse:
     return _check_exchange_connection()
+
+
+@app.get("/api/v1/config/exchange/account", response_model=ExchangeAccountConnectionResponse)
+def config_exchange_account() -> ExchangeAccountConnectionResponse:
+    return _check_exchange_account_connection()
 
 
 @app.get("/api/v1/config/ai-analyst", response_model=AIAnalystConnectionResponse)
@@ -503,6 +522,7 @@ async def governance_stream(symbol: str = "", interval_seconds: float = 5.0) -> 
                             os.getenv("ORACLE_REDIS_URL", "").strip(),
                         ).model_dump(),
                         "exchange": _check_exchange_connection().model_dump(),
+                        "exchange_account": _check_exchange_account_connection().model_dump(),
                         "ai_analyst": _check_ai_analyst_connection().model_dump(),
                     },
                 }

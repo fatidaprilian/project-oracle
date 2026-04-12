@@ -172,6 +172,7 @@ Progress saat ini:
 - exchange adapter interface (vendor-agnostic): implemented
 - adapter awal Bybit testnet (market time ping): implemented
 - endpoint health exchange (`/api/v1/config/exchange`): implemented
+- endpoint private preflight exchange account (`/api/v1/config/exchange/account`): implemented
 - AI analyst adapter interface (vendor-agnostic): implemented
 - endpoint health AI analyst (`/api/v1/config/ai-analyst`): implemented
 - konfigurasi env provider abstraction (toggle + health path): implemented

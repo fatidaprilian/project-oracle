@@ -5,6 +5,7 @@ import {
   GovernanceSummary,
   ConfigConnections,
   ExchangeConnection,
+  ExchangeAccountConnection,
   AIAnalystConnection,
   buildGovernanceStreamUrl,
 } from '../api/client'
@@ -31,6 +32,7 @@ export default function Dashboard({ role }: DashboardProps) {
   const [summary, setSummary] = useState<GovernanceSummary | null>(null)
   const [connections, setConnections] = useState<ConfigConnections | null>(null)
   const [exchangeConnection, setExchangeConnection] = useState<ExchangeConnection | null>(null)
+  const [exchangeAccountConnection, setExchangeAccountConnection] = useState<ExchangeAccountConnection | null>(null)
   const [aiAnalystConnection, setAiAnalystConnection] = useState<AIAnalystConnection | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>('')
@@ -45,6 +47,7 @@ export default function Dashboard({ role }: DashboardProps) {
     loadSymbols()
     loadConnections()
     loadExchangeConnection()
+    loadExchangeAccountConnection()
     loadAiAnalystConnection()
   }, [])
 
@@ -70,6 +73,7 @@ export default function Dashboard({ role }: DashboardProps) {
           summary?: GovernanceSummary
           connections?: ConfigConnections & {
             exchange?: ExchangeConnection
+            exchange_account?: ExchangeAccountConnection
             ai_analyst?: AIAnalystConnection
           }
         }
@@ -80,6 +84,9 @@ export default function Dashboard({ role }: DashboardProps) {
           setConnections(payload.connections)
           if (payload.connections.exchange) {
             setExchangeConnection(payload.connections.exchange)
+          }
+          if (payload.connections.exchange_account) {
+            setExchangeAccountConnection(payload.connections.exchange_account)
           }
           if (payload.connections.ai_analyst) {
             setAiAnalystConnection(payload.connections.ai_analyst)
@@ -176,6 +183,15 @@ export default function Dashboard({ role }: DashboardProps) {
     }
   }
 
+  const loadExchangeAccountConnection = async () => {
+    try {
+      const { data } = await withRetry(() => api.getExchangeAccountConnection())
+      setExchangeAccountConnection(data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const triggerWorkflow = async () => {
     if (!canTriggerWorkflow) {
       setError('Current role cannot trigger workflow')
@@ -231,6 +247,7 @@ export default function Dashboard({ role }: DashboardProps) {
             void loadSummary()
             void loadConnections()
             void loadExchangeConnection()
+            void loadExchangeAccountConnection()
             void loadAiAnalystConnection()
           }}
         />
@@ -344,6 +361,18 @@ export default function Dashboard({ role }: DashboardProps) {
                   ? exchangeConnection.reachable
                     ? 'Connected'
                     : exchangeConnection.detail
+                  : 'unavailable'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">
+                Exchange Account ({exchangeAccountConnection?.account_type || 'UNIFIED'})
+              </span>
+              <span className={exchangeAccountConnection?.reachable ? 'text-green-400' : 'text-red-400'}>
+                {exchangeAccountConnection
+                  ? exchangeAccountConnection.reachable
+                    ? 'Connected'
+                    : exchangeAccountConnection.detail
                   : 'unavailable'}
               </span>
             </div>

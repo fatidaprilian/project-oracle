@@ -142,6 +142,10 @@ ORACLE_ENABLE_EXCHANGE_CONNECTIVITY=true
 ORACLE_EXCHANGE_PROVIDER=bybit
 ORACLE_EXCHANGE_BASE_URL=https://api-testnet.bybit.com
 ORACLE_EXCHANGE_TIMEOUT_SECONDS=3.0
+ORACLE_EXCHANGE_API_KEY=<your-bybit-api-key>
+ORACLE_EXCHANGE_API_SECRET=<your-bybit-api-secret>
+ORACLE_EXCHANGE_ACCOUNT_TYPE=UNIFIED
+ORACLE_EXCHANGE_RECV_WINDOW_MS=5000
 ```
 
 ### 3. Run Tests
@@ -184,6 +188,9 @@ curl http://localhost:8000/api/v1/governance/requests
 
 # AI analyst connectivity
 curl http://localhost:8000/api/v1/config/ai-analyst
+
+# Exchange account preflight (read-only auth check)
+curl http://localhost:8000/api/v1/config/exchange/account
 ```
 
 ### 5. Test Scheduler Locally

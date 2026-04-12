@@ -91,6 +91,15 @@ export interface ExchangeConnection {
   server_time?: string
 }
 
+export interface ExchangeAccountConnection {
+  provider: string
+  enabled: boolean
+  configured: boolean
+  reachable: boolean
+  detail: string
+  account_type?: string
+}
+
 export interface AIAnalystConnection {
   provider: string
   enabled: boolean
@@ -147,6 +156,9 @@ export const api = {
 
   getExchangeConnection: () =>
     apiClient.get<ExchangeConnection>('/api/v1/config/exchange'),
+
+  getExchangeAccountConnection: () =>
+    apiClient.get<ExchangeAccountConnection>('/api/v1/config/exchange/account'),
 
   getAiAnalystConnection: () =>
     apiClient.get<AIAnalystConnection>('/api/v1/config/ai-analyst'),
