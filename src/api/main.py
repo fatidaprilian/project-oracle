@@ -87,6 +87,18 @@ class ConfigReadinessResponse(BaseModel):
     ai_analyst_api_key_configured: bool
 
 
+class ServiceConnectionStatus(BaseModel):
+    enabled: bool
+    configured: bool
+    reachable: bool
+    detail: str
+
+
+class ConfigConnectionsResponse(BaseModel):
+    postgres: ServiceConnectionStatus
+    redis: ServiceConnectionStatus
+
+
 class WorkflowResponse(BaseModel):
     success: bool
     ai_review_packet_path: str | None = None
@@ -166,6 +178,100 @@ def config_readiness() -> ConfigReadinessResponse:
         sentiment_api_key_configured=bool(os.getenv("ORACLE_SENTIMENT_API_KEY", "").strip()),
         ai_analyst_base_url_configured=bool(os.getenv("ORACLE_AI_ANALYST_BASE_URL", "").strip()),
         ai_analyst_api_key_configured=bool(os.getenv("ORACLE_AI_ANALYST_API_KEY", "").strip()),
+    )
+
+
+def _check_postgres_connection(enabled: bool, dsn: str) -> ServiceConnectionStatus:
+    if not enabled:
+        return ServiceConnectionStatus(
+            enabled=False,
+            configured=bool(dsn),
+            reachable=False,
+            detail="disabled",
+        )
+
+    if not dsn:
+        return ServiceConnectionStatus(
+            enabled=True,
+            configured=False,
+            reachable=False,
+            detail="missing ORACLE_POSTGRES_DSN",
+        )
+
+    try:
+        import psycopg  # type: ignore
+
+        with psycopg.connect(dsn, connect_timeout=3) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+        return ServiceConnectionStatus(
+            enabled=True,
+            configured=True,
+            reachable=True,
+            detail="ok",
+        )
+    except Exception as exc:
+        return ServiceConnectionStatus(
+            enabled=True,
+            configured=True,
+            reachable=False,
+            detail=f"error: {str(exc)}",
+        )
+
+
+def _check_redis_connection(enabled: bool, redis_url: str) -> ServiceConnectionStatus:
+    if not enabled:
+        return ServiceConnectionStatus(
+            enabled=False,
+            configured=bool(redis_url),
+            reachable=False,
+            detail="disabled",
+        )
+
+    if not redis_url:
+        return ServiceConnectionStatus(
+            enabled=True,
+            configured=False,
+            reachable=False,
+            detail="missing ORACLE_REDIS_URL",
+        )
+
+    try:
+        import redis  # type: ignore
+
+        client = redis.from_url(
+            redis_url,
+            decode_responses=True,
+            socket_connect_timeout=3,
+            socket_timeout=3,
+        )
+        client.ping()
+        return ServiceConnectionStatus(
+            enabled=True,
+            configured=True,
+            reachable=True,
+            detail="ok",
+        )
+    except Exception as exc:
+        return ServiceConnectionStatus(
+            enabled=True,
+            configured=True,
+            reachable=False,
+            detail=f"error: {str(exc)}",
+        )
+
+
+@app.get("/api/v1/config/connections", response_model=ConfigConnectionsResponse)
+def config_connections() -> ConfigConnectionsResponse:
+    postgres_enabled = os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true"
+    redis_enabled = os.getenv("ORACLE_ENABLE_REDIS", "false").lower() == "true"
+    postgres_dsn = os.getenv("ORACLE_POSTGRES_DSN", "").strip()
+    redis_url = os.getenv("ORACLE_REDIS_URL", "").strip()
+
+    return ConfigConnectionsResponse(
+        postgres=_check_postgres_connection(postgres_enabled, postgres_dsn),
+        redis=_check_redis_connection(redis_enabled, redis_url),
     )
 
 

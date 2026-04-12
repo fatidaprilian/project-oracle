@@ -51,6 +51,18 @@ export interface SymbolInfo {
   ready_to_promote: number
 }
 
+export interface ServiceConnectionStatus {
+  enabled: boolean
+  configured: boolean
+  reachable: boolean
+  detail: string
+}
+
+export interface ConfigConnections {
+  postgres: ServiceConnectionStatus
+  redis: ServiceConnectionStatus
+}
+
 export const api = {
   health: () => apiClient.get<HealthResponse>('/health'),
   
@@ -71,6 +83,9 @@ export const api = {
   
   getSymbols: () =>
     apiClient.get<SymbolInfo[]>('/api/v1/symbols'),
+
+  getConnections: () =>
+    apiClient.get<ConfigConnections>('/api/v1/config/connections'),
   
   approveRequest: (requestId: string, status: string) =>
     apiClient.post('/api/v1/governance/approve', {

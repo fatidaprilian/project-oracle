@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
-import { api, SymbolInfo, GovernanceSummary } from '../api/client'
+import { api, SymbolInfo, GovernanceSummary, ConfigConnections } from '../api/client'
 import { Card, Stat, Loading, Error } from '../components/UI'
 
 export default function Dashboard() {
   const [symbols, setSymbols] = useState<SymbolInfo[]>([])
   const [selectedSymbol, setSelectedSymbol] = useState<string>('')
   const [summary, setSummary] = useState<GovernanceSummary | null>(null)
+  const [connections, setConnections] = useState<ConfigConnections | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>('')
 
   useEffect(() => {
     loadSymbols()
+    loadConnections()
   }, [])
 
   useEffect(() => {
@@ -41,6 +43,15 @@ export default function Dashboard() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadConnections = async () => {
+    try {
+      const { data } = await api.getConnections()
+      setConnections(data)
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -148,6 +159,28 @@ export default function Dashboard() {
             <span className="text-slate-400">Check in Requests tab</span>
           </div>
         </div>
+      </Card>
+
+      <Card>
+        <div className="card-header">Infrastructure Connections</div>
+        {connections ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">PostgreSQL</span>
+              <span className={connections.postgres.reachable ? 'text-green-400' : 'text-red-400'}>
+                {connections.postgres.reachable ? 'Connected' : connections.postgres.detail}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">Redis</span>
+              <span className={connections.redis.reachable ? 'text-green-400' : 'text-red-400'}>
+                {connections.redis.reachable ? 'Connected' : connections.redis.detail}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <span className="text-slate-400">Connection status unavailable</span>
+        )}
       </Card>
     </div>
   )
