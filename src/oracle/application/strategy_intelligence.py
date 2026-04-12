@@ -10,11 +10,27 @@ import uuid
 
 ALLOWED_REQUEST_STATUSES = {"pending", "approved", "rejected"}
 
-PARAMETER_RULES: dict[str, tuple[float, float]] = {
+# Global parameter rules (used as defaults for all symbols)
+DEFAULT_PARAMETER_RULES: dict[str, tuple[float, float]] = {
     "min_confluence_score": (40.0, 95.0),
     "min_volume_threshold": (100.0, 1_000_000.0),
     "max_consecutive_losses": (1.0, 10.0),
 }
+
+# Per-symbol parameter rules (overrides defaults)
+# Example: {"BTCUSDT": {"min_confluence_score": (45.0, 90.0)}, ...}
+SYMBOL_PARAMETER_RULES: dict[str, dict[str, tuple[float, float]]] = {}
+
+# Legacy compatibility
+PARAMETER_RULES = DEFAULT_PARAMETER_RULES
+
+
+def get_parameter_rules(symbol: str = "") -> dict[str, tuple[float, float]]:
+    if symbol and symbol in SYMBOL_PARAMETER_RULES:
+        rules = DEFAULT_PARAMETER_RULES.copy()
+        rules.update(SYMBOL_PARAMETER_RULES[symbol])
+        return rules
+    return DEFAULT_PARAMETER_RULES.copy()
 
 
 @dataclass(frozen=True)
@@ -36,7 +52,8 @@ def select_worst_trades(events: list[dict[str, Any]], limit: int = 10) -> list[T
         payload = event.get("payload", {})
 
         if event_type == "position_closed":
-            reason = payload.get("reason", "UNKNOWN") if isinstance(payload, dict) else "UNKNOWN"
+            reason = payload.get("reason", "UNKNOWN") if isinstance(
+                payload, dict) else "UNKNOWN"
             close_reasons.append(str(reason))
 
         if event_type == "trade_quality_assessed" and isinstance(payload, dict):
@@ -90,17 +107,22 @@ def write_ai_review_packet(output_dir: Path, packet: dict[str, Any]) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     file_name = f"{datetime.now(UTC).strftime('%G-W%V')}-ai-review.json"
     output_path = output_dir / file_name
-    output_path.write_text(json.dumps(packet, indent=2, ensure_ascii=True), encoding="utf-8")
+    output_path.write_text(json.dumps(
+        packet, indent=2, ensure_ascii=True), encoding="utf-8")
     return output_path
 
 
-def validate_suggested_changes(suggested_changes: dict[str, float]) -> list[str]:
+def validate_suggested_changes(
+    suggested_changes: dict[str, float],
+    symbol: str = "",
+) -> list[str]:
     violations: list[str] = []
+    parameter_rules = get_parameter_rules(symbol)
     for parameter_name, parameter_value in suggested_changes.items():
-        if parameter_name not in PARAMETER_RULES:
+        if parameter_name not in parameter_rules:
             violations.append(f"UNKNOWN_PARAMETER:{parameter_name}")
             continue
-        minimum, maximum = PARAMETER_RULES[parameter_name]
+        minimum, maximum = parameter_rules[parameter_name]
         if not (minimum <= float(parameter_value) <= maximum):
             violations.append(
                 f"OUT_OF_RANGE:{parameter_name}:{parameter_value}:allowed[{minimum},{maximum}]"
@@ -113,15 +135,16 @@ def build_parameter_change_request(
     provider: str,
     suggested_changes: dict[str, float],
     status: str = "pending",
+    symbol: str = "",
 ) -> dict[str, Any]:
     normalized_status = status.lower().strip()
     if normalized_status not in ALLOWED_REQUEST_STATUSES:
         normalized_status = "pending"
 
-    violations = validate_suggested_changes(suggested_changes)
+    violations = validate_suggested_changes(suggested_changes, symbol=symbol)
     is_valid = len(violations) == 0
 
-    return {
+    request = {
         "request_id": str(uuid.uuid4()),
         "generated_at": datetime.now(UTC).isoformat(),
         "generated_from": generated_from,
@@ -133,6 +156,9 @@ def build_parameter_change_request(
         },
         "suggested_changes": suggested_changes,
     }
+    if symbol:
+        request["symbol"] = symbol
+    return request
 
 
 def append_parameter_change_request(registry_file: Path, request: dict[str, Any]) -> None:
@@ -174,7 +200,8 @@ def summarize_parameter_change_registry(registry_file: Path) -> dict[str, Any]:
                 summary[status] += 1
 
             validation = record.get("validation", {})
-            is_valid = bool(validation.get("is_valid", False)) if isinstance(validation, dict) else False
+            is_valid = bool(validation.get("is_valid", False)
+                            ) if isinstance(validation, dict) else False
             if status == "approved" and is_valid:
                 summary["ready_to_promote"] += 1
 
@@ -236,7 +263,8 @@ def promote_approved_requests(
     for record in records:
         status = str(record.get("status", "pending")).lower()
         validation = record.get("validation", {})
-        is_valid = bool(validation.get("is_valid", False)) if isinstance(validation, dict) else False
+        is_valid = bool(validation.get("is_valid", False)
+                        ) if isinstance(validation, dict) else False
         already_promoted = bool(record.get("promoted", False))
         if status == "approved" and is_valid and not already_promoted:
             promotable.append(record)
@@ -253,7 +281,8 @@ def promote_approved_requests(
                 merged_changes[str(parameter_name)] = float(parameter_value)
         promoted_ids.append(str(record.get("request_id", "")))
 
-    hash_input = json.dumps({"request_ids": promoted_ids, "changes": merged_changes}, sort_keys=True)
+    hash_input = json.dumps(
+        {"request_ids": promoted_ids, "changes": merged_changes}, sort_keys=True)
     version_suffix = hashlib.sha256(hash_input.encode("utf-8")).hexdigest()[:8]
     version = f"strategy-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{version_suffix}"
 
@@ -266,7 +295,8 @@ def promote_approved_requests(
 
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{version}.json"
-    output_path.write_text(json.dumps(candidate_config, indent=2, ensure_ascii=True), encoding="utf-8")
+    output_path.write_text(json.dumps(
+        candidate_config, indent=2, ensure_ascii=True), encoding="utf-8")
 
     for record in records:
         request_id = str(record.get("request_id", ""))

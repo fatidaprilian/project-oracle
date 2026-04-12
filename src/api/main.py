@@ -60,6 +60,15 @@ class RequestRecord(BaseModel):
     promoted: bool = False
 
 
+class SymbolInfoResponse(BaseModel):
+    symbol: str
+    total_requests: int
+    pending: int
+    approved: int
+    rejected: int
+    ready_to_promote: int
+
+
 class ApprovalRequest(BaseModel):
     request_id: str
     status: str  # approved, rejected, or pending
@@ -77,7 +86,7 @@ def health() -> HealthResponse:
 
 
 @app.post("/api/v1/weekly-workflow", response_model=WorkflowResponse)
-def trigger_weekly_workflow() -> WorkflowResponse:
+def trigger_weekly_workflow(symbol: str = "") -> WorkflowResponse:
     result = run_weekly_workflow()
     return WorkflowResponse(
         success=result.success,
@@ -93,9 +102,28 @@ def trigger_weekly_workflow() -> WorkflowResponse:
 
 
 @app.get("/api/v1/governance/summary", response_model=GovernanceSummaryResponse)
-def get_governance_summary() -> GovernanceSummaryResponse:
+def get_governance_summary(symbol: str = "") -> GovernanceSummaryResponse:
     try:
-        summary = summarize_parameter_change_registry(DEFAULT_REGISTRY_PATH)
+        records = load_parameter_change_requests(DEFAULT_REGISTRY_PATH)
+        summary = {
+            "total": 0,
+            "pending": 0,
+            "approved": 0,
+            "rejected": 0,
+            "ready_to_promote": 0,
+        }
+        for record in records:
+            if symbol and record.get("symbol", "") != symbol:
+                continue
+            summary["total"] += 1
+            status = str(record.get("status", "pending")).lower()
+            if status in ("pending", "approved", "rejected"):
+                summary[status] += 1
+            validation = record.get("validation", {})
+            is_valid = bool(validation.get("is_valid", False)
+                            ) if isinstance(validation, dict) else False
+            if status == "approved" and is_valid:
+                summary["ready_to_promote"] += 1
         return GovernanceSummaryResponse(**summary)
     except Exception as e:
         raise HTTPException(
@@ -103,7 +131,7 @@ def get_governance_summary() -> GovernanceSummaryResponse:
 
 
 @app.get("/api/v1/governance/requests", response_model=list[RequestRecord])
-def list_governance_requests() -> list[RequestRecord]:
+def list_governance_requests(symbol: str = "") -> list[RequestRecord]:
     try:
         records = load_parameter_change_requests(DEFAULT_REGISTRY_PATH)
         return [
@@ -115,10 +143,55 @@ def list_governance_requests() -> list[RequestRecord]:
                 promoted=record.get("promoted", False),
             )
             for record in records
+            if not symbol or record.get("symbol", "") == symbol
         ]
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to list requests: {str(e)}")
+
+
+@app.get("/api/v1/symbols", response_model=list[SymbolInfoResponse])
+def list_symbols() -> list[SymbolInfoResponse]:
+    try:
+        records = load_parameter_change_requests(DEFAULT_REGISTRY_PATH)
+        symbol_info: dict[str, dict[str, int]] = {}
+
+        for record in records:
+            symbol = record.get("symbol", "default")
+            if symbol not in symbol_info:
+                symbol_info[symbol] = {
+                    "total": 0,
+                    "pending": 0,
+                    "approved": 0,
+                    "rejected": 0,
+                    "ready_to_promote": 0,
+                }
+
+            summary = symbol_info[symbol]
+            summary["total"] += 1
+            status = str(record.get("status", "pending")).lower()
+            if status in ("pending", "approved", "rejected"):
+                summary[status] += 1
+            validation = record.get("validation", {})
+            is_valid = bool(validation.get("is_valid", False)
+                            ) if isinstance(validation, dict) else False
+            if status == "approved" and is_valid:
+                summary["ready_to_promote"] += 1
+
+        return [
+            SymbolInfoResponse(
+                symbol=symbol,
+                total_requests=info["total"],
+                pending=info["pending"],
+                approved=info["approved"],
+                rejected=info["rejected"],
+                ready_to_promote=info["ready_to_promote"],
+            )
+            for symbol, info in sorted(symbol_info.items())
+        ]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to list symbols: {str(e)}")
 
 
 @app.post("/api/v1/governance/approve", response_model=dict[str, bool | str])
