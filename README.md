@@ -7,16 +7,37 @@ Project Oracle adalah kerangka trading intelligence yang memadukan:
 - exit strategy berbasis aturan objektif
 - learning loop mingguan dari trade gagal
 
-Status saat ini: documentation-first. Belum ada modul runtime yang diaktifkan.
+Status saat ini: docs + fase 1 scaffold (paper trading pipeline) sudah aktif.
 
 ## Dokumentasi Utama
 - Arsitektur sistem: docs/architecture.md
 - Draft data model: docs/data-model.md
+- Trading flow per modul: docs/trading-flow-modules.md
 
 ## Ruang Lingkup Fase Saat Ini
 - definisi arsitektur
 - definisi komponen dan state machine
 - definisi data model dan governance dasar
+- scaffold kode fase 1 paper trading
+
+## Struktur Kode Fase 1
+- src/main.py
+- src/oracle/domain/models.py
+- src/oracle/modules/structure_engine.py
+- src/oracle/modules/zone_engine.py
+- src/oracle/modules/confluence_engine.py
+- src/oracle/modules/sentiment_gate.py
+- src/oracle/modules/sniper_entry.py
+- src/oracle/modules/exit_engine.py
+- src/oracle/application/paper_pipeline.py
+- src/oracle/infrastructure/journal.py
+
+## Menjalankan Demo Paper Cycle
+
+```bash
+set PYTHONPATH=src
+python src/main.py
+```
 
 ## Quick Start Repository (WSL)
 
@@ -43,9 +64,19 @@ git status
 Catatan: push ke remote bisa dilakukan setelah token tersedia.
 
 ## Rencana Tahap Berikutnya
-- scaffold service modular monolith (market, strategy, execution, learning)
-- implement paper trading pipeline
-- tambah dashboard observability + audit trail
+- tambah test unit untuk tiap engine
+- tambah replay runner untuk multi simbol
+- integrasi sentiment provider adapter (vendor-agnostic)
+- tambah persistensi PostgreSQL + Redis
+
+## Checklist Implementasi Mingguan
+- [ ] Monday: review parameter aktif dan risk limit
+- [ ] Tuesday: validasi kualitas data market feed
+- [ ] Wednesday: review kandidat trade yang dibatalkan shield
+- [ ] Thursday: audit reason code entry/exit
+- [ ] Friday: kirim 10 trade terburuk ke AI analyst
+- [ ] Saturday: evaluasi usulan perubahan parameter
+- [ ] Sunday: freeze parameter dan publish weekly summary
 
 ## Governance Singkat
 - semua keputusan entry/exit wajib punya reason code

@@ -1,0 +1,12 @@
+[project]
+name = "project-oracle"
+version = "0.1.0"
+description = "Project Oracle phase-1 paper trading pipeline"
+readme = "README.md"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
