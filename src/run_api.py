@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 
 import uvicorn
 
@@ -15,8 +16,8 @@ def main() -> int:
     parser.add_argument(
         "--port",
         type=int,
-        default=8000,
-        help="Port to bind to (default: 8000)",
+        default=int(os.getenv("PORT", "8000")),
+        help="Port to bind to (default: 8000 or $PORT env var)",
     )
     parser.add_argument(
         "--reload",
