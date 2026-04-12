@@ -92,6 +92,14 @@ Copy and edit .env.example:
 cp .env.example .env
 ```
 
+Recommended for local + production baseline:
+```
+ORACLE_FRONTEND_URL=http://localhost:3000
+ORACLE_ALLOWED_ORIGINS=http://localhost:3000
+ORACLE_API_AUTH_ENABLED=false
+ORACLE_API_AUTH_TOKEN=
+```
+
 Required variables:
 ```
 ORACLE_RUNTIME_MODE=paper
@@ -105,6 +113,14 @@ ORACLE_ENABLE_POSTGRES=true
 ORACLE_POSTGRES_DSN=postgresql://user:pass@localhost:5432/oracle
 ORACLE_ENABLE_REDIS=true
 ORACLE_REDIS_URL=redis://localhost:6379/0
+```
+
+Optional (for external AI/sentiment integrations):
+```
+ORACLE_SENTIMENT_BASE_URL=https://<sentiment-provider>
+ORACLE_SENTIMENT_API_KEY=<your-sentiment-key>
+ORACLE_AI_ANALYST_BASE_URL=https://<ai-analyst-provider>
+ORACLE_AI_ANALYST_API_KEY=<your-ai-analyst-key>
 ```
 
 ### 3. Run Tests
@@ -129,6 +145,12 @@ In another terminal, test endpoints:
 ```bash
 # Health check
 curl http://localhost:8000/health
+
+# Root endpoint (contains docs and optional frontend URL)
+curl http://localhost:8000/
+
+# Production readiness flags for env variables
+curl http://localhost:8000/api/v1/config/readiness
 
 # Trigger weekly workflow
 curl -X POST http://localhost:8000/api/v1/weekly-workflow
@@ -229,6 +251,40 @@ If you want to keep Railway support as a fallback, the same Dockerfile can be re
 ## Railway Deployment (Fallback)
 
 The Railway path still works as a fallback if you want a second platform option later. Keep the same environment variables and use the same Dockerfile-based build.
+
+## Frontend Access
+
+Current Cloud Run URL below is API service, not frontend app shell:
+
+```
+https://project-oracle-133425616833.asia-southeast2.run.app/
+```
+
+Use these URLs for API service:
+
+```bash
+# API health
+curl https://project-oracle-133425616833.asia-southeast2.run.app/health
+
+# API docs (Swagger)
+https://project-oracle-133425616833.asia-southeast2.run.app/docs
+```
+
+For frontend app access in local development:
+
+```bash
+cd web
+cp .env.example .env
+npm run dev -- --host 0.0.0.0 --port 3000
+```
+
+Then open:
+
+```
+http://localhost:3000
+```
+
+Set `VITE_API_URL` in `web/.env` to point to local API or Cloud Run API.
 
 ## VPS Deployment (Linux)
 

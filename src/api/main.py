@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import Depends, FastAPI, Header, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
     from pydantic import BaseModel
 except ImportError:
@@ -43,10 +43,48 @@ app.add_middleware(
 DEFAULT_REGISTRY_PATH = Path("registry/parameter_change_requests.jsonl")
 DEFAULT_STRATEGY_CONFIG_PATH = Path("reports/strategy-configs")
 
+API_AUTH_ENABLED = os.getenv("ORACLE_API_AUTH_ENABLED", "false").lower() == "true"
+API_AUTH_TOKEN = os.getenv("ORACLE_API_AUTH_TOKEN", "")
+
+
+def require_api_auth(authorization: str | None = Header(default=None)) -> None:
+    if not API_AUTH_ENABLED:
+        return
+
+    if not API_AUTH_TOKEN:
+        raise HTTPException(
+            status_code=500,
+            detail="ORACLE_API_AUTH_ENABLED=true but ORACLE_API_AUTH_TOKEN is empty",
+        )
+
+    expected = f"Bearer {API_AUTH_TOKEN}"
+    if authorization != expected:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
 
 class HealthResponse(BaseModel):
     status: str
     version: str
+
+
+class ApiRootResponse(BaseModel):
+    service: str
+    api_docs_url: str
+    health_url: str
+    frontend_url: str | None = None
+
+
+class ConfigReadinessResponse(BaseModel):
+    auth_enabled: bool
+    auth_token_configured: bool
+    postgres_enabled: bool
+    postgres_dsn_configured: bool
+    redis_enabled: bool
+    redis_url_configured: bool
+    sentiment_base_url_configured: bool
+    sentiment_api_key_configured: bool
+    ai_analyst_base_url_configured: bool
+    ai_analyst_api_key_configured: bool
 
 
 class WorkflowResponse(BaseModel):
@@ -98,8 +136,44 @@ def health() -> HealthResponse:
     return HealthResponse(status="healthy", version="0.1.0")
 
 
+@app.get("/", response_model=ApiRootResponse)
+def root() -> ApiRootResponse:
+    frontend_url = os.getenv("ORACLE_FRONTEND_URL", "").strip() or None
+    return ApiRootResponse(
+        service="Project Oracle API",
+        api_docs_url="/docs",
+        health_url="/health",
+        frontend_url=frontend_url,
+    )
+
+
+@app.get("/api/v1/config/readiness", response_model=ConfigReadinessResponse)
+def config_readiness() -> ConfigReadinessResponse:
+    postgres_enabled = os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true"
+    redis_enabled = os.getenv("ORACLE_ENABLE_REDIS", "false").lower() == "true"
+
+    postgres_dsn = os.getenv("ORACLE_POSTGRES_DSN", "").strip()
+    redis_url = os.getenv("ORACLE_REDIS_URL", "").strip()
+
+    return ConfigReadinessResponse(
+        auth_enabled=API_AUTH_ENABLED,
+        auth_token_configured=bool(API_AUTH_TOKEN.strip()),
+        postgres_enabled=postgres_enabled,
+        postgres_dsn_configured=bool(postgres_dsn),
+        redis_enabled=redis_enabled,
+        redis_url_configured=bool(redis_url),
+        sentiment_base_url_configured=bool(os.getenv("ORACLE_SENTIMENT_BASE_URL", "").strip()),
+        sentiment_api_key_configured=bool(os.getenv("ORACLE_SENTIMENT_API_KEY", "").strip()),
+        ai_analyst_base_url_configured=bool(os.getenv("ORACLE_AI_ANALYST_BASE_URL", "").strip()),
+        ai_analyst_api_key_configured=bool(os.getenv("ORACLE_AI_ANALYST_API_KEY", "").strip()),
+    )
+
+
 @app.post("/api/v1/weekly-workflow", response_model=WorkflowResponse)
-def trigger_weekly_workflow(symbol: str = "") -> WorkflowResponse:
+def trigger_weekly_workflow(
+    symbol: str = "",
+    _: None = Depends(require_api_auth),
+) -> WorkflowResponse:
     result = run_weekly_workflow()
     return WorkflowResponse(
         success=result.success,
@@ -208,7 +282,10 @@ def list_symbols() -> list[SymbolInfoResponse]:
 
 
 @app.post("/api/v1/governance/approve", response_model=dict[str, bool | str])
-def approve_request(approval: ApprovalRequest) -> dict[str, bool | str]:
+def approve_request(
+    approval: ApprovalRequest,
+    _: None = Depends(require_api_auth),
+) -> dict[str, bool | str]:
     try:
         if approval.status not in ("approved", "rejected", "pending"):
             raise HTTPException(
@@ -226,7 +303,7 @@ def approve_request(approval: ApprovalRequest) -> dict[str, bool | str]:
 
 
 @app.post("/api/v1/governance/promote", response_model=PromoteResponse)
-def promote_requests() -> PromoteResponse:
+def promote_requests(_: None = Depends(require_api_auth)) -> PromoteResponse:
     try:
         config_path = promote_approved_requests(
             DEFAULT_REGISTRY_PATH, DEFAULT_STRATEGY_CONFIG_PATH)
