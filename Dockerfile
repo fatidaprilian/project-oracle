@@ -12,8 +12,6 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 RUN mkdir -p /app/data /app/registry /app/reports /app/logs /app/runtime-fallback
 
 COPY src /app/src
-COPY data /app/data
-COPY registry /app/registry
 
 WORKDIR /app/src
 
