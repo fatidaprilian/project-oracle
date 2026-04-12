@@ -24,6 +24,7 @@ from oracle.application.strategy_intelligence import (
     update_request_status_by_id,
 )
 from oracle.application.weekly_workflow import run_weekly_workflow
+from oracle.infrastructure.exchange_adapter import build_exchange_adapter_from_env
 from api.security import (
     authenticate_db_user,
     create_api_token,
@@ -215,6 +216,15 @@ class ConfigConnectionsResponse(BaseModel):
     redis: ServiceConnectionStatus
 
 
+class ExchangeConnectionResponse(BaseModel):
+    provider: str
+    enabled: bool
+    configured: bool
+    reachable: bool
+    detail: str
+    server_time: str | None = None
+
+
 class WorkflowResponse(BaseModel):
     success: bool
     ai_review_packet_path: str | None = None
@@ -402,6 +412,11 @@ def _check_redis_connection(enabled: bool, redis_url: str) -> ServiceConnectionS
         )
 
 
+def _check_exchange_connection() -> ExchangeConnectionResponse:
+    status = build_exchange_adapter_from_env().check_connectivity()
+    return ExchangeConnectionResponse(**status.__dict__)
+
+
 @app.get("/api/v1/config/connections", response_model=ConfigConnectionsResponse)
 def config_connections() -> ConfigConnectionsResponse:
     postgres_enabled = os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true"
@@ -413,6 +428,11 @@ def config_connections() -> ConfigConnectionsResponse:
         postgres=_check_postgres_connection(postgres_enabled, postgres_dsn),
         redis=_check_redis_connection(redis_enabled, redis_url),
     )
+
+
+@app.get("/api/v1/config/exchange", response_model=ExchangeConnectionResponse)
+def config_exchange() -> ExchangeConnectionResponse:
+    return _check_exchange_connection()
 
 
 @app.post("/api/v1/weekly-workflow", response_model=WorkflowResponse)
@@ -463,6 +483,7 @@ async def governance_stream(symbol: str = "", interval_seconds: float = 5.0) -> 
                             os.getenv("ORACLE_ENABLE_REDIS", "false").lower() == "true",
                             os.getenv("ORACLE_REDIS_URL", "").strip(),
                         ).model_dump(),
+                        "exchange": _check_exchange_connection().model_dump(),
                     },
                 }
                 yield f"event: governance\ndata: {json.dumps(payload)}\n\n"

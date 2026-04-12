@@ -133,6 +133,14 @@ ORACLE_AI_ANALYST_BASE_URL=https://<ai-analyst-provider>
 ORACLE_AI_ANALYST_API_KEY=<your-ai-analyst-key>
 ```
 
+Optional (for exchange connectivity checks):
+```
+ORACLE_ENABLE_EXCHANGE_CONNECTIVITY=true
+ORACLE_EXCHANGE_PROVIDER=bybit
+ORACLE_EXCHANGE_BASE_URL=https://api-testnet.bybit.com
+ORACLE_EXCHANGE_TIMEOUT_SECONDS=3.0
+```
+
 ### 3. Run Tests
 
 ```bash

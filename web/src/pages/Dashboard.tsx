@@ -4,6 +4,7 @@ import {
   SymbolInfo,
   GovernanceSummary,
   ConfigConnections,
+  ExchangeConnection,
   buildGovernanceStreamUrl,
 } from '../api/client'
 import { AppRole } from '../auth/session'
@@ -28,6 +29,7 @@ export default function Dashboard({ role }: DashboardProps) {
   const [selectedSymbol, setSelectedSymbol] = useState<string>('')
   const [summary, setSummary] = useState<GovernanceSummary | null>(null)
   const [connections, setConnections] = useState<ConfigConnections | null>(null)
+  const [exchangeConnection, setExchangeConnection] = useState<ExchangeConnection | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>('')
   const [liveStatus, setLiveStatus] = useState<'connected' | 'reconnecting' | 'stale'>('reconnecting')
@@ -40,6 +42,7 @@ export default function Dashboard({ role }: DashboardProps) {
   useEffect(() => {
     loadSymbols()
     loadConnections()
+    loadExchangeConnection()
   }, [])
 
   useEffect(() => {
@@ -143,6 +146,15 @@ export default function Dashboard({ role }: DashboardProps) {
     }
   }
 
+  const loadExchangeConnection = async () => {
+    try {
+      const { data } = await withRetry(() => api.getExchangeConnection())
+      setExchangeConnection(data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const triggerWorkflow = async () => {
     if (!canTriggerWorkflow) {
       setError('Current role cannot trigger workflow')
@@ -197,6 +209,7 @@ export default function Dashboard({ role }: DashboardProps) {
           onRetry={() => {
             void loadSummary()
             void loadConnections()
+            void loadExchangeConnection()
           }}
         />
       )}
@@ -300,6 +313,16 @@ export default function Dashboard({ role }: DashboardProps) {
               <span className="text-slate-300">Redis</span>
               <span className={connections.redis.reachable ? 'text-green-400' : 'text-red-400'}>
                 {connections.redis.reachable ? 'Connected' : connections.redis.detail}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">Exchange ({exchangeConnection?.provider || 'n/a'})</span>
+              <span className={exchangeConnection?.reachable ? 'text-green-400' : 'text-red-400'}>
+                {exchangeConnection
+                  ? exchangeConnection.reachable
+                    ? 'Connected'
+                    : exchangeConnection.detail
+                  : 'unavailable'}
               </span>
             </div>
           </div>

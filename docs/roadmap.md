@@ -150,7 +150,7 @@ Progress saat ini:
 - observability frontend baseline (web vitals + error tracking hooks): implemented
 - multi-symbol replay guard test: implemented
 
-## Phase 8 - Market Connectivity and Provider Abstraction (Planned)
+## Phase 8 - Market Connectivity and Provider Abstraction (In Progress)
 Tujuan:
 - menyiapkan konektivitas market/exchange secara aman tanpa lock-in vendor
 - menyiapkan integrasi AI analyst provider yang bisa diganti tanpa ubah core domain
@@ -167,6 +167,11 @@ Definition of done:
 - minimal satu adapter exchange berjalan di testnet tanpa memengaruhi governance flow
 - pergantian provider tidak membutuhkan perubahan di modul domain utama
 - runbook konfigurasi provider/exchange tersedia
+
+Progress saat ini:
+- exchange adapter interface (vendor-agnostic): implemented
+- adapter awal Bybit testnet (market time ping): implemented
+- endpoint health exchange (`/api/v1/config/exchange`): implemented
 
 ## Status Keseluruhan
 

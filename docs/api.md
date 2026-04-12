@@ -184,6 +184,26 @@ Setiap event `governance` berisi payload seperti:
 }
 ```
 
+### Exchange Connectivity
+
+```http
+GET /api/v1/config/exchange
+```
+
+Returns exchange adapter connectivity status (Phase 8 baseline).
+
+**Response:**
+```json
+{
+  "provider": "bybit",
+  "enabled": true,
+  "configured": true,
+  "reachable": true,
+  "detail": "ok",
+  "server_time": "1712921005"
+}
+```
+
 ### List Governance Requests
 
 ```http

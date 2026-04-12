@@ -82,6 +82,15 @@ export interface ConfigConnections {
   redis: ServiceConnectionStatus
 }
 
+export interface ExchangeConnection {
+  provider: string
+  enabled: boolean
+  configured: boolean
+  reachable: boolean
+  detail: string
+  server_time?: string
+}
+
 export interface AuthLoginResponse {
   access_token: string
   token_type: string
@@ -127,6 +136,9 @@ export const api = {
 
   getConnections: () =>
     apiClient.get<ConfigConnections>('/api/v1/config/connections'),
+
+  getExchangeConnection: () =>
+    apiClient.get<ExchangeConnection>('/api/v1/config/exchange'),
   
   approveRequest: (requestId: string, status: string) =>
     apiClient.post('/api/v1/governance/approve', {
