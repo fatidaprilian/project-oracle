@@ -39,6 +39,11 @@ set PYTHONPATH=src
 python src/main.py
 ```
 
+Runtime akan otomatis memilih adapter berdasarkan environment:
+- ORACLE_SENTIMENT_BASE_URL + ORACLE_SENTIMENT_API_KEY -> external sentiment provider
+- ORACLE_POSTGRES_DSN + ORACLE_ENABLE_POSTGRES=true -> persist journal ke PostgreSQL
+- ORACLE_REDIS_URL + ORACLE_ENABLE_REDIS=true -> simpan state risk ke Redis
+
 ## Menjalankan Replay Multi Simbol
 
 ```bash
@@ -65,6 +70,8 @@ python src/weekly_report.py
 
 Output report:
 - reports/weekly/<ISO-week>.md
+
+Weekly report dibangun dari event replay dan bisa dijalankan sebagai artefak mingguan.
 
 ## Adapter Sentiment Eksternal
 File adapter:

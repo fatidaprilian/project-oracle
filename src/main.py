@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from oracle.application.paper_pipeline import run_paper_cycle
+from oracle.runtime import build_runtime_components
 from oracle.domain.models import MarketSnapshot
-from oracle.infrastructure.journal import InMemoryJournal
-from oracle.modules.sentiment_gate import StaticSentimentProvider
 
 
 def build_demo_snapshot() -> MarketSnapshot:
@@ -19,13 +18,21 @@ def build_demo_snapshot() -> MarketSnapshot:
 
 
 def main() -> None:
-    journal = InMemoryJournal()
     snapshot = build_demo_snapshot()
-    sentiment_provider = StaticSentimentProvider()
+    runtime = build_runtime_components()
 
-    run_paper_cycle(snapshot, sentiment_provider, journal)
+    run_paper_cycle(
+        snapshot,
+        runtime.sentiment_provider,
+        runtime.journal,
+        runtime.risk_guard,
+    )
 
-    for event in journal.dump():
+    runtime.journal.flush()
+    if runtime.risk_state_store is not None:
+        runtime.risk_state_store.save_state(runtime.risk_guard.state)
+
+    for event in runtime.journal.dump():
         print(event)
 
 
