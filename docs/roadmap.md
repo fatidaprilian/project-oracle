@@ -70,7 +70,7 @@ Definition of done:
 - operasi tetap aman saat dependency eksternal gagal
 - data audit tidak hilang saat replay berulang
 
-## Fase 5 - Strategy Intelligence (In Progress)
+## Fase 5 - Strategy Intelligence (Done)
 Tujuan:
 - pembelajaran mingguan semi-otomatis
 
@@ -78,6 +78,8 @@ Deliverables:
 - top 10 worst trade selector
 - paket input AI analyst
 - parameter change request registry
+- weekly workflow orchestrator dengan scheduler APScheduler
+- REST API untuk governance (summary, list, approve, promote)
 
 Definition of done:
 - workflow review mingguan dapat dijalankan end-to-end
@@ -91,19 +93,26 @@ Progress saat ini:
 - weekly report governance summary: implemented
 - governance CLI (summary/list/approve/reject/promote): implemented
 - candidate strategy config promotion from approved valid requests: implemented
+- weekly workflow orchestrator (weekly_workflow.py): implemented
+- APScheduler daemon (scheduler.py): implemented
+- REST API endpoints (FastAPI, api/main.py): implemented
+- API tests: implemented (test_api_endpoints.py)
 
-## Fase 6 - Operations and Release
+## Fase 6 - API Service and Operations (In Progress)
 Tujuan:
-- kesiapan operasi rutin
+- service API production-ready dan operasi rutin terautomasi
 
 Deliverables:
-- scheduler mingguan report + review
+- API server FastAPI (governance, workflow, health checks)
+- scheduler daemon untuk weekly workflow terjadwal
 - runbook incident dan kill switch ops
-- dashboard KPI strategi
+- parameter runtime integration (load promoted configs)
+- deployment docs (Railway, environment setup)
 
 Definition of done:
-- operasi mingguan berjalan tanpa intervensi manual berat
-- KPI utama terpantau stabil
+- API server berjalan stabil dengan auth basic (opsional untuk v1)
+- weekly workflow dapat dijadwalkan dan dimonitor
+- kesiapan operasi mingguan tanpa intervensi manual berat
 
 ## Urutan Kerja Praktis Mingguan
 1. Selesaikan fase aktif dan checklist test-nya.
