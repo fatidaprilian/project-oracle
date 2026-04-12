@@ -83,6 +83,11 @@ Definition of done:
 - workflow review mingguan dapat dijalankan end-to-end
 - usulan perubahan parameter tercatat dan bisa di-approve
 
+Progress saat ini:
+- top 10 worst trade selector: implemented
+- paket input AI analyst: implemented (file output)
+- parameter change request registry: implemented (jsonl append)
+
 ## Fase 6 - Operations and Release
 Tujuan:
 - kesiapan operasi rutin

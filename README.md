@@ -64,6 +64,17 @@ set PYTHONPATH=src
 python -m unittest discover -s tests -p "test_*.py"
 ```
 
+## Generate AI Strategy Review Packet
+
+```bash
+set PYTHONPATH=src
+python src/strategy_review.py
+```
+
+Output:
+- reports/ai-review/<ISO-week>-ai-review.json
+- registry/parameter_change_requests.jsonl
+
 ## Generate Weekly Report
 
 ```bash
@@ -102,6 +113,14 @@ Opsional environment untuk persistence:
 - ORACLE_REDIS_RISK_TTL_SECONDS
 - ORACLE_PERSISTENCE_FALLBACK_FILE
 
+## Provider dan Environment yang Dipakai
+- AI provider: vendor-agnostic (default di env example = grok, bisa diganti gemini/custom)
+- exchange environment: testnet dulu (belum live trading)
+- runtime mode default: paper
+
+File referensi konfigurasi:
+- .env.example
+
 ## Quick Start Repository (WSL)
 
 1. Buka terminal WSL di folder proyek.
@@ -127,9 +146,9 @@ git status
 Catatan: push ke remote bisa dilakukan setelah token tersedia.
 
 ## Rencana Tahap Berikutnya
-- fase aktif saat ini: Persistence Hardening (lihat docs/roadmap.md)
-- finalisasi persistensi production-ready (schema + retry policy)
-- scheduler mingguan otomatis untuk report + AI review
+- fase aktif saat ini: Strategy Intelligence (lihat docs/roadmap.md)
+- lanjut otomatisasi scheduler mingguan report + AI review
+- lanjut parameter governance agar request bisa di-approve/reject secara terstruktur
 
 ## Keputusan Frontend Saat Ini
 - stack UI: React + Vite
