@@ -3,8 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+try:
+    from fastapi import FastAPI, HTTPException
+    from pydantic import BaseModel
+except ImportError:
+    raise ImportError(
+        "FastAPI is required to run the API. Install it with: pip install fastapi uvicorn"
+    )
 
 from oracle.application.strategy_intelligence import (
     load_parameter_change_requests,
