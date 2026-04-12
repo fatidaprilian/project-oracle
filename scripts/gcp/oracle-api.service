@@ -1,0 +1,16 @@
+[Unit]
+Description=Project Oracle API
+After=network.target
+
+[Service]
+Type=simple
+User=oracle
+WorkingDirectory=/opt/project-oracle/src
+Environment=PYTHONPATH=/opt/project-oracle/src
+Environment=PORT=8000
+ExecStart=/opt/project-oracle/.venv/bin/python3 run_api.py --host 0.0.0.0
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

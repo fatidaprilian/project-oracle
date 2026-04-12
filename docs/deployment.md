@@ -7,6 +7,67 @@
 - Northflank account (untuk cloud deployment) atau Linux VPS
 - Optional: PostgreSQL, Redis
 
+## Google Cloud Trial Deployment (Recommended for Current Phase)
+
+Gunakan ini jika fokus utama adalah deploy cepat selama masa trial credit tanpa refactor arsitektur storage.
+
+Kenapa cocok untuk saat ini:
+- arsitektur saat ini masih file-based (`registry`, `reports`, `runtime-fallback`)
+- VM menjaga filesystem persisten sederhana
+- biaya tetap rendah dengan `e2-micro` di region US
+
+### Step 1: Siapkan GCP CLI lokal
+
+Pastikan `gcloud` sudah login:
+
+```bash
+gcloud auth login
+gcloud auth application-default login
+```
+
+### Step 2: Buat VM dan auto-bootstrap
+
+Dari root repository:
+
+```bash
+chmod +x scripts/gcp/create_vm.sh scripts/gcp/bootstrap_vm.sh
+./scripts/gcp/create_vm.sh <PROJECT_ID> us-central1-a project-oracle-vm
+```
+
+Script ini akan:
+- membuat VM Debian (`e2-micro`, disk 20GB)
+- membuka firewall port `8000`
+- clone repository ke `/opt/project-oracle`
+- install dependencies dari `requirements.txt`
+- pasang service `oracle-api` dan `oracle-scheduler`
+
+### Step 3: Ambil public IP dan verifikasi
+
+```bash
+gcloud compute instances describe project-oracle-vm --zone=us-central1-a --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
+```
+
+Lalu test endpoint:
+
+```bash
+curl http://<PUBLIC_IP>:8000/health
+curl -X POST http://<PUBLIC_IP>:8000/api/v1/weekly-workflow
+```
+
+### Step 4: Monitoring service
+
+```bash
+gcloud compute ssh project-oracle-vm --zone=us-central1-a --command="sudo systemctl status oracle-api oracle-scheduler"
+```
+
+### Cost baseline (trial-friendly)
+
+- machine type: `e2-micro`
+- disk: `pd-standard` 20GB
+- region: `us-central1`
+
+Upgrade hanya jika benar-benar perlu (memory pressure, response lambat, atau persistence eksternal aktif).
+
 ## Local Development Setup
 
 ### 1. Clone and Install
