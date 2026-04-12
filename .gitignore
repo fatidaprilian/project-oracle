@@ -10,6 +10,7 @@ node_modules/
 vendor/
 venv/
 .venv/
+.venv-wsl/
 __pycache__/
 .gradle/
 target/
