@@ -1,0 +1,67 @@
+# Secrets and environment
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# Dependencies
+node_modules/
+vendor/
+venv/
+.venv/
+__pycache__/
+.gradle/
+target/
+bin/
+pkg/
+
+# Build output
+dist/
+build/
+out/
+.next/
+.nuxt/
+.output/
+
+# IDE and editor
+.idea/
+.vscode/settings.json
+.vscode/launch.json
+*.swp
+*.swo
+*~
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.lnk
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Testing and coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Runtime and backups
+*.pid
+*.seed
+*.pid.lock
+.agentic-backup/
+
+# AI instruction and agent config
+AGENTS.md
+.instructions.md
+.github/copilot-instructions.md
+.agent-context/
+.agents/
+.agent-override.md
+.cursorrules
+.windsurfrules
+.gemini/
