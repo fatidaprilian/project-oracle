@@ -5,6 +5,7 @@ import {
   GovernanceSummary,
   ConfigConnections,
   ExchangeConnection,
+  AIAnalystConnection,
   buildGovernanceStreamUrl,
 } from '../api/client'
 import { AppRole } from '../auth/session'
@@ -30,6 +31,7 @@ export default function Dashboard({ role }: DashboardProps) {
   const [summary, setSummary] = useState<GovernanceSummary | null>(null)
   const [connections, setConnections] = useState<ConfigConnections | null>(null)
   const [exchangeConnection, setExchangeConnection] = useState<ExchangeConnection | null>(null)
+  const [aiAnalystConnection, setAiAnalystConnection] = useState<AIAnalystConnection | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>('')
   const [liveStatus, setLiveStatus] = useState<'connected' | 'reconnecting' | 'stale'>('reconnecting')
@@ -43,6 +45,7 @@ export default function Dashboard({ role }: DashboardProps) {
     loadSymbols()
     loadConnections()
     loadExchangeConnection()
+    loadAiAnalystConnection()
   }, [])
 
   useEffect(() => {
@@ -65,13 +68,22 @@ export default function Dashboard({ role }: DashboardProps) {
       try {
         const payload = JSON.parse((event as MessageEvent).data) as {
           summary?: GovernanceSummary
-          connections?: ConfigConnections
+          connections?: ConfigConnections & {
+            exchange?: ExchangeConnection
+            ai_analyst?: AIAnalystConnection
+          }
         }
         if (payload.summary) {
           setSummary(payload.summary)
         }
         if (payload.connections) {
           setConnections(payload.connections)
+          if (payload.connections.exchange) {
+            setExchangeConnection(payload.connections.exchange)
+          }
+          if (payload.connections.ai_analyst) {
+            setAiAnalystConnection(payload.connections.ai_analyst)
+          }
         }
         setLastLiveUpdateAt(Date.now())
         setLiveStatus('connected')
@@ -155,6 +167,15 @@ export default function Dashboard({ role }: DashboardProps) {
     }
   }
 
+  const loadAiAnalystConnection = async () => {
+    try {
+      const { data } = await withRetry(() => api.getAiAnalystConnection())
+      setAiAnalystConnection(data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   const triggerWorkflow = async () => {
     if (!canTriggerWorkflow) {
       setError('Current role cannot trigger workflow')
@@ -210,6 +231,7 @@ export default function Dashboard({ role }: DashboardProps) {
             void loadSummary()
             void loadConnections()
             void loadExchangeConnection()
+            void loadAiAnalystConnection()
           }}
         />
       )}
@@ -322,6 +344,16 @@ export default function Dashboard({ role }: DashboardProps) {
                   ? exchangeConnection.reachable
                     ? 'Connected'
                     : exchangeConnection.detail
+                  : 'unavailable'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-300">AI Analyst ({aiAnalystConnection?.provider || 'n/a'})</span>
+              <span className={aiAnalystConnection?.reachable ? 'text-green-400' : 'text-red-400'}>
+                {aiAnalystConnection
+                  ? aiAnalystConnection.reachable
+                    ? 'Connected'
+                    : aiAnalystConnection.detail
                   : 'unavailable'}
               </span>
             </div>

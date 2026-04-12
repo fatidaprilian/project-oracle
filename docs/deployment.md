@@ -131,6 +131,8 @@ ORACLE_SENTIMENT_BASE_URL=https://<sentiment-provider>
 ORACLE_SENTIMENT_API_KEY=<your-sentiment-key>
 ORACLE_AI_ANALYST_BASE_URL=https://<ai-analyst-provider>
 ORACLE_AI_ANALYST_API_KEY=<your-ai-analyst-key>
+ORACLE_ENABLE_AI_ANALYST_CONNECTIVITY=true
+ORACLE_AI_ANALYST_HEALTH_PATH=/health
 ```
 
 Optional (for exchange connectivity checks):
@@ -178,6 +180,9 @@ curl http://localhost:8000/api/v1/governance/summary
 
 # List requests
 curl http://localhost:8000/api/v1/governance/requests
+
+# AI analyst connectivity
+curl http://localhost:8000/api/v1/config/ai-analyst
 ```
 
 ### 5. Test Scheduler Locally

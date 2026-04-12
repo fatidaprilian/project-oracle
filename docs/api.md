@@ -179,6 +179,21 @@ Setiap event `governance` berisi payload seperti:
       "configured": true,
       "reachable": false,
       "detail": "disabled"
+    },
+    "exchange": {
+      "provider": "bybit",
+      "enabled": true,
+      "configured": true,
+      "reachable": true,
+      "detail": "ok",
+      "server_time": "1712921005"
+    },
+    "ai_analyst": {
+      "provider": "grok",
+      "enabled": true,
+      "configured": true,
+      "reachable": true,
+      "detail": "ok"
     }
   }
 }
@@ -201,6 +216,25 @@ Returns exchange adapter connectivity status (Phase 8 baseline).
   "reachable": true,
   "detail": "ok",
   "server_time": "1712921005"
+}
+```
+
+### AI Analyst Connectivity
+
+```http
+GET /api/v1/config/ai-analyst
+```
+
+Returns AI analyst adapter connectivity status.
+
+**Response:**
+```json
+{
+  "provider": "grok",
+  "enabled": true,
+  "configured": true,
+  "reachable": true,
+  "detail": "ok"
 }
 ```
 

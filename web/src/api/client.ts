@@ -91,6 +91,14 @@ export interface ExchangeConnection {
   server_time?: string
 }
 
+export interface AIAnalystConnection {
+  provider: string
+  enabled: boolean
+  configured: boolean
+  reachable: boolean
+  detail: string
+}
+
 export interface AuthLoginResponse {
   access_token: string
   token_type: string
@@ -139,6 +147,9 @@ export const api = {
 
   getExchangeConnection: () =>
     apiClient.get<ExchangeConnection>('/api/v1/config/exchange'),
+
+  getAiAnalystConnection: () =>
+    apiClient.get<AIAnalystConnection>('/api/v1/config/ai-analyst'),
   
   approveRequest: (requestId: string, status: string) =>
     apiClient.post('/api/v1/governance/approve', {
