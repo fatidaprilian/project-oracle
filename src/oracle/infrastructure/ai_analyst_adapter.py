@@ -7,6 +7,9 @@ from typing import Protocol
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+DEFAULT_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com"
+DEFAULT_GEMINI_HEALTH_PATH = "/v1beta/models"
+
 
 @dataclass(frozen=True)
 class AIAnalystConnectivityStatus:
@@ -90,15 +93,7 @@ class HttpAIAnalystAdapter:
             )
 
         endpoint = f"{self._base_url}{self._health_path}"
-        request = Request(
-            endpoint,
-            method="GET",
-            headers={
-                "Authorization": f"Bearer {self._api_key}",
-                "Accept": "application/json",
-                "User-Agent": "project-oracle/phase8-ai-check",
-            },
-        )
+        request = self._build_request(endpoint)
 
         try:
             with urlopen(request, timeout=self._timeout_seconds) as response:
@@ -135,6 +130,30 @@ class HttpAIAnalystAdapter:
                 detail=f"error: {str(exc)}",
             )
 
+    def _build_request(self, endpoint: str) -> Request:
+        return Request(
+            endpoint,
+            method="GET",
+            headers={
+                "Authorization": f"Bearer {self._api_key}",
+                "Accept": "application/json",
+                "User-Agent": "project-oracle/phase8-ai-check",
+            },
+        )
+
+
+class GeminiAIAnalystAdapter(HttpAIAnalystAdapter):
+    def _build_request(self, endpoint: str) -> Request:
+        return Request(
+            endpoint,
+            method="GET",
+            headers={
+                "X-goog-api-key": self._api_key,
+                "Accept": "application/json",
+                "User-Agent": "project-oracle/phase8-ai-check",
+            },
+        )
+
 
 def _derive_health_detail(response_body: str) -> str:
     try:
@@ -154,6 +173,11 @@ def _derive_health_detail(response_body: str) -> str:
     return "ok"
 
 
+def _env_with_default(name: str, default: str) -> str:
+    value = os.getenv(name, "").strip()
+    return value or default
+
+
 def build_ai_analyst_adapter_from_env() -> AIAnalystAdapter:
     enabled = os.getenv("ORACLE_ENABLE_AI_ANALYST_CONNECTIVITY", "false").lower() == "true"
     provider = os.getenv("ORACLE_AI_PROVIDER", "none").strip().lower()
@@ -161,7 +185,16 @@ def build_ai_analyst_adapter_from_env() -> AIAnalystAdapter:
     if not enabled:
         return DisabledAIAnalystAdapter(provider=provider)
 
-    if provider in {"grok", "gemini", "custom"}:
+    if provider == "gemini":
+        return GeminiAIAnalystAdapter(
+            provider=provider,
+            base_url=_env_with_default("ORACLE_AI_ANALYST_BASE_URL", DEFAULT_GEMINI_BASE_URL),
+            api_key=os.getenv("ORACLE_AI_ANALYST_API_KEY", ""),
+            timeout_seconds=float(os.getenv("ORACLE_AI_ANALYST_TIMEOUT", "10.0")),
+            health_path=_env_with_default("ORACLE_AI_ANALYST_HEALTH_PATH", DEFAULT_GEMINI_HEALTH_PATH),
+        )
+
+    if provider in {"grok", "custom"}:
         return HttpAIAnalystAdapter(
             provider=provider,
             base_url=os.getenv("ORACLE_AI_ANALYST_BASE_URL", ""),

@@ -129,10 +129,11 @@ Optional (for external AI/sentiment integrations):
 ```
 ORACLE_SENTIMENT_BASE_URL=https://<sentiment-provider>
 ORACLE_SENTIMENT_API_KEY=<your-sentiment-key>
-ORACLE_AI_ANALYST_BASE_URL=https://<ai-analyst-provider>
+ORACLE_AI_PROVIDER=gemini
+ORACLE_AI_ANALYST_BASE_URL=https://generativelanguage.googleapis.com
 ORACLE_AI_ANALYST_API_KEY=<your-ai-analyst-key>
 ORACLE_ENABLE_AI_ANALYST_CONNECTIVITY=true
-ORACLE_AI_ANALYST_HEALTH_PATH=/health
+ORACLE_AI_ANALYST_HEALTH_PATH=/v1beta/models
 ```
 
 Optional (for exchange connectivity checks):

@@ -230,12 +230,21 @@ Returns AI analyst adapter connectivity status.
 **Response:**
 ```json
 {
-  "provider": "grok",
+  "provider": "gemini",
   "enabled": true,
   "configured": true,
   "reachable": true,
   "detail": "ok"
 }
+```
+
+For Gemini, recommended runtime env:
+
+```bash
+ORACLE_AI_PROVIDER=gemini
+ORACLE_AI_ANALYST_BASE_URL=https://generativelanguage.googleapis.com
+ORACLE_AI_ANALYST_HEALTH_PATH=/v1beta/models
+ORACLE_ENABLE_AI_ANALYST_CONNECTIVITY=true
 ```
 
 ### List Governance Requests

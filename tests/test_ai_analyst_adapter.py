@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import unittest
 from unittest.mock import patch
+from urllib.request import Request
 
 from oracle.infrastructure.ai_analyst_adapter import (
     HttpAIAnalystAdapter,
@@ -73,6 +74,35 @@ class AIAnalystAdapterTest(unittest.TestCase):
         self.assertTrue(status.configured)
         self.assertTrue(status.reachable)
         self.assertEqual(status.detail, "ok")
+
+    @patch("oracle.infrastructure.ai_analyst_adapter.urlopen")
+    def test_should_use_gemini_api_key_header_with_default_models_path(self, mock_urlopen) -> None:
+        mock_urlopen.return_value = _FakeResponse('{"models": []}')
+
+        with patch.dict(
+            os.environ,
+            {
+                "ORACLE_ENABLE_AI_ANALYST_CONNECTIVITY": "true",
+                "ORACLE_AI_PROVIDER": "gemini",
+                "ORACLE_AI_ANALYST_API_KEY": "gemini-test-key",
+                "ORACLE_AI_ANALYST_BASE_URL": "",
+                "ORACLE_AI_ANALYST_HEALTH_PATH": "",
+            },
+            clear=False,
+        ):
+            status = build_ai_analyst_adapter_from_env().check_connectivity()
+
+        self.assertTrue(status.enabled)
+        self.assertTrue(status.configured)
+        self.assertTrue(status.reachable)
+        self.assertEqual(status.provider, "gemini")
+
+        request_arg = mock_urlopen.call_args[0][0]
+        self.assertIsInstance(request_arg, Request)
+        self.assertIn("/v1beta/models", request_arg.full_url)
+        request_headers = {k.lower(): v for k, v in request_arg.header_items()}
+        self.assertEqual(request_headers.get("x-goog-api-key"), "gemini-test-key")
+        self.assertNotIn("authorization", request_headers)
 
     def test_should_report_unsupported_provider(self) -> None:
         with patch.dict(
