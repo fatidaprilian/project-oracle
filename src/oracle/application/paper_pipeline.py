@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from oracle.domain.models import MarketSnapshot, PositionState
+from oracle.application.risk_controls import RiskGuard
 from oracle.infrastructure.journal import InMemoryJournal
 from oracle.modules.confluence_engine import evaluate_confluence
 from oracle.modules.exit_engine import evaluate_exit
@@ -14,7 +15,14 @@ def run_paper_cycle(
     snapshot: MarketSnapshot,
     sentiment_provider: SentimentProvider,
     journal: InMemoryJournal,
+    risk_guard: RiskGuard | None = None,
 ) -> None:
+    if risk_guard is not None:
+        is_allowed, reason = risk_guard.pre_trade_check(snapshot)
+        if not is_allowed:
+            journal.record("candidate_rejected", {"reason": reason})
+            return
+
     structure = evaluate_structure(snapshot)
     journal.record("structure_evaluated", structure)
 
@@ -59,3 +67,7 @@ def run_paper_cycle(
     if exit_decision.should_close:
         position.is_open = False
         journal.record("position_closed", {"reason": exit_decision.exit_reason})
+        if risk_guard is not None:
+            initial_risk = max(position.entry_price - entry_plan.stop_loss, position.entry_price * 0.001)
+            realized_r = (snapshot.current_price - position.entry_price) / initial_risk
+            risk_guard.register_closed_trade(realized_r)

@@ -56,14 +56,35 @@ set PYTHONPATH=src
 python -m unittest discover -s tests -p "test_*.py"
 ```
 
+## Generate Weekly Report
+
+```bash
+set PYTHONPATH=src
+python src/weekly_report.py
+```
+
+Output report:
+- reports/weekly/<ISO-week>.md
+
 ## Adapter Sentiment Eksternal
 File adapter:
 - src/oracle/infrastructure/external_sentiment_provider.py
+
+Adapter persistence:
+- src/oracle/infrastructure/postgres_journal_repository.py
+- src/oracle/infrastructure/redis_risk_repository.py
+
+Risk guard dan circuit breaker:
+- src/oracle/application/risk_controls.py
 
 Environment variable:
 - ORACLE_SENTIMENT_BASE_URL
 - ORACLE_SENTIMENT_API_KEY
 - ORACLE_SENTIMENT_TIMEOUT
+
+Opsional environment untuk persistence:
+- ORACLE_POSTGRES_DSN
+- ORACLE_REDIS_URL
 
 ## Quick Start Repository (WSL)
 
@@ -90,10 +111,9 @@ git status
 Catatan: push ke remote bisa dilakukan setelah token tersedia.
 
 ## Rencana Tahap Berikutnya
-- tambah test unit untuk tiap engine
-- tambah replay runner untuk multi simbol
-- integrasi sentiment provider adapter (vendor-agnostic)
-- tambah persistensi PostgreSQL + Redis
+- tambah integrasi nyata Postgres/Redis di runtime pipeline
+- tambah evaluasi MAE/MFE dan scoring kualitas entry
+- tambah scheduler mingguan otomatis untuk report + AI review
 
 ## Checklist Implementasi Mingguan
 - [ ] Monday: review parameter aktif dan risk limit

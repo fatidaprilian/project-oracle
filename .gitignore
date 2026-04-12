@@ -54,6 +54,7 @@ coverage/
 *.seed
 *.pid.lock
 .agentic-backup/
+reports/weekly/
 
 # AI instruction and agent config
 AGENTS.md
