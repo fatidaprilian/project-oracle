@@ -252,6 +252,28 @@ If you want to keep Railway support as a fallback, the same Dockerfile can be re
 
 The Railway path still works as a fallback if you want a second platform option later. Keep the same environment variables and use the same Dockerfile-based build.
 
+## Frontend Deployment (Vercel)
+
+Frontend boundary lives in `web/` and is intended to deploy separately to Vercel.
+
+Recommended env values for the frontend:
+
+```bash
+VITE_API_URL=https://project-oracle-133425616833.asia-southeast2.run.app
+VITE_API_TOKEN=
+```
+
+If backend auth is enabled later, set `VITE_API_TOKEN` to the same bearer token you store in backend secrets.
+
+The Vercel project can point to the `web/` folder as the root directory, then run:
+
+```bash
+npm install
+npm run build
+```
+
+Deploy output will be the frontend root, while the API remains on Cloud Run.
+
 ## Frontend Access
 
 Current Cloud Run URL below is API service, not frontend app shell:

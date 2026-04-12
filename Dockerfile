@@ -12,7 +12,8 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 RUN mkdir -p /app/data /app/registry /app/reports /app/logs /app/runtime-fallback
 
 COPY src /app/src
+COPY services /app/services
 
-WORKDIR /app/src
+WORKDIR /app
 
-CMD ["python3", "run_api.py"]
+CMD ["python3", "services/api/entrypoint.py"]

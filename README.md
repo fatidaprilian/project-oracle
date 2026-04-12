@@ -17,6 +17,15 @@ Status saat ini: docs + fase 1 scaffold (paper trading pipeline) sudah aktif.
 - Roadmap frontend: docs/frontend-roadmap.md
 - Persistence recovery runbook: docs/persistence-recovery.md
 
+## Layout Repositori
+
+- `src/` - core domain, application, infrastructure, dan entrypoint backend
+- `services/` - boundary service untuk API dan worker scheduler
+- `web/` - frontend app yang akan dipindah/deploy ke Vercel
+- `apps/` - penanda boundary aplikasi tingkat atas
+- `scripts/` - tooling deployment dan bootstrap
+- `docs/` - blueprint, roadmap, dan runbook
+
 ## Ruang Lingkup Fase Saat Ini
 - definisi arsitektur
 - definisi komponen dan state machine
@@ -169,8 +178,9 @@ Catatan: push ke remote bisa dilakukan setelah token tersedia.
 
 ## Keputusan Frontend Saat Ini
 - stack UI: React + Vite
-- deployment awal: single Railway
-- evaluasi split Railway + Vercel setelah trigger scale terpenuhi (lihat docs/frontend-roadmap.md)
+- deployment frontend: Vercel
+- backend service: Cloud Run / worker service terpisah
+- frontend memakai boundary `web/` sekarang, dengan target deploy terpisah ke Vercel
 
 ## Checklist Implementasi Mingguan
 - [ ] Monday: review parameter aktif dan risk limit
