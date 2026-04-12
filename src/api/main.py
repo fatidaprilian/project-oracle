@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
 try:
     from fastapi import FastAPI, HTTPException
+    from fastapi.middleware.cors import CORSMiddleware
     from pydantic import BaseModel
 except ImportError:
     raise ImportError(
@@ -24,6 +26,17 @@ app = FastAPI(
     title="Project Oracle API",
     description="Strategy intelligence and governance REST API",
     version="0.1.0",
+)
+
+# CORS Configuration
+allowed_origins = os.getenv(
+    "ORACLE_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Configuration
