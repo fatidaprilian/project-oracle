@@ -23,6 +23,7 @@ class RuntimeSettings:
     persistence_max_retries: int
     persistence_retry_delay_seconds: float
     redis_risk_ttl_seconds: int
+    persistence_fallback_file_path: str
 
 
 @dataclass
@@ -41,6 +42,10 @@ def build_runtime_settings() -> RuntimeSettings:
     persistence_max_retries = int(os.getenv("ORACLE_PERSISTENCE_MAX_RETRIES", "2"))
     persistence_retry_delay_seconds = float(os.getenv("ORACLE_PERSISTENCE_RETRY_DELAY_SECONDS", "0.2"))
     redis_risk_ttl_seconds = int(os.getenv("ORACLE_REDIS_RISK_TTL_SECONDS", "86400"))
+    persistence_fallback_file_path = os.getenv(
+        "ORACLE_PERSISTENCE_FALLBACK_FILE",
+        "runtime-fallback/journal-events.jsonl",
+    )
 
     return RuntimeSettings(
         postgres_dsn=postgres_dsn,
@@ -50,6 +55,7 @@ def build_runtime_settings() -> RuntimeSettings:
         persistence_max_retries=persistence_max_retries,
         persistence_retry_delay_seconds=persistence_retry_delay_seconds,
         redis_risk_ttl_seconds=redis_risk_ttl_seconds,
+        persistence_fallback_file_path=persistence_fallback_file_path,
     )
 
 
@@ -62,6 +68,7 @@ def build_runtime_components() -> RuntimeComponents:
             settings.postgres_dsn,
             max_retries=settings.persistence_max_retries,
             retry_delay_seconds=settings.persistence_retry_delay_seconds,
+            fallback_file_path=settings.persistence_fallback_file_path,
         )
 
     journal = InMemoryJournal(journal_sink)

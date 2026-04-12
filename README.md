@@ -15,6 +15,7 @@ Status saat ini: docs + fase 1 scaffold (paper trading pipeline) sudah aktif.
 - Trading flow per modul: docs/trading-flow-modules.md
 - Roadmap eksekusi: docs/roadmap.md
 - Roadmap frontend: docs/frontend-roadmap.md
+- Persistence recovery runbook: docs/persistence-recovery.md
 
 ## Ruang Lingkup Fase Saat Ini
 - definisi arsitektur
@@ -99,6 +100,7 @@ Opsional environment untuk persistence:
 - ORACLE_PERSISTENCE_MAX_RETRIES
 - ORACLE_PERSISTENCE_RETRY_DELAY_SECONDS
 - ORACLE_REDIS_RISK_TTL_SECONDS
+- ORACLE_PERSISTENCE_FALLBACK_FILE
 
 ## Quick Start Repository (WSL)
 

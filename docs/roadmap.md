@@ -57,7 +57,7 @@ Definition of done:
 - event quality tercatat di journal
 - report mingguan menampilkan rata-rata quality score
 
-## Fase 4 - Persistence Hardening (In Progress)
+## Fase 4 - Persistence Hardening (Done)
 Tujuan:
 - persistence production-ready
 
@@ -70,7 +70,7 @@ Definition of done:
 - operasi tetap aman saat dependency eksternal gagal
 - data audit tidak hilang saat replay berulang
 
-## Fase 5 - Strategy Intelligence
+## Fase 5 - Strategy Intelligence (In Progress)
 Tujuan:
 - pembelajaran mingguan semi-otomatis
 
