@@ -34,6 +34,59 @@ The API will be available at `http://localhost:8000` by default.
 
 ## API Endpoints
 
+### Login
+
+```http
+POST /api/v1/auth/login
+```
+
+No registration flow is required for v1, but user credentials are stored in PostgreSQL table `auth_users` with hashed passwords.
+
+Environment options:
+- `ORACLE_AUTH_POSTGRES_DSN` (or fallback `ORACLE_POSTGRES_DSN`)
+- `ORACLE_AUTH_HASH_ITERATIONS`
+
+Seed or update user via script:
+
+```bash
+PYTHONPATH=src python3 scripts/security/create_auth_user.py --username <USERNAME> --role admin
+```
+
+**Request Body:**
+```json
+{
+  "username": "admin-user",
+  "password": "<your-password>"
+}
+```
+
+**Response:**
+```json
+{
+  "access_token": "<jwt-token>",
+  "token_type": "bearer",
+  "username": "admin-user",
+  "role": "admin"
+}
+```
+
+### Current Auth Session
+
+```http
+GET /api/v1/auth/me
+```
+
+Requires `Authorization: Bearer <token>`.
+
+**Response:**
+```json
+{
+  "username": "admin-user",
+  "role": "admin",
+  "auth_source": "jwt"
+}
+```
+
 ### Health Check
 
 ```http
@@ -91,6 +144,43 @@ Get count summary of all parameter change requests by status.
   "approved": 2,
   "rejected": 1,
   "ready_to_promote": 2
+}
+```
+
+### Governance Live Stream
+
+```http
+GET /api/v1/governance/stream?symbol=BTCUSDT&interval_seconds=5
+```
+
+Stream status governance dan koneksi infra secara near real-time menggunakan Server-Sent Events (SSE).
+
+Setiap event `governance` berisi payload seperti:
+
+```json
+{
+  "symbol": "BTCUSDT",
+  "summary": {
+    "total": 5,
+    "pending": 2,
+    "approved": 2,
+    "rejected": 1,
+    "ready_to_promote": 2
+  },
+  "connections": {
+    "postgres": {
+      "enabled": true,
+      "configured": true,
+      "reachable": true,
+      "detail": "ok"
+    },
+    "redis": {
+      "enabled": false,
+      "configured": true,
+      "reachable": false,
+      "detail": "disabled"
+    }
+  }
 }
 ```
 
@@ -248,4 +338,4 @@ These are automatically created by the API if they don't exist.
 - Add basic authentication (Bearer token or API key)
 - Add request logging and monitoring
 - Implement rate limiting
-- Add WebSocket support for real-time status updates (Phase 7)
+- Upgrade SSE stream to WebSocket channel if bidirectional event flow is needed

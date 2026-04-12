@@ -1,15 +1,34 @@
 import axios from 'axios'
 
-const API_BASE_URL =
+export const API_BASE_URL =
   import.meta.env.VITE_API_URL || 'http://localhost:8000'
-const API_TOKEN = import.meta.env.VITE_API_TOKEN || ''
+let runtimeToken = import.meta.env.VITE_API_TOKEN || ''
+
+export function setApiAuthToken(token: string | null): void {
+  runtimeToken = token || ''
+}
+
+export function buildGovernanceStreamUrl(symbol?: string): string {
+  const url = new URL('/api/v1/governance/stream', API_BASE_URL)
+  if (symbol) {
+    url.searchParams.set('symbol', symbol)
+  }
+  url.searchParams.set('interval_seconds', '5')
+  return url.toString()
+}
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    ...(API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {}),
   },
+})
+
+apiClient.interceptors.request.use((config) => {
+  if (runtimeToken) {
+    config.headers.Authorization = `Bearer ${runtimeToken}`
+  }
+  return config
 })
 
 export interface HealthResponse {
@@ -63,7 +82,29 @@ export interface ConfigConnections {
   redis: ServiceConnectionStatus
 }
 
+export interface AuthLoginResponse {
+  access_token: string
+  token_type: string
+  username: string
+  role: 'viewer' | 'operator' | 'admin'
+}
+
+export interface AuthMeResponse {
+  username: string
+  role: 'viewer' | 'operator' | 'admin'
+  auth_source: string
+}
+
 export const api = {
+  login: (username: string, password: string) =>
+    apiClient.post<AuthLoginResponse>('/api/v1/auth/login', {
+      username,
+      password,
+    }),
+
+  me: () =>
+    apiClient.get<AuthMeResponse>('/api/v1/auth/me'),
+
   health: () => apiClient.get<HealthResponse>('/health'),
   
   triggerWorkflow: (symbol?: string) => 

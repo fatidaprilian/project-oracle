@@ -75,3 +75,46 @@ export function Error({ message }: ErrorProps) {
     </div>
   )
 }
+
+interface RetryNoticeProps {
+  message: string
+  onRetry: () => void
+}
+
+export function RetryNotice({ message, onRetry }: RetryNoticeProps) {
+  return (
+    <div className="p-4 bg-amber-900/20 border border-amber-700 rounded-lg text-amber-100 flex items-center justify-between gap-4">
+      <span>{message}</span>
+      <button type="button" className="btn-secondary" onClick={onRetry}>
+        Retry
+      </button>
+    </div>
+  )
+}
+
+export function SkeletonCard() {
+  return (
+    <div className="card animate-pulse space-y-3">
+      <div className="h-4 w-1/3 bg-slate-800 rounded" />
+      <div className="h-8 w-2/3 bg-slate-800 rounded" />
+    </div>
+  )
+}
+
+interface LiveStatusBadgeProps {
+  status: 'connected' | 'reconnecting' | 'stale'
+}
+
+export function LiveStatusBadge({ status }: LiveStatusBadgeProps) {
+  const styles = {
+    connected: 'bg-green-900 text-green-200 border-green-700',
+    reconnecting: 'bg-amber-900 text-amber-200 border-amber-700',
+    stale: 'bg-red-900 text-red-200 border-red-700',
+  }
+
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${styles[status]}`}>
+      live: {status}
+    </span>
+  )
+}

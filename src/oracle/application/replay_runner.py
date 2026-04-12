@@ -21,6 +21,20 @@ def _to_snapshot(record: dict[str, object]) -> MarketSnapshot:
     )
 
 
+def load_replay_symbols(dataset_path: Path) -> list[str]:
+    symbols: set[str] = set()
+    with dataset_path.open("r", encoding="utf-8") as file_obj:
+        for line in file_obj:
+            line = line.strip()
+            if not line:
+                continue
+            record = json.loads(line)
+            symbol = str(record.get("symbol", "")).strip()
+            if symbol:
+                symbols.add(symbol)
+    return sorted(symbols)
+
+
 def run_replay(dataset_path: Path, sentiment_provider: SentimentProvider) -> list[dict[str, object]]:
     journal = InMemoryJournal()
     with dataset_path.open("r", encoding="utf-8") as file_obj:

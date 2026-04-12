@@ -122,7 +122,7 @@ Progress saat ini:
 - integration tests: implemented (3 tests passing)
 - total tests: 38 passing
 
-## Phase 7 - Frontend and Multi-Symbol (Future)
+## Phase 7 - Frontend and Multi-Symbol (In Progress)
 Tujuan:
 - user interface untuk monitoring dan governance
 - support multi-symbol portfolio trading
@@ -132,12 +132,41 @@ Deliverables:
 - governance dashboard (request approval, promotion)
 - strategy performance KPI display
 - multi-symbol support dalam core pipeline
-- WebSocket live updates
+- real-time live updates (SSE/WebSocket)
 
 Definition of done:
 - frontend accessible di Railway atau Vercel
 - governance approval dapat dilakukan via UI
 - multi-symbol replay berjalan tanpa error
+
+Progress saat ini:
+- React + Vite frontend dengan routing: implemented
+- governance dashboard (request approval, promotion): implemented
+- strategy performance KPI display (governance summary + infra connectivity): implemented
+- stream update near real-time via SSE endpoint: implemented
+- frontend hardening (error boundary, skeleton loading, retry UX): implemented
+- role-based view restriction (viewer/operator/admin): implemented
+- login flow without register (username/password from DB auth_users -> role token): implemented
+- observability frontend baseline (web vitals + error tracking hooks): implemented
+- multi-symbol replay guard test: implemented
+
+## Phase 8 - Market Connectivity and Provider Abstraction (Planned)
+Tujuan:
+- menyiapkan konektivitas market/exchange secara aman tanpa lock-in vendor
+- menyiapkan integrasi AI analyst provider yang bisa diganti tanpa ubah core domain
+
+Deliverables:
+- exchange adapter interface (vendor-agnostic) dengan mode testnet sebagai default
+- implementasi adapter awal untuk Bybit testnet (read/ping + market sanity check)
+- health endpoint untuk status koneksi exchange adapter
+- AI analyst adapter interface (vendor-agnostic) dengan fallback jika API key belum aktif
+- konfigurasi environment standar untuk provider selection (grok/gemini/custom)
+
+Definition of done:
+- runtime tetap aman dalam mode paper saat kredensial exchange/provider tidak tersedia
+- minimal satu adapter exchange berjalan di testnet tanpa memengaruhi governance flow
+- pergantian provider tidak membutuhkan perubahan di modul domain utama
+- runbook konfigurasi provider/exchange tersedia
 
 ## Status Keseluruhan
 

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import hmac
+import json
 import os
 from pathlib import Path
 from typing import Any
@@ -7,6 +10,7 @@ from typing import Any
 try:
     from fastapi import Depends, FastAPI, Header, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import StreamingResponse
     from pydantic import BaseModel
 except ImportError:
     raise ImportError(
@@ -20,6 +24,14 @@ from oracle.application.strategy_intelligence import (
     update_request_status_by_id,
 )
 from oracle.application.weekly_workflow import run_weekly_workflow
+from api.security import (
+    authenticate_db_user,
+    create_api_token,
+    ensure_auth_schema,
+    get_auth_dsn,
+    normalize_role,
+    verify_api_token,
+)
 
 
 app = FastAPI(
@@ -45,21 +57,125 @@ DEFAULT_STRATEGY_CONFIG_PATH = Path("reports/strategy-configs")
 
 API_AUTH_ENABLED = os.getenv("ORACLE_API_AUTH_ENABLED", "false").lower() == "true"
 API_AUTH_TOKEN = os.getenv("ORACLE_API_AUTH_TOKEN", "")
+ROLE_ORDER = {
+    "viewer": 1,
+    "operator": 2,
+    "admin": 3,
+}
 
 
-def require_api_auth(authorization: str | None = Header(default=None)) -> None:
+def _extract_bearer_token(authorization: str | None) -> str:
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing Authorization header")
+    if not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Authorization must be Bearer token")
+    token = authorization.split(" ", 1)[1].strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+    return token
+
+
+def require_api_auth(authorization: str | None = Header(default=None)) -> dict[str, str]:
+    if not API_AUTH_ENABLED:
+        return {
+            "username": "anonymous",
+            "role": "admin",
+            "auth_source": "disabled",
+        }
+
+    token = _extract_bearer_token(authorization)
+
+    if API_AUTH_TOKEN and hmac.compare_digest(token, API_AUTH_TOKEN):
+        return {
+            "username": "api-token",
+            "role": "admin",
+            "auth_source": "static-token",
+        }
+
+    payload = verify_api_token(token)
+    username = str(payload.get("sub", "user"))
+    role = normalize_role(str(payload.get("role", "viewer")))
+    return {
+        "username": username,
+        "role": role,
+        "auth_source": "jwt",
+    }
+
+
+def require_role(min_role: str):
+    minimum = normalize_role(min_role)
+
+    def _dependency(user: dict[str, str] = Depends(require_api_auth)) -> dict[str, str]:
+        actual = normalize_role(user.get("role", "viewer"))
+        if ROLE_ORDER[actual] < ROLE_ORDER[minimum]:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Role '{actual}' cannot access this resource",
+            )
+        return user
+
+    return _dependency
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    username: str
+    role: str
+
+
+class CurrentUserResponse(BaseModel):
+    username: str
+    role: str
+    auth_source: str
+
+
+@app.on_event("startup")
+def initialize_auth_schema_on_startup() -> None:
     if not API_AUTH_ENABLED:
         return
 
-    if not API_AUTH_TOKEN:
-        raise HTTPException(
-            status_code=500,
-            detail="ORACLE_API_AUTH_ENABLED=true but ORACLE_API_AUTH_TOKEN is empty",
+    auth_dsn = get_auth_dsn()
+    if not auth_dsn:
+        raise RuntimeError(
+            "ORACLE_API_AUTH_ENABLED=true but auth DSN is missing. Set ORACLE_AUTH_POSTGRES_DSN or ORACLE_POSTGRES_DSN."
         )
 
-    expected = f"Bearer {API_AUTH_TOKEN}"
-    if authorization != expected:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    ensure_auth_schema(auth_dsn)
+
+
+@app.post("/api/v1/auth/login", response_model=LoginResponse)
+def login(payload: LoginRequest) -> LoginResponse:
+    try:
+        user = authenticate_db_user(payload.username, payload.password)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(exc)}") from exc
+
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    token = create_api_token(identifier=user["username"], role=user["role"])
+    return LoginResponse(
+        access_token=token,
+        username=user["username"],
+        role=user["role"],
+    )
+
+
+@app.get("/api/v1/auth/me", response_model=CurrentUserResponse)
+def auth_me(user: dict[str, str] = Depends(require_api_auth)) -> CurrentUserResponse:
+    return CurrentUserResponse(
+        username=user["username"],
+        role=user["role"],
+        auth_source=user["auth_source"],
+    )
 
 
 class HealthResponse(BaseModel):
@@ -141,6 +257,30 @@ class PromoteResponse(BaseModel):
     promoted: bool
     config_path: str | None = None
     reason: str | None = None
+
+
+def _build_governance_summary(symbol: str = "") -> dict[str, int]:
+    records = load_parameter_change_requests(DEFAULT_REGISTRY_PATH)
+    summary = {
+        "total": 0,
+        "pending": 0,
+        "approved": 0,
+        "rejected": 0,
+        "ready_to_promote": 0,
+    }
+    for record in records:
+        if symbol and record.get("symbol", "") != symbol:
+            continue
+        summary["total"] += 1
+        status = str(record.get("status", "pending")).lower()
+        if status in ("pending", "approved", "rejected"):
+            summary[status] += 1
+        validation = record.get("validation", {})
+        is_valid = bool(validation.get("is_valid", False)
+                        ) if isinstance(validation, dict) else False
+        if status == "approved" and is_valid:
+            summary["ready_to_promote"] += 1
+    return summary
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -278,7 +418,7 @@ def config_connections() -> ConfigConnectionsResponse:
 @app.post("/api/v1/weekly-workflow", response_model=WorkflowResponse)
 def trigger_weekly_workflow(
     symbol: str = "",
-    _: None = Depends(require_api_auth),
+    _: dict[str, str] = Depends(require_role("operator")),
 ) -> WorkflowResponse:
     result = run_weekly_workflow()
     return WorkflowResponse(
@@ -297,30 +437,51 @@ def trigger_weekly_workflow(
 @app.get("/api/v1/governance/summary", response_model=GovernanceSummaryResponse)
 def get_governance_summary(symbol: str = "") -> GovernanceSummaryResponse:
     try:
-        records = load_parameter_change_requests(DEFAULT_REGISTRY_PATH)
-        summary = {
-            "total": 0,
-            "pending": 0,
-            "approved": 0,
-            "rejected": 0,
-            "ready_to_promote": 0,
-        }
-        for record in records:
-            if symbol and record.get("symbol", "") != symbol:
-                continue
-            summary["total"] += 1
-            status = str(record.get("status", "pending")).lower()
-            if status in ("pending", "approved", "rejected"):
-                summary[status] += 1
-            validation = record.get("validation", {})
-            is_valid = bool(validation.get("is_valid", False)
-                            ) if isinstance(validation, dict) else False
-            if status == "approved" and is_valid:
-                summary["ready_to_promote"] += 1
+        summary = _build_governance_summary(symbol)
         return GovernanceSummaryResponse(**summary)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to retrieve summary: {str(e)}")
+
+
+@app.get("/api/v1/governance/stream")
+async def governance_stream(symbol: str = "", interval_seconds: float = 5.0) -> StreamingResponse:
+    interval = max(1.0, min(interval_seconds, 30.0))
+
+    async def event_generator():
+        while True:
+            try:
+                payload = {
+                    "symbol": symbol,
+                    "summary": _build_governance_summary(symbol),
+                    "connections": {
+                        "postgres": _check_postgres_connection(
+                            os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true",
+                            os.getenv("ORACLE_POSTGRES_DSN", "").strip(),
+                        ).model_dump(),
+                        "redis": _check_redis_connection(
+                            os.getenv("ORACLE_ENABLE_REDIS", "false").lower() == "true",
+                            os.getenv("ORACLE_REDIS_URL", "").strip(),
+                        ).model_dump(),
+                    },
+                }
+                yield f"event: governance\ndata: {json.dumps(payload)}\n\n"
+            except Exception as exc:
+                error_payload = {
+                    "error": f"stream_error: {str(exc)}",
+                }
+                yield f"event: error\ndata: {json.dumps(error_payload)}\n\n"
+
+            await asyncio.sleep(interval)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @app.get("/api/v1/governance/requests", response_model=list[RequestRecord])
@@ -390,7 +551,7 @@ def list_symbols() -> list[SymbolInfoResponse]:
 @app.post("/api/v1/governance/approve", response_model=dict[str, bool | str])
 def approve_request(
     approval: ApprovalRequest,
-    _: None = Depends(require_api_auth),
+    _: dict[str, str] = Depends(require_role("operator")),
 ) -> dict[str, bool | str]:
     try:
         if approval.status not in ("approved", "rejected", "pending"):
@@ -409,7 +570,7 @@ def approve_request(
 
 
 @app.post("/api/v1/governance/promote", response_model=PromoteResponse)
-def promote_requests(_: None = Depends(require_api_auth)) -> PromoteResponse:
+def promote_requests(_: dict[str, str] = Depends(require_role("admin"))) -> PromoteResponse:
     try:
         config_path = promote_approved_requests(
             DEFAULT_REGISTRY_PATH, DEFAULT_STRATEGY_CONFIG_PATH)

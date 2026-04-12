@@ -1,12 +1,24 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { AppRole } from '../auth/session'
 
 interface LayoutProps {
   children: React.ReactNode
+  username: string
+  role: AppRole
+  isAuthenticated: boolean
+  onLogout?: () => void
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({
+  children,
+  username,
+  role,
+  isAuthenticated,
+  onLogout,
+}: LayoutProps) {
   const location = useLocation()
+  const roleLabel = role.charAt(0).toUpperCase() + role.slice(1)
   
   const isActive = (path: string) => location.pathname === path
   
@@ -20,6 +32,9 @@ export default function Layout({ children }: LayoutProps) {
                 <span className="text-white font-bold text-sm">PO</span>
               </div>
               <h1 className="text-2xl font-bold text-white">Oracle</h1>
+              <span className="text-xs px-2 py-1 rounded border border-slate-700 text-slate-300 bg-slate-800/80">
+                role: {roleLabel}
+              </span>
             </div>
             <nav className="flex items-center gap-1">
               <Link
@@ -42,6 +57,29 @@ export default function Layout({ children }: LayoutProps) {
               >
                 Requests
               </Link>
+              {isAuthenticated ? (
+                <>
+                  <span className="ml-2 text-xs text-slate-400">{username}</span>
+                  <button
+                    type="button"
+                    className="ml-2 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800"
+                    onClick={onLogout}
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className={`ml-2 px-3 py-2 rounded-lg transition-colors ${
+                    isActive('/login')
+                      ? 'bg-blue-600 text-white'
+                      : 'text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  Login
+                </Link>
+              )}
             </nav>
           </div>
         </div>

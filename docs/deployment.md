@@ -96,9 +96,19 @@ Recommended for local + production baseline:
 ```
 ORACLE_FRONTEND_URL=http://localhost:3000
 ORACLE_ALLOWED_ORIGINS=http://localhost:3000
-ORACLE_API_AUTH_ENABLED=false
+ORACLE_API_AUTH_ENABLED=true
 ORACLE_API_AUTH_TOKEN=
+ORACLE_AUTH_POSTGRES_DSN=postgresql://<user>:<pass>@<host>:5432/<db>
+ORACLE_AUTH_HASH_ITERATIONS=390000
 ```
+
+Setelah env auth siap, buat akun dashboard pertama (tanpa register UI):
+
+```bash
+PYTHONPATH=src python3 scripts/security/create_auth_user.py --username <USERNAME> --role admin
+```
+
+Password akan diminta via prompt dan disimpan sebagai hash di tabel `auth_users`.
 
 Required variables:
 ```
@@ -447,6 +457,28 @@ Add to crontab:
 ```bash
 */5 * * * * /usr/local/bin/check-oracle-health.sh
 ```
+
+### One-Command Production Smoke Check
+
+Gunakan script ini setiap selesai deploy Cloud Run untuk verifikasi cepat endpoint utama:
+
+```bash
+./scripts/ops/check_prod.sh
+```
+
+Opsional jika ingin cek URL lain:
+
+```bash
+./scripts/ops/check_prod.sh https://your-service-url.run.app
+```
+
+Script ini memverifikasi:
+- `/health`
+- `/api/v1/config/readiness`
+- `/api/v1/config/connections`
+- `/docs`
+
+Script akan exit code `1` jika ada dependency yang enabled tapi tidak reachable.
 
 ## Troubleshooting
 

@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react'
 import { api, RequestRecord, SymbolInfo } from '../api/client'
-import { Card, Badge, Loading, Error } from '../components/UI'
+import { Card, Badge, Error, RetryNotice, SkeletonCard } from '../components/UI'
+import { withRetry } from '../api/retry'
+import { AppRole } from '../auth/session'
+import { getAccessByRole } from '../config/access'
 
-export default function Requests() {
+interface RequestsProps {
+  role: AppRole
+}
+
+export default function Requests({ role }: RequestsProps) {
   const [symbols, setSymbols] = useState<SymbolInfo[]>([])
   const [selectedSymbol, setSelectedSymbol] = useState<string>('')
   const [requests, setRequests] = useState<RequestRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string>('')
+
+  const access = getAccessByRole(role)
+  const canApproveRequests = access.canApproveRequests
 
   useEffect(() => {
     loadSymbols()
@@ -19,7 +29,7 @@ export default function Requests() {
 
   const loadSymbols = async () => {
     try {
-      const { data } = await api.getSymbols()
+      const { data } = await withRetry(() => api.getSymbols())
       setSymbols(data)
       if (data.length > 0) {
         setSelectedSymbol(data[0].symbol)
@@ -33,7 +43,7 @@ export default function Requests() {
   const loadRequests = async () => {
     try {
       setLoading(true)
-      const { data } = await api.getRequests(selectedSymbol)
+      const { data } = await withRetry(() => api.getRequests(selectedSymbol), 2, 400)
       setRequests(data)
       setError('')
     } catch (err) {
@@ -45,6 +55,11 @@ export default function Requests() {
   }
 
   const approveRequest = async (requestId: string) => {
+    if (!canApproveRequests) {
+      setError('Current role cannot approve requests')
+      return
+    }
+
     try {
       await api.approveRequest(requestId, 'approved')
       await loadRequests()
@@ -55,6 +70,11 @@ export default function Requests() {
   }
 
   const rejectRequest = async (requestId: string) => {
+    if (!canApproveRequests) {
+      setError('Current role cannot reject requests')
+      return
+    }
+
     try {
       await api.approveRequest(requestId, 'rejected')
       await loadRequests()
@@ -69,9 +89,22 @@ export default function Requests() {
       <div>
         <h2 className="text-3xl font-bold text-white mb-2">Parameter Change Requests</h2>
         <p className="text-slate-400">Approve, reject, or promote strategy parameter changes</p>
+        {!canApproveRequests && (
+          <p className="text-xs text-amber-300 mt-2">
+            Current role is read-only for approval actions.
+          </p>
+        )}
       </div>
 
       {error && <Error message={error} />}
+      {error && (
+        <RetryNotice
+          message="Request list failed to load. Retry now."
+          onRetry={() => {
+            void loadRequests()
+          }}
+        />
+      )}
 
       <Card>
         <div>
@@ -93,7 +126,11 @@ export default function Requests() {
       </Card>
 
       {loading ? (
-        <Loading message="Loading requests..." />
+        <div className="space-y-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       ) : requests.length === 0 ? (
         <Card>
           <p className="text-slate-400 text-center py-8">No requests found</p>
@@ -124,7 +161,7 @@ export default function Requests() {
                 </div>
               </div>
 
-              {req.status === 'pending' && (
+              {req.status === 'pending' && canApproveRequests && (
                 <div className="flex gap-2 pt-2 border-t border-slate-800">
                   <button
                     onClick={() => approveRequest(req.request_id)}
@@ -138,6 +175,11 @@ export default function Requests() {
                   >
                     Reject
                   </button>
+                </div>
+              )}
+              {req.status === 'pending' && !canApproveRequests && (
+                <div className="pt-2 border-t border-slate-800 text-xs text-amber-300">
+                  Role {access.role} cannot change request status.
                 </div>
               )}
             </Card>

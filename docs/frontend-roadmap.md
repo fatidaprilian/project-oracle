@@ -45,7 +45,7 @@ Pindah ke arsitektur split jika minimal 2 kondisi terpenuhi:
 
 Data flow:
 - REST polling untuk fase awal
-- tambah websocket channel setelah panel utama stabil
+- tambah stream channel (SSE dulu, lalu WebSocket jika perlu bidirectional)
 
 ## 5. Roadmap Frontend per Fase
 
@@ -87,7 +87,7 @@ Definition of done:
 
 ### F-4: Real-Time and Alerting
 Deliverables:
-- websocket stream untuk update posisi dan event
+- stream channel untuk update posisi dan event (SSE/WebSocket)
 - alert drawer untuk shield/risk lock
 
 Definition of done:
