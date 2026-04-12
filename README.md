@@ -14,6 +14,7 @@ Status saat ini: docs + fase 1 scaffold (paper trading pipeline) sudah aktif.
 - Draft data model: docs/data-model.md
 - Trading flow per modul: docs/trading-flow-modules.md
 - Roadmap eksekusi: docs/roadmap.md
+- Roadmap frontend: docs/frontend-roadmap.md
 
 ## Ruang Lingkup Fase Saat Ini
 - definisi arsitektur
@@ -122,6 +123,11 @@ Catatan: push ke remote bisa dilakukan setelah token tersedia.
 - fase aktif saat ini: Quality Analytics (lihat docs/roadmap.md)
 - persistensi production-ready (schema + retry policy)
 - scheduler mingguan otomatis untuk report + AI review
+
+## Keputusan Frontend Saat Ini
+- stack UI: React + Vite
+- deployment awal: single Railway
+- evaluasi split Railway + Vercel setelah trigger scale terpenuhi (lihat docs/frontend-roadmap.md)
 
 ## Checklist Implementasi Mingguan
 - [ ] Monday: review parameter aktif dan risk limit

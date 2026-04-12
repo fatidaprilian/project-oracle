@@ -101,3 +101,15 @@ Definition of done:
 2. Commit dan push artefak fase.
 3. Jalankan replay dan generate weekly report.
 4. Review hasil, lalu buka fase berikutnya.
+
+## Roadmap Frontend
+Dokumen detail frontend ada di docs/frontend-roadmap.md.
+
+Keputusan saat ini:
+- UI stack: React + Vite
+- deployment: single Railway dulu
+
+Trigger split Railway + Vercel:
+- butuh SEO/edge delivery publik
+- cadence release frontend/backend sudah berbeda
+- traffic frontend menuntut optimasi CDN/edge khusus
