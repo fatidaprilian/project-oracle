@@ -4,7 +4,7 @@
 
 - Python 3.12+
 - Git
-- Railway account (untuk cloud deployment) atau Linux VPS
+- Northflank account (untuk cloud deployment) atau Linux VPS
 - Optional: PostgreSQL, Redis
 
 ## Local Development Setup
@@ -95,18 +95,18 @@ cd src
 PYTHONPATH=. python3 scheduler.py --start --day-of-week 0 --hour 8
 ```
 
-## Railway Deployment
+## Northflank Deployment
 
-### Step 1: Create Railway Project
+### Step 1: Create Northflank Project
 
-1. Go to https://railway.app
+1. Go to https://northflank.com
 2. Create new project
 3. Connect GitHub repository
 4. Select `project-oracle` repo
 
 ### Step 2: Add Environment Variables
 
-In Railway dashboard, set environment variables:
+In Northflank dashboard, set environment variables:
 
 ```
 PYTHONPATH=src
@@ -116,20 +116,22 @@ ORACLE_AI_PROVIDER=grok
 ORACLE_ENABLE_POSTGRES=false  # until Phase 7
 ```
 
-Optional: Add PostgreSQL/Redis plugins via Railway dashboard
+Optional: Add PostgreSQL/Redis plugins via Northflank dashboard
 
-### Step 3: Configure Start Command
+### Step 3: Configure Services
 
-Railway should auto-detect Python. If not, create `Procfile`:
+Create two services from the same repository and Dockerfile:
 
-```
-web: cd src && python3 run_api.py --host 0.0.0.0 --port $PORT
-scheduler: cd src && python3 scheduler.py --start --day-of-week 0 --hour 8
-```
+Web service:
+- Build from `Dockerfile`
+- Start command: `python3 run_api.py --host 0.0.0.0`
+- Port: use `PORT` from environment or Northflank default port mapping
 
-Or configure in Railway dashboard:
-- **Web Service**: `src/run_api.py`
-- **Worker Service**: `src/scheduler.py --start`
+Worker service:
+- Build from the same `Dockerfile`
+- Start command: `python3 scheduler.py --start --day-of-week 0 --hour 8`
+
+Use a US region for now. That is sufficient for the current paper-trading scope and keeps latency predictable.
 
 ### Step 4: Deploy
 
@@ -141,21 +143,31 @@ git commit -m "deploy: configure for Railway"
 git push origin main
 ```
 
-Railway auto-deploys on push.
+Northflank auto-deploys on push.
 
 ### Step 5: Verify Deployment
 
-Once deployed, Railway shows your URL (e.g., `https://project-oracle-prod.up.railway.app`):
+Once deployed, Northflank shows your URL (example format depends on the service name):
 
 ```bash
 # Health check
-curl https://project-oracle-prod.up.railway.app/health
+curl https://<your-service-url>/health
 
 # Trigger workflow
-curl -X POST https://project-oracle-prod.up.railway.app/api/v1/weekly-workflow
+curl -X POST https://<your-service-url>/api/v1/weekly-workflow
 ```
 
-Check logs in Railway dashboard.
+Check logs in Northflank dashboard.
+
+### Dockerfile
+
+Northflank can build directly from the repository using the Dockerfile at the project root. The API service uses the same image as the scheduler service, so the runtime logic stays identical and only the command differs.
+
+If you want to keep Railway support as a fallback, the same Dockerfile can be reused there too.
+
+## Railway Deployment (Fallback)
+
+The Railway path still works as a fallback if you want a second platform option later. Keep the same environment variables and use the same Dockerfile-based build.
 
 ## VPS Deployment (Linux)
 
