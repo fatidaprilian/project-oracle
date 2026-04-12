@@ -8,8 +8,11 @@ from oracle.application.strategy_intelligence import (
     append_parameter_change_request,
     build_parameter_change_request,
     build_ai_review_packet,
+    load_parameter_change_requests,
+    promote_approved_requests,
     select_worst_trades,
     summarize_parameter_change_registry,
+    update_request_status_by_id,
     validate_suggested_changes,
     write_ai_review_packet,
 )
@@ -96,6 +99,52 @@ class StrategyIntelligenceTest(unittest.TestCase):
             self.assertEqual(summary["approved"], 1)
             self.assertEqual(summary["pending"], 1)
             self.assertEqual(summary["ready_to_promote"], 1)
+
+    def test_should_update_request_status_by_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            registry_file = Path(temp_dir) / "requests.jsonl"
+            request = build_parameter_change_request(
+                generated_from="reports/ai-review/sample.json",
+                provider="grok",
+                status="pending",
+                suggested_changes={
+                    "min_confluence_score": 60.0,
+                    "min_volume_threshold": 1000.0,
+                    "max_consecutive_losses": 3.0,
+                },
+            )
+            append_parameter_change_request(registry_file, request)
+
+            updated = update_request_status_by_id(registry_file, request["request_id"], "approved")
+            records = load_parameter_change_requests(registry_file)
+
+            self.assertTrue(updated)
+            self.assertEqual(records[0]["status"], "approved")
+
+    def test_should_promote_approved_valid_requests_to_config(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            registry_file = Path(temp_dir) / "requests.jsonl"
+            output_dir = Path(temp_dir) / "configs"
+
+            request = build_parameter_change_request(
+                generated_from="reports/ai-review/sample.json",
+                provider="grok",
+                status="approved",
+                suggested_changes={
+                    "min_confluence_score": 61.0,
+                    "min_volume_threshold": 900.0,
+                    "max_consecutive_losses": 2.0,
+                },
+            )
+            append_parameter_change_request(registry_file, request)
+
+            config_path = promote_approved_requests(registry_file, output_dir)
+            records = load_parameter_change_requests(registry_file)
+
+            self.assertIsNotNone(config_path)
+            assert config_path is not None
+            self.assertTrue(config_path.exists())
+            self.assertTrue(records[0]["promoted"])
 
 
 if __name__ == "__main__":

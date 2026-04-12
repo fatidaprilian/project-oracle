@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
+import uuid
 
 ALLOWED_REQUEST_STATUSES = {"pending", "approved", "rejected"}
 
@@ -120,6 +122,7 @@ def build_parameter_change_request(
     is_valid = len(violations) == 0
 
     return {
+        "request_id": str(uuid.uuid4()),
         "generated_at": datetime.now(UTC).isoformat(),
         "generated_from": generated_from,
         "provider": provider,
@@ -176,3 +179,101 @@ def summarize_parameter_change_registry(registry_file: Path) -> dict[str, Any]:
                 summary["ready_to_promote"] += 1
 
     return summary
+
+
+def load_parameter_change_requests(registry_file: Path) -> list[dict[str, Any]]:
+    if not registry_file.exists():
+        return []
+
+    records: list[dict[str, Any]] = []
+    with registry_file.open("r", encoding="utf-8") as file_obj:
+        for line in file_obj:
+            line = line.strip()
+            if not line:
+                continue
+            parsed = json.loads(line)
+            if isinstance(parsed, dict):
+                records.append(parsed)
+    return records
+
+
+def write_parameter_change_requests(registry_file: Path, records: list[dict[str, Any]]) -> None:
+    registry_file.parent.mkdir(parents=True, exist_ok=True)
+    with registry_file.open("w", encoding="utf-8") as file_obj:
+        for record in records:
+            file_obj.write(json.dumps(record, ensure_ascii=True) + "\n")
+
+
+def update_request_status_by_id(
+    registry_file: Path,
+    request_id: str,
+    status: str,
+) -> bool:
+    normalized_status = status.lower().strip()
+    if normalized_status not in ALLOWED_REQUEST_STATUSES:
+        return False
+
+    records = load_parameter_change_requests(registry_file)
+    updated = False
+    for record in records:
+        if str(record.get("request_id", "")) == request_id:
+            record["status"] = normalized_status
+            record["status_updated_at"] = datetime.now(UTC).isoformat()
+            updated = True
+            break
+
+    if updated:
+        write_parameter_change_requests(registry_file, records)
+    return updated
+
+
+def promote_approved_requests(
+    registry_file: Path,
+    output_dir: Path,
+) -> Path | None:
+    records = load_parameter_change_requests(registry_file)
+    promotable: list[dict[str, Any]] = []
+    for record in records:
+        status = str(record.get("status", "pending")).lower()
+        validation = record.get("validation", {})
+        is_valid = bool(validation.get("is_valid", False)) if isinstance(validation, dict) else False
+        already_promoted = bool(record.get("promoted", False))
+        if status == "approved" and is_valid and not already_promoted:
+            promotable.append(record)
+
+    if not promotable:
+        return None
+
+    merged_changes: dict[str, float] = {}
+    promoted_ids: list[str] = []
+    for record in promotable:
+        changes = record.get("suggested_changes", {})
+        if isinstance(changes, dict):
+            for parameter_name, parameter_value in changes.items():
+                merged_changes[str(parameter_name)] = float(parameter_value)
+        promoted_ids.append(str(record.get("request_id", "")))
+
+    hash_input = json.dumps({"request_ids": promoted_ids, "changes": merged_changes}, sort_keys=True)
+    version_suffix = hashlib.sha256(hash_input.encode("utf-8")).hexdigest()[:8]
+    version = f"strategy-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}-{version_suffix}"
+
+    candidate_config = {
+        "version": version,
+        "created_at": datetime.now(UTC).isoformat(),
+        "source_request_ids": promoted_ids,
+        "parameters": merged_changes,
+    }
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"{version}.json"
+    output_path.write_text(json.dumps(candidate_config, indent=2, ensure_ascii=True), encoding="utf-8")
+
+    for record in records:
+        request_id = str(record.get("request_id", ""))
+        if request_id in promoted_ids:
+            record["promoted"] = True
+            record["promoted_at"] = datetime.now(UTC).isoformat()
+            record["promoted_config"] = str(output_path)
+
+    write_parameter_change_requests(registry_file, records)
+    return output_path

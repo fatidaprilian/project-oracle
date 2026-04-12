@@ -89,6 +89,8 @@ Progress saat ini:
 - parameter change request registry: implemented (jsonl append)
 - request validation rules and status governance: implemented
 - weekly report governance summary: implemented
+- governance CLI (summary/list/approve/reject/promote): implemented
+- candidate strategy config promotion from approved valid requests: implemented
 
 ## Fase 6 - Operations and Release
 Tujuan:

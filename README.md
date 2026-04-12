@@ -75,6 +75,19 @@ Output:
 - reports/ai-review/<ISO-week>-ai-review.json
 - registry/parameter_change_requests.jsonl
 
+## Strategy Governance CLI
+
+```bash
+set PYTHONPATH=src
+python src/strategy_governance.py summary
+python src/strategy_governance.py list
+python src/strategy_governance.py set-status --request-id <REQUEST_ID> --status approved
+python src/strategy_governance.py promote
+```
+
+Output promosi config kandidat:
+- reports/strategy-configs/<version>.json
+
 ## Generate Weekly Report
 
 ```bash

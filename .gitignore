@@ -56,6 +56,7 @@ coverage/
 .agentic-backup/
 reports/weekly/
 reports/ai-review/
+reports/strategy-configs/
 registry/
 
 # AI instruction and agent config
