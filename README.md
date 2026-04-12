@@ -118,6 +118,10 @@ Opsional environment untuk persistence:
 - exchange environment: testnet dulu (belum live trading)
 - runtime mode default: paper
 
+Catatan eksekusi saat ini:
+- backend masih berbasis script pipeline (main, replay, weekly_report, strategy_review)
+- belum ada API server long-running yang dijalankan
+
 File referensi konfigurasi:
 - .env.example
 

@@ -87,6 +87,8 @@ Progress saat ini:
 - top 10 worst trade selector: implemented
 - paket input AI analyst: implemented (file output)
 - parameter change request registry: implemented (jsonl append)
+- request validation rules and status governance: implemented
+- weekly report governance summary: implemented
 
 ## Fase 6 - Operations and Release
 Tujuan:

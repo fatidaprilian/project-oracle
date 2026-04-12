@@ -26,6 +26,21 @@ class WeeklyReportTest(unittest.TestCase):
         self.assertIn("Trade Quality", report)
         self.assertIn("avg_quality_score", report)
 
+    def test_should_include_governance_summary_when_provided(self) -> None:
+        report = build_weekly_report(
+            events=[],
+            governance_summary={
+                "total": 3,
+                "pending": 1,
+                "approved": 1,
+                "rejected": 1,
+                "ready_to_promote": 1,
+            },
+        )
+
+        self.assertIn("Parameter Governance", report)
+        self.assertIn("ready_to_promote", report)
+
     def test_should_write_markdown_file_to_output_dir(self) -> None:
         events = [{"event_type": "candidate_rejected", "payload": {"reason": "LOW_LIQUIDITY"}}]
         with tempfile.TemporaryDirectory() as temp_dir:

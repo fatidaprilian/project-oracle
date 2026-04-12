@@ -7,7 +7,10 @@ from statistics import mean
 from typing import Any
 
 
-def build_weekly_report(events: list[dict[str, Any]]) -> str:
+def build_weekly_report(
+    events: list[dict[str, Any]],
+    governance_summary: dict[str, int] | None = None,
+) -> str:
     event_counter = Counter(event["event_type"] for event in events)
 
     rejection_reasons: list[str] = []
@@ -66,12 +69,25 @@ def build_weekly_report(events: list[dict[str, Any]]) -> str:
     else:
         lines.append("- none")
 
+    if governance_summary is not None:
+        lines.append("")
+        lines.append("## Parameter Governance")
+        lines.append(f"- total_requests: {governance_summary.get('total', 0)}")
+        lines.append(f"- pending: {governance_summary.get('pending', 0)}")
+        lines.append(f"- approved: {governance_summary.get('approved', 0)}")
+        lines.append(f"- rejected: {governance_summary.get('rejected', 0)}")
+        lines.append(f"- ready_to_promote: {governance_summary.get('ready_to_promote', 0)}")
+
     return "\n".join(lines) + "\n"
 
 
-def write_weekly_report(output_dir: Path, events: list[dict[str, Any]]) -> Path:
+def write_weekly_report(
+    output_dir: Path,
+    events: list[dict[str, Any]],
+    governance_summary: dict[str, int] | None = None,
+) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     file_name = f"{datetime.now(UTC).strftime('%G-W%V')}.md"
     report_path = output_dir / file_name
-    report_path.write_text(build_weekly_report(events), encoding="utf-8")
+    report_path.write_text(build_weekly_report(events, governance_summary=governance_summary), encoding="utf-8")
     return report_path

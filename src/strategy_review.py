@@ -6,6 +6,7 @@ from pathlib import Path
 from oracle.application.replay_runner import run_replay
 from oracle.application.strategy_intelligence import (
     append_parameter_change_request,
+    build_parameter_change_request,
     build_ai_review_packet,
     write_ai_review_packet,
 )
@@ -30,16 +31,16 @@ def main() -> None:
     packet_path = write_ai_review_packet(Path("reports/ai-review"), packet)
     print(f"ai_review_packet={packet_path}")
 
-    request = {
-        "generated_from": str(packet_path),
-        "provider": ai_provider,
-        "status": "pending",
-        "suggested_changes": {
-            "min_confluence_score": "TBD",
-            "min_volume_threshold": "TBD",
-            "max_consecutive_losses": "TBD",
+    request = build_parameter_change_request(
+        generated_from=str(packet_path),
+        provider=ai_provider,
+        status="pending",
+        suggested_changes={
+            "min_confluence_score": 62.0,
+            "min_volume_threshold": 850.0,
+            "max_consecutive_losses": 3.0,
         },
-    }
+    )
     append_parameter_change_request(Path("registry/parameter_change_requests.jsonl"), request)
     print("parameter_change_request_appended=true")
 

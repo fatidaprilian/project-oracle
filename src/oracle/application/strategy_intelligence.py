@@ -6,6 +6,14 @@ import json
 from pathlib import Path
 from typing import Any
 
+ALLOWED_REQUEST_STATUSES = {"pending", "approved", "rejected"}
+
+PARAMETER_RULES: dict[str, tuple[float, float]] = {
+    "min_confluence_score": (40.0, 95.0),
+    "min_volume_threshold": (100.0, 1_000_000.0),
+    "max_consecutive_losses": (1.0, 10.0),
+}
+
 
 @dataclass(frozen=True)
 class TradeReviewItem:
@@ -84,8 +92,87 @@ def write_ai_review_packet(output_dir: Path, packet: dict[str, Any]) -> Path:
     return output_path
 
 
+def validate_suggested_changes(suggested_changes: dict[str, float]) -> list[str]:
+    violations: list[str] = []
+    for parameter_name, parameter_value in suggested_changes.items():
+        if parameter_name not in PARAMETER_RULES:
+            violations.append(f"UNKNOWN_PARAMETER:{parameter_name}")
+            continue
+        minimum, maximum = PARAMETER_RULES[parameter_name]
+        if not (minimum <= float(parameter_value) <= maximum):
+            violations.append(
+                f"OUT_OF_RANGE:{parameter_name}:{parameter_value}:allowed[{minimum},{maximum}]"
+            )
+    return violations
+
+
+def build_parameter_change_request(
+    generated_from: str,
+    provider: str,
+    suggested_changes: dict[str, float],
+    status: str = "pending",
+) -> dict[str, Any]:
+    normalized_status = status.lower().strip()
+    if normalized_status not in ALLOWED_REQUEST_STATUSES:
+        normalized_status = "pending"
+
+    violations = validate_suggested_changes(suggested_changes)
+    is_valid = len(violations) == 0
+
+    return {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "generated_from": generated_from,
+        "provider": provider,
+        "status": normalized_status,
+        "validation": {
+            "is_valid": is_valid,
+            "violations": violations,
+        },
+        "suggested_changes": suggested_changes,
+    }
+
+
 def append_parameter_change_request(registry_file: Path, request: dict[str, Any]) -> None:
     registry_file.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps(request, ensure_ascii=True)
     with registry_file.open("a", encoding="utf-8") as file_obj:
         file_obj.write(line + "\n")
+
+
+def summarize_parameter_change_registry(registry_file: Path) -> dict[str, Any]:
+    if not registry_file.exists():
+        return {
+            "total": 0,
+            "pending": 0,
+            "approved": 0,
+            "rejected": 0,
+            "ready_to_promote": 0,
+        }
+
+    summary = {
+        "total": 0,
+        "pending": 0,
+        "approved": 0,
+        "rejected": 0,
+        "ready_to_promote": 0,
+    }
+    with registry_file.open("r", encoding="utf-8") as file_obj:
+        for line in file_obj:
+            line = line.strip()
+            if not line:
+                continue
+            record = json.loads(line)
+            if not isinstance(record, dict):
+                continue
+
+            summary["total"] += 1
+            status = str(record.get("status", "pending")).lower()
+            if status in ("pending", "approved", "rejected"):
+                summary[status] += 1
+
+            validation = record.get("validation", {})
+            is_valid = bool(validation.get("is_valid", False)) if isinstance(validation, dict) else False
+            if status == "approved" and is_valid:
+                summary["ready_to_promote"] += 1
+
+    return summary
