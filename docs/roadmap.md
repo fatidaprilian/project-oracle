@@ -44,7 +44,7 @@ Definition of done:
 - fallback in-memory tetap jalan
 - report mingguan dapat digenerate
 
-## Fase 3 - Quality Analytics (In Progress)
+## Fase 3 - Quality Analytics (Done)
 Tujuan:
 - ukur kualitas entry dan outcome secara objektif
 
@@ -57,7 +57,7 @@ Definition of done:
 - event quality tercatat di journal
 - report mingguan menampilkan rata-rata quality score
 
-## Fase 4 - Persistence Hardening
+## Fase 4 - Persistence Hardening (In Progress)
 Tujuan:
 - persistence production-ready
 

@@ -94,6 +94,11 @@ Environment variable:
 Opsional environment untuk persistence:
 - ORACLE_POSTGRES_DSN
 - ORACLE_REDIS_URL
+- ORACLE_ENABLE_POSTGRES
+- ORACLE_ENABLE_REDIS
+- ORACLE_PERSISTENCE_MAX_RETRIES
+- ORACLE_PERSISTENCE_RETRY_DELAY_SECONDS
+- ORACLE_REDIS_RISK_TTL_SECONDS
 
 ## Quick Start Repository (WSL)
 
@@ -120,8 +125,8 @@ git status
 Catatan: push ke remote bisa dilakukan setelah token tersedia.
 
 ## Rencana Tahap Berikutnya
-- fase aktif saat ini: Quality Analytics (lihat docs/roadmap.md)
-- persistensi production-ready (schema + retry policy)
+- fase aktif saat ini: Persistence Hardening (lihat docs/roadmap.md)
+- finalisasi persistensi production-ready (schema + retry policy)
 - scheduler mingguan otomatis untuk report + AI review
 
 ## Keputusan Frontend Saat Ini

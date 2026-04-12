@@ -20,6 +20,9 @@ class RuntimeSettings:
     redis_url: str
     enable_postgres_persistence: bool
     enable_redis_risk_state: bool
+    persistence_max_retries: int
+    persistence_retry_delay_seconds: float
+    redis_risk_ttl_seconds: int
 
 
 @dataclass
@@ -35,12 +38,18 @@ def build_runtime_settings() -> RuntimeSettings:
     redis_url = os.getenv("ORACLE_REDIS_URL", "")
     enable_postgres_persistence = os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true"
     enable_redis_risk_state = os.getenv("ORACLE_ENABLE_REDIS", "false").lower() == "true"
+    persistence_max_retries = int(os.getenv("ORACLE_PERSISTENCE_MAX_RETRIES", "2"))
+    persistence_retry_delay_seconds = float(os.getenv("ORACLE_PERSISTENCE_RETRY_DELAY_SECONDS", "0.2"))
+    redis_risk_ttl_seconds = int(os.getenv("ORACLE_REDIS_RISK_TTL_SECONDS", "86400"))
 
     return RuntimeSettings(
         postgres_dsn=postgres_dsn,
         redis_url=redis_url,
         enable_postgres_persistence=enable_postgres_persistence,
         enable_redis_risk_state=enable_redis_risk_state,
+        persistence_max_retries=persistence_max_retries,
+        persistence_retry_delay_seconds=persistence_retry_delay_seconds,
+        redis_risk_ttl_seconds=redis_risk_ttl_seconds,
     )
 
 
@@ -49,14 +58,23 @@ def build_runtime_components() -> RuntimeComponents:
 
     journal_sink: JournalSink | None = None
     if settings.enable_postgres_persistence and settings.postgres_dsn:
-        journal_sink = PostgresJournalRepository(settings.postgres_dsn)
+        journal_sink = PostgresJournalRepository(
+            settings.postgres_dsn,
+            max_retries=settings.persistence_max_retries,
+            retry_delay_seconds=settings.persistence_retry_delay_seconds,
+        )
 
     journal = InMemoryJournal(journal_sink)
 
     risk_state_store: RedisRiskRepository | None = None
     risk_state = RiskState()
     if settings.enable_redis_risk_state and settings.redis_url:
-        risk_state_store = RedisRiskRepository(settings.redis_url)
+        risk_state_store = RedisRiskRepository(
+            settings.redis_url,
+            ttl_seconds=settings.redis_risk_ttl_seconds,
+            max_retries=settings.persistence_max_retries,
+            retry_delay_seconds=settings.persistence_retry_delay_seconds,
+        )
         risk_state = risk_state_store.load_state()
 
     risk_guard = RiskGuard(RiskConfig(), risk_state)
