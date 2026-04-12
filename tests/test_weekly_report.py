@@ -12,6 +12,10 @@ class WeeklyReportTest(unittest.TestCase):
         events = [
             {"event_type": "candidate_rejected", "payload": {"reason": ["LOW_CONFLUENCE"]}},
             {"event_type": "position_closed", "payload": {"reason": "FIB_EXTENSION_TP_HIT"}},
+            {
+                "event_type": "trade_quality_assessed",
+                "payload": {"quality_score": 62.5, "mae": 1.2, "mfe": 2.1},
+            },
         ]
 
         report = build_weekly_report(events)
@@ -19,6 +23,8 @@ class WeeklyReportTest(unittest.TestCase):
         self.assertIn("Top Rejection Reasons", report)
         self.assertIn("LOW_CONFLUENCE", report)
         self.assertIn("FIB_EXTENSION_TP_HIT", report)
+        self.assertIn("Trade Quality", report)
+        self.assertIn("avg_quality_score", report)
 
     def test_should_write_markdown_file_to_output_dir(self) -> None:
         events = [{"event_type": "candidate_rejected", "payload": {"reason": "LOW_LIQUIDITY"}}]

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
+from statistics import mean
 from typing import Any
 
 
@@ -11,6 +12,9 @@ def build_weekly_report(events: list[dict[str, Any]]) -> str:
 
     rejection_reasons: list[str] = []
     close_reasons: list[str] = []
+    quality_scores: list[float] = []
+    mae_values: list[float] = []
+    mfe_values: list[float] = []
     for event in events:
         event_type = event.get("event_type")
         payload = event.get("payload", {})
@@ -22,6 +26,10 @@ def build_weekly_report(events: list[dict[str, Any]]) -> str:
                 rejection_reasons.append(str(reason))
         if event_type == "position_closed" and isinstance(payload, dict):
             close_reasons.append(str(payload.get("reason", "UNKNOWN")))
+        if event_type == "trade_quality_assessed" and isinstance(payload, dict):
+            quality_scores.append(float(payload.get("quality_score", 0.0)))
+            mae_values.append(float(payload.get("mae", 0.0)))
+            mfe_values.append(float(payload.get("mfe", 0.0)))
 
     rejection_counter = Counter(rejection_reasons)
     close_counter = Counter(close_reasons)
@@ -46,6 +54,15 @@ def build_weekly_report(events: list[dict[str, Any]]) -> str:
     lines.append("## Close Reasons")
     if close_counter:
         lines.extend(f"- {reason}: {count}" for reason, count in close_counter.most_common(10))
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    lines.append("## Trade Quality")
+    if quality_scores:
+        lines.append(f"- avg_quality_score: {round(mean(quality_scores), 2)}")
+        lines.append(f"- avg_mae: {round(mean(mae_values), 6)}")
+        lines.append(f"- avg_mfe: {round(mean(mfe_values), 6)}")
     else:
         lines.append("- none")
 

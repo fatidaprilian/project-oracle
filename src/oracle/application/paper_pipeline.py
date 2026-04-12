@@ -8,6 +8,7 @@ from oracle.modules.exit_engine import evaluate_exit
 from oracle.modules.sentiment_gate import SentimentProvider, evaluate_sentiment
 from oracle.modules.sniper_entry import build_entry_plan
 from oracle.modules.structure_engine import evaluate_structure
+from oracle.application.trade_quality import evaluate_trade_quality
 from oracle.modules.zone_engine import detect_zone
 
 
@@ -67,6 +68,8 @@ def run_paper_cycle(
     if exit_decision.should_close:
         position.is_open = False
         journal.record("position_closed", {"reason": exit_decision.exit_reason})
+        quality_metrics = evaluate_trade_quality(snapshot, position)
+        journal.record("trade_quality_assessed", quality_metrics)
         if risk_guard is not None:
             initial_risk = max(position.entry_price - entry_plan.stop_loss, position.entry_price * 0.001)
             realized_r = (snapshot.current_price - position.entry_price) / initial_risk

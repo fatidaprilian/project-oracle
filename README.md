@@ -13,6 +13,7 @@ Status saat ini: docs + fase 1 scaffold (paper trading pipeline) sudah aktif.
 - Arsitektur sistem: docs/architecture.md
 - Draft data model: docs/data-model.md
 - Trading flow per modul: docs/trading-flow-modules.md
+- Roadmap eksekusi: docs/roadmap.md
 
 ## Ruang Lingkup Fase Saat Ini
 - definisi arsitektur
@@ -118,9 +119,9 @@ git status
 Catatan: push ke remote bisa dilakukan setelah token tersedia.
 
 ## Rencana Tahap Berikutnya
-- tambah integrasi nyata Postgres/Redis di runtime pipeline
-- tambah evaluasi MAE/MFE dan scoring kualitas entry
-- tambah scheduler mingguan otomatis untuk report + AI review
+- fase aktif saat ini: Quality Analytics (lihat docs/roadmap.md)
+- persistensi production-ready (schema + retry policy)
+- scheduler mingguan otomatis untuk report + AI review
 
 ## Checklist Implementasi Mingguan
 - [ ] Monday: review parameter aktif dan risk limit
