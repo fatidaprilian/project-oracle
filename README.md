@@ -39,6 +39,32 @@ set PYTHONPATH=src
 python src/main.py
 ```
 
+## Menjalankan Replay Multi Simbol
+
+```bash
+set PYTHONPATH=src
+python src/replay.py
+```
+
+Dataset contoh replay:
+- data/replay/sample_snapshots.jsonl
+
+## Menjalankan Unit Test
+
+```bash
+set PYTHONPATH=src
+python -m unittest discover -s tests -p "test_*.py"
+```
+
+## Adapter Sentiment Eksternal
+File adapter:
+- src/oracle/infrastructure/external_sentiment_provider.py
+
+Environment variable:
+- ORACLE_SENTIMENT_BASE_URL
+- ORACLE_SENTIMENT_API_KEY
+- ORACLE_SENTIMENT_TIMEOUT
+
 ## Quick Start Repository (WSL)
 
 1. Buka terminal WSL di folder proyek.
