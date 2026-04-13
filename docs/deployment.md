@@ -4,69 +4,118 @@
 
 - Python 3.12+
 - Git
-- Northflank account (untuk cloud deployment) atau Linux VPS
+- Google Cloud project (Cloud Run enabled)
+- Vercel project (frontend)
+- Linux VPS (optional, jika butuh self-managed deploy)
 - Optional: PostgreSQL, Redis
 
-## Google Cloud Trial Deployment (Recommended for Current Phase)
+## Active Production Endpoints
 
-Gunakan ini jika fokus utama adalah deploy cepat selama masa trial credit tanpa refactor arsitektur storage.
+- Frontend (Vercel): https://project-oracle-nine.vercel.app/
+- API base (Cloud Run): https://project-oracle-133425616833.asia-southeast2.run.app
+- API docs (Swagger/OpenAPI): https://project-oracle-133425616833.asia-southeast2.run.app/docs
+- Region: asia-southeast2
 
-Kenapa cocok untuk saat ini:
-- arsitektur saat ini masih file-based (`registry`, `reports`, `runtime-fallback`)
-- VM menjaga filesystem persisten sederhana
-- biaya tetap rendah dengan `e2-micro` di region US
+## API Contract Source of Truth
 
-### Step 1: Siapkan GCP CLI lokal
+Gunakan Swagger di endpoint `/docs` sebagai kontrak API utama.
 
-Pastikan `gcloud` sudah login:
+- Untuk request/response schema terbaru: gunakan Swagger.
+- Untuk alur operasional dan contoh tambahan: gunakan `docs/api.md`.
+
+Jika ada perbedaan antara dokumen naratif dan Swagger, ikuti Swagger.
+
+## Google Cloud Run Deployment (Current Production)
+
+### Step 1: Deploy API revision
 
 ```bash
 gcloud auth login
-gcloud auth application-default login
+gcloud config set project <PROJECT_ID>
+
+# Build+deploy from source
+gcloud run deploy <SERVICE_NAME> \
+    --source . \
+    --region asia-southeast2 \
+    --allow-unauthenticated
 ```
 
-### Step 2: Buat VM dan auto-bootstrap
+### Step 2: Set environment variables (Cloud Run)
 
-Dari root repository:
+Set environment variables di Cloud Run service revision, mengikuti `.env.example`.
+
+Core:
+```bash
+PYTHONPATH=src
+ORACLE_RUNTIME_MODE=paper
+ORACLE_EXCHANGE_ENV=testnet
+ORACLE_ALLOWED_ORIGINS=https://project-oracle-nine.vercel.app
+ORACLE_FRONTEND_URL=https://project-oracle-nine.vercel.app
+ORACLE_API_AUTH_ENABLED=true
+```
+
+Exchange adapter:
+```bash
+ORACLE_ENABLE_EXCHANGE_CONNECTIVITY=true
+ORACLE_EXCHANGE_PROVIDER=bybit
+ORACLE_EXCHANGE_BASE_URL=https://api-testnet.bybit.com
+ORACLE_EXCHANGE_API_KEY=<secret>
+ORACLE_EXCHANGE_API_SECRET=<secret>
+ORACLE_EXCHANGE_ACCOUNT_TYPE=UNIFIED
+ORACLE_EXCHANGE_RECV_WINDOW_MS=5000
+ORACLE_EXCHANGE_SYMBOL_CATEGORY=linear
+ORACLE_EXCHANGE_SYMBOL_QUOTE_COIN=USDT
+ORACLE_EXCHANGE_SYMBOL_STATUS=Trading
+ORACLE_SYMBOL_CACHE_FILE=runtime-fallback/exchange-symbols-cache.json
+ORACLE_SYMBOL_CACHE_TTL_SECONDS=21600
+```
+
+AI analyst adapter:
+```bash
+ORACLE_ENABLE_AI_ANALYST_CONNECTIVITY=true
+ORACLE_AI_PROVIDER=gemini
+ORACLE_AI_ANALYST_BASE_URL=https://generativelanguage.googleapis.com
+ORACLE_AI_ANALYST_API_KEY=<secret>
+ORACLE_AI_ANALYST_HEALTH_PATH=/v1beta/models
+```
+
+Persistence:
+```bash
+ORACLE_ENABLE_POSTGRES=true
+ORACLE_POSTGRES_DSN=postgresql://<user>:<pass>@<host>:5432/<db>
+ORACLE_AUTH_POSTGRES_DSN=postgresql://<user>:<pass>@<host>:5432/<db>
+
+# Optional (belum aktif saat ini)
+ORACLE_ENABLE_REDIS=false
+ORACLE_REDIS_URL=
+
+# Optional (provider belum dipakai saat ini)
+ORACLE_SENTIMENT_BASE_URL=
+ORACLE_SENTIMENT_API_KEY=
+```
+
+### Step 3: Verify deployment and Swagger
 
 ```bash
-chmod +x scripts/gcp/create_vm.sh scripts/gcp/bootstrap_vm.sh
-./scripts/gcp/create_vm.sh <PROJECT_ID> us-central1-a project-oracle-vm
+curl https://project-oracle-133425616833.asia-southeast2.run.app/health
+curl https://project-oracle-133425616833.asia-southeast2.run.app/api/v1/config/readiness
+curl https://project-oracle-133425616833.asia-southeast2.run.app/api/v1/config/connections
+curl https://project-oracle-133425616833.asia-southeast2.run.app/api/v1/config/exchange
+curl https://project-oracle-133425616833.asia-southeast2.run.app/api/v1/config/exchange/account
+curl https://project-oracle-133425616833.asia-southeast2.run.app/api/v1/config/ai-analyst
 ```
 
-Script ini akan:
-- membuat VM Debian (`e2-micro`, disk 20GB)
-- membuka firewall port `8000`
-- clone repository ke `/opt/project-oracle`
-- install dependencies dari `requirements.txt`
-- pasang service `oracle-api` dan `oracle-scheduler`
+Buka Swagger UI untuk endpoint terbaru:
 
-### Step 3: Ambil public IP dan verifikasi
+```text
+https://project-oracle-133425616833.asia-southeast2.run.app/docs
+```
+
+### Step 4: Production smoke check
 
 ```bash
-gcloud compute instances describe project-oracle-vm --zone=us-central1-a --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
+./scripts/ops/check_prod.sh
 ```
-
-Lalu test endpoint:
-
-```bash
-curl http://<PUBLIC_IP>:8000/health
-curl -X POST http://<PUBLIC_IP>:8000/api/v1/weekly-workflow
-```
-
-### Step 4: Monitoring service
-
-```bash
-gcloud compute ssh project-oracle-vm --zone=us-central1-a --command="sudo systemctl status oracle-api oracle-scheduler"
-```
-
-### Cost baseline (trial-friendly)
-
-- machine type: `e2-micro`
-- disk: `pd-standard` 20GB
-- region: `us-central1`
-
-Upgrade hanya jika benar-benar perlu (memory pressure, response lambat, atau persistence eksternal aktif).
 
 ## Local Development Setup
 
@@ -114,7 +163,7 @@ Required variables:
 ```
 ORACLE_RUNTIME_MODE=paper
 ORACLE_EXCHANGE_ENV=testnet
-ORACLE_AI_PROVIDER=grok
+ORACLE_AI_PROVIDER=gemini
 ```
 
 Optional (for production):
@@ -146,6 +195,11 @@ ORACLE_EXCHANGE_API_KEY=<your-bybit-api-key>
 ORACLE_EXCHANGE_API_SECRET=<your-bybit-api-secret>
 ORACLE_EXCHANGE_ACCOUNT_TYPE=UNIFIED
 ORACLE_EXCHANGE_RECV_WINDOW_MS=5000
+ORACLE_EXCHANGE_SYMBOL_CATEGORY=linear
+ORACLE_EXCHANGE_SYMBOL_QUOTE_COIN=USDT
+ORACLE_EXCHANGE_SYMBOL_STATUS=Trading
+ORACLE_SYMBOL_CACHE_FILE=runtime-fallback/exchange-symbols-cache.json
+ORACLE_SYMBOL_CACHE_TTL_SECONDS=21600
 ```
 
 ### 3. Run Tests
@@ -154,7 +208,7 @@ ORACLE_EXCHANGE_RECV_WINDOW_MS=5000
 PYTHONPATH=src python3 -m unittest discover tests -v
 ```
 
-Expected: 35+ tests passing
+Expected: 58+ tests passing
 
 ### 4. Test API Locally
 
@@ -209,7 +263,7 @@ cd src
 PYTHONPATH=. python3 scheduler.py --start --day-of-week 0 --hour 8
 ```
 
-## Northflank Deployment
+## Northflank Deployment (Optional Legacy)
 
 ### Step 1: Create Northflank Project
 
@@ -226,7 +280,7 @@ In Northflank dashboard, set environment variables:
 PYTHONPATH=src
 ORACLE_RUNTIME_MODE=paper
 ORACLE_EXCHANGE_ENV=testnet
-ORACLE_AI_PROVIDER=grok
+ORACLE_AI_PROVIDER=gemini
 ORACLE_ENABLE_POSTGRES=false  # until Phase 7
 ```
 
@@ -253,7 +307,7 @@ Push to GitHub:
 
 ```bash
 git add .
-git commit -m "deploy: configure for Railway"
+git commit -m "deploy: update platform configuration"
 git push origin main
 ```
 
@@ -279,7 +333,7 @@ Northflank can build directly from the repository using the Dockerfile at the pr
 
 If you want to keep Railway support as a fallback, the same Dockerfile can be reused there too.
 
-## Railway Deployment (Fallback)
+## Railway Deployment (Legacy Fallback)
 
 The Railway path still works as a fallback if you want a second platform option later. Keep the same environment variables and use the same Dockerfile-based build.
 
@@ -445,7 +499,10 @@ sudo systemctl restart nginx
 
 ### API Logs
 
-Railway: View in dashboard under "Logs"
+Cloud Run:
+```bash
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=<SERVICE_NAME>" --limit 50
+```
 
 VPS:
 ```bash
@@ -543,13 +600,13 @@ git revert <commit-hash>
 git push origin main
 ```
 
-Railway auto-redeploys on push (should take 2-5 minutes).
+Jika menggunakan Railway fallback, Railway auto-redeploys on push (2-5 menit).
+
+Cloud Run deploys new revision on each deploy command. If needed, rollback via Cloud Run revision traffic split.
 
 ## Next Steps (Phase 7+)
 
-- Add Basic Auth middleware to API
-- Database persistence (PostgreSQL migration)
-- Real-time dashboard (WebSocket support)
-- Multi-symbol portfolio mode
-- Email alerts for governance decisions
-- Frontend React app deployment
+- Enable Redis runtime store jika ingin active risk-state cache
+- Integrate sentiment provider saat API key/provider siap
+- Tambah symbol universe bertahap via governance flow
+- Tambah CI smoke test ke endpoint `/health`, `/api/v1/config/*`, dan `/docs`

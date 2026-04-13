@@ -42,6 +42,9 @@ class ExchangeAdapter(Protocol):
     def check_account_connectivity(self) -> ExchangeAccountConnectivityStatus:
         ...
 
+    def list_symbols(self) -> list[str]:
+        ...
+
 
 class DisabledExchangeAdapter:
     def __init__(self, provider: str = "none") -> None:
@@ -65,6 +68,9 @@ class DisabledExchangeAdapter:
             detail="disabled",
         )
 
+    def list_symbols(self) -> list[str]:
+        return []
+
 
 class UnsupportedExchangeAdapter:
     def __init__(self, provider: str) -> None:
@@ -87,6 +93,9 @@ class UnsupportedExchangeAdapter:
             reachable=False,
             detail=f"unsupported provider: {self._provider}",
         )
+
+    def list_symbols(self) -> list[str]:
+        return []
 
 
 class BybitExchangeAdapter:
@@ -285,6 +294,70 @@ class BybitExchangeAdapter:
                 detail=f"error: {str(exc)}",
                 account_type=self._account_type,
             )
+
+    def list_symbols(self) -> list[str]:
+        if not self._base_url:
+            return []
+
+        category = os.getenv("ORACLE_EXCHANGE_SYMBOL_CATEGORY", "linear").strip() or "linear"
+        quote_coin = os.getenv("ORACLE_EXCHANGE_SYMBOL_QUOTE_COIN", "USDT").strip().upper()
+        status = os.getenv("ORACLE_EXCHANGE_SYMBOL_STATUS", "Trading").strip()
+        page_limit = int(os.getenv("ORACLE_EXCHANGE_SYMBOL_PAGE_LIMIT", "200"))
+
+        symbols: set[str] = set()
+        cursor = ""
+
+        try:
+            while True:
+                params = {
+                    "category": category,
+                    "limit": str(max(1, min(page_limit, 1000))),
+                }
+                if status:
+                    params["status"] = status
+                if cursor:
+                    params["cursor"] = cursor
+
+                endpoint = f"{self._base_url}/v5/market/instruments-info?{urlencode(params)}"
+                request = Request(
+                    endpoint,
+                    method="GET",
+                    headers={"User-Agent": "project-oracle/phase8-symbols"},
+                )
+
+                with urlopen(request, timeout=self._timeout_seconds) as response:
+                    body = response.read().decode("utf-8")
+                payload = json.loads(body)
+
+                ret_code = int(payload.get("retCode", -1))
+                if ret_code != 0:
+                    break
+
+                result = payload.get("result", {})
+                instruments = result.get("list", []) if isinstance(result, dict) else []
+                for item in instruments:
+                    if not isinstance(item, dict):
+                        continue
+                    symbol = str(item.get("symbol", "")).strip()
+                    if not symbol:
+                        continue
+                    if quote_coin:
+                        item_quote_coin = str(item.get("quoteCoin", "")).strip().upper()
+                        if item_quote_coin != quote_coin:
+                            continue
+                    symbols.add(symbol)
+
+                next_cursor = ""
+                if isinstance(result, dict):
+                    next_cursor = str(result.get("nextPageCursor", "")).strip()
+
+                if not next_cursor or next_cursor == cursor:
+                    break
+                cursor = next_cursor
+        except Exception:
+            return []
+
+        return sorted(symbols)
 
 
 def build_exchange_adapter_from_env() -> ExchangeAdapter:

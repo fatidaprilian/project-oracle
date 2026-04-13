@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -55,6 +56,30 @@ class WeeklyWorkflowTest(unittest.TestCase):
             self.assertIsNotNone(result.error)
             self.assertTrue(any("failed" in detail.lower()
                             for detail in result.details))
+
+    def test_should_record_symbol_when_workflow_runs_with_symbol_filter(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            dataset_path = Path("data/replay/sample_snapshots.jsonl")
+            registry_file = Path(temp_dir) / "requests.jsonl"
+            ai_review_dir = Path(temp_dir) / "ai-review"
+            weekly_dir = Path(temp_dir) / "weekly"
+            config_dir = Path(temp_dir) / "configs"
+
+            result = run_weekly_workflow(
+                dataset_path=dataset_path,
+                symbol="BTCUSDT",
+                registry_file=registry_file,
+                ai_review_output_dir=ai_review_dir,
+                weekly_output_dir=weekly_dir,
+                strategy_config_output_dir=config_dir,
+            )
+
+            self.assertTrue(result.success)
+            with registry_file.open("r", encoding="utf-8") as file_obj:
+                records = [json.loads(line) for line in file_obj if line.strip()]
+
+            self.assertEqual(len(records), 1)
+            self.assertEqual(records[0].get("symbol"), "BTCUSDT")
 
 
 if __name__ == "__main__":

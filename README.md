@@ -7,7 +7,7 @@ Project Oracle adalah kerangka trading intelligence yang memadukan:
 - exit strategy berbasis aturan objektif
 - learning loop mingguan dari trade gagal
 
-Status saat ini: docs + fase 1 scaffold (paper trading pipeline) sudah aktif.
+Status saat ini: phase 0-8 implementasi inti sudah aktif, API production berjalan di Cloud Run, dan frontend berjalan di Vercel.
 
 ## Dokumentasi Utama
 - Arsitektur sistem: docs/architecture.md
@@ -15,6 +15,8 @@ Status saat ini: docs + fase 1 scaffold (paper trading pipeline) sudah aktif.
 - Trading flow per modul: docs/trading-flow-modules.md
 - Roadmap eksekusi: docs/roadmap.md
 - Roadmap frontend: docs/frontend-roadmap.md
+- Deployment guide (single source): docs/deployment.md
+- API contract dan endpoint detail: docs/api.md
 - Persistence recovery runbook: docs/persistence-recovery.md
 
 ## Layout Repositori
@@ -27,10 +29,10 @@ Status saat ini: docs + fase 1 scaffold (paper trading pipeline) sudah aktif.
 - `docs/` - blueprint, roadmap, dan runbook
 
 ## Ruang Lingkup Fase Saat Ini
-- definisi arsitektur
-- definisi komponen dan state machine
-- definisi data model dan governance dasar
-- scaffold kode fase 1 paper trading
+- operasi production paper mode (Cloud Run + Vercel)
+- governance workflow berbasis API (summary, requests, approve, promote)
+- connectivity checks untuk exchange adapter dan AI analyst adapter
+- hardening observability frontend dan role-based access
 
 ## Struktur Kode Fase 1
 - src/main.py
@@ -136,13 +138,14 @@ Opsional environment untuk persistence:
 - ORACLE_PERSISTENCE_FALLBACK_FILE
 
 ## Provider dan Environment yang Dipakai
-- AI provider: vendor-agnostic (default di env example = grok, bisa diganti gemini/custom)
+- AI provider: vendor-agnostic (default di env example = gemini, bisa diganti grok/custom)
 - exchange environment: testnet dulu (belum live trading)
 - runtime mode default: paper
 
 Catatan eksekusi saat ini:
-- backend masih berbasis script pipeline (main, replay, weekly_report, strategy_review)
-- belum ada API server long-running yang dijalankan
+- backend API long-running aktif via FastAPI service
+- scheduler worker untuk weekly workflow tersedia via service boundary
+- frontend governance dashboard aktif dan terhubung ke API
 
 File referensi konfigurasi:
 - .env.example
@@ -172,9 +175,10 @@ git status
 Catatan: push ke remote bisa dilakukan setelah token tersedia.
 
 ## Rencana Tahap Berikutnya
-- fase aktif saat ini: Strategy Intelligence (lihat docs/roadmap.md)
-- lanjut otomatisasi scheduler mingguan report + AI review
-- lanjut parameter governance agar request bisa di-approve/reject secara terstruktur
+- fase aktif saat ini: hardening operasional post-Phase 8
+- optional: enable Redis runtime store untuk risk-state cache
+- optional: integrasi sentiment provider saat API key/provider siap
+- lanjut ekspansi symbol universe bertahap via governance flow
 
 ## Keputusan Frontend Saat Ini
 - stack UI: React + Vite

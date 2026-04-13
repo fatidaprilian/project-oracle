@@ -30,9 +30,10 @@ class WorkflowResult:
 
 def run_weekly_workflow(
     dataset_path: Path = Path("data/replay/sample_snapshots.jsonl"),
-    ai_provider: str = "grok",
+    ai_provider: str = "gemini",
     runtime_mode: str = "paper",
     exchange_env: str = "testnet",
+    symbol: str = "",
     registry_file: Path = Path("registry/parameter_change_requests.jsonl"),
     ai_review_output_dir: Path = Path("reports/ai-review"),
     weekly_output_dir: Path = Path("reports/weekly"),
@@ -54,8 +55,14 @@ def run_weekly_workflow(
         registry_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Step 1: Run replay and generate AI review packet
-        result.details.append("Running replay...")
-        events = run_replay(dataset_path, StaticSentimentProvider())
+        target_symbol = symbol.strip()
+        replay_label = f" for symbol={target_symbol}" if target_symbol else ""
+        result.details.append(f"Running replay{replay_label}...")
+        events = run_replay(
+            dataset_path,
+            StaticSentimentProvider(),
+            symbol=target_symbol,
+        )
         result.details.append(f"Replay complete: {len(events)} events")
 
         result.details.append("Building AI review packet...")
@@ -79,6 +86,7 @@ def run_weekly_workflow(
             generated_from=str(result.ai_review_packet_path),
             provider=ai_provider,
             status="pending",
+            symbol=target_symbol,
             suggested_changes={
                 "min_confluence_score": 62.0,
                 "min_volume_threshold": 850.0,

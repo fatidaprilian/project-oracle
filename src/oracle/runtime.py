@@ -75,8 +75,11 @@ def load_latest_strategy_config(config_dir: Path = Path("reports/strategy-config
     if not config_dir.exists():
         return None
 
-    config_files = sorted(config_dir.glob("*.json"),
-                          key=lambda p: p.stat().st_mtime, reverse=True)
+    config_files = sorted(
+        config_dir.glob("*.json"),
+        key=lambda p: (p.stat().st_mtime_ns, p.name),
+        reverse=True,
+    )
     if not config_files:
         return None
 

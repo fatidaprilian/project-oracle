@@ -8,6 +8,14 @@ Project Oracle exposes its strategy intelligence and governance workflows via a 
 - Querying parameter change request status and approvals
 - Promoting approved changes to strategy configuration
 
+## Source of Truth
+
+Untuk kontrak API terbaru (schema request/response), gunakan Swagger production:
+
+- https://project-oracle-133425616833.asia-southeast2.run.app/docs
+
+Dokumen ini berfungsi sebagai panduan operasional tambahan.
+
 ## Getting Started
 
 ### Start the API Server
@@ -111,6 +119,10 @@ POST /api/v1/weekly-workflow
 
 Trigger the complete weekly workflow: run replay, generate AI review packet, produce weekly report, and attempt config promotion.
 
+Optional query parameter:
+
+- `symbol` (contoh: `BTCUSDT`) untuk menjalankan replay dan mencatat request governance per symbol.
+
 **Response:**
 ```json
 {
@@ -145,6 +157,44 @@ Get count summary of all parameter change requests by status.
   "rejected": 1,
   "ready_to_promote": 2
 }
+```
+
+### Symbol Catalog
+
+```http
+GET /api/v1/symbols
+```
+
+Returns symbol list for UI selector with governance counters per symbol.
+
+Behavior:
+- Default: reads from cached exchange catalog to reduce repeated Bybit fetch.
+- If cache expired: refreshes from exchange adapter.
+- If exchange fetch fails: reuses stale cache or falls back to replay dataset.
+
+Optional query parameter:
+- `refresh=true` to force refresh from exchange API (for newly listed coins).
+
+**Response:**
+```json
+[
+  {
+    "symbol": "BTCUSDT",
+    "total_requests": 3,
+    "pending": 1,
+    "approved": 1,
+    "rejected": 1,
+    "ready_to_promote": 1
+  },
+  {
+    "symbol": "ETHUSDT",
+    "total_requests": 0,
+    "pending": 0,
+    "approved": 0,
+    "rejected": 0,
+    "ready_to_promote": 0
+  }
+]
 ```
 
 ### Governance Live Stream

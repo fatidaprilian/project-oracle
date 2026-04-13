@@ -35,14 +35,21 @@ def load_replay_symbols(dataset_path: Path) -> list[str]:
     return sorted(symbols)
 
 
-def run_replay(dataset_path: Path, sentiment_provider: SentimentProvider) -> list[dict[str, object]]:
+def run_replay(
+    dataset_path: Path,
+    sentiment_provider: SentimentProvider,
+    symbol: str = "",
+) -> list[dict[str, object]]:
     journal = InMemoryJournal()
+    target_symbol = symbol.strip()
     with dataset_path.open("r", encoding="utf-8") as file_obj:
         for line in file_obj:
             line = line.strip()
             if not line:
                 continue
             record = json.loads(line)
+            if target_symbol and str(record.get("symbol", "")).strip() != target_symbol:
+                continue
             snapshot = _to_snapshot(record)
             run_paper_cycle(snapshot, sentiment_provider, journal)
     return journal.dump()

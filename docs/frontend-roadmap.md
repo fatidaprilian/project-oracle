@@ -19,21 +19,27 @@ Catatan:
 
 ## 2. Keputusan Deployment
 Pilihan final untuk fase awal:
-- Single platform dulu: Railway
-- Tidak perlu split Railway + Vercel di tahap sekarang
+- Frontend: Vercel
+- Backend API: Google Cloud Run
+- Frontend dan backend dipisah sejak awal untuk boundary yang jelas
 
-Alasan single Railway cukup saat ini:
-- produk masih fokus internal dashboard dan operasional strategy
-- trafik awal belum butuh edge optimization khusus frontend
-- operasional lebih sederhana (1 platform, 1 observability path)
-- biaya dan kompleksitas deployment lebih rendah
+Alasan arsitektur ini dipakai saat ini:
+- boundary frontend/backend lebih jelas untuk release terpisah
+- endpoint API tetap stabil via Cloud Run sementara UI iterasi cepat di Vercel
+- CORS dan auth flow sudah tervalidasi pada topologi production
 
 ## 3. Trigger Kapan Perlu Split Railway + Vercel
-Pindah ke arsitektur split jika minimal 2 kondisi terpenuhi:
+Arsitektur sudah split. Trigger berikutnya adalah scale-up jika minimal 2 kondisi terpenuhi:
 1. Frontend public-facing butuh SEO kuat dan edge delivery global.
 2. Build/deploy frontend lebih cepat jika dipisah dari siklus backend.
 3. Traffic frontend tumbuh signifikan dan perlu CDN/edge cache agresif.
 4. Tim frontend dan backend sudah berjalan paralel dengan release cadence berbeda.
+
+## 3.1 Status Implementasi Saat Ini
+- F-1 sampai F-5 inti sudah terpasang (scaffold, monitoring views, report surface, SSE stream, hardening)
+- role-based view restriction aktif
+- login flow berbasis auth_users + JWT aktif
+- observability baseline frontend aktif
 
 ## 4. Arsitektur Frontend (Phase Starter)
 - app shell dashboard

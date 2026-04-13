@@ -32,6 +32,21 @@ class ReplayRunnerTest(unittest.TestCase):
         self.assertGreater(len(events), 0)
         self.assertIn("candidate_rejected", {event["event_type"] for event in events})
 
+    def test_should_filter_replay_events_by_symbol_when_symbol_is_provided(self) -> None:
+        dataset_path = Path("data/replay/sample_snapshots.jsonl")
+
+        events = run_replay(
+            dataset_path,
+            StaticSentimentProvider(),
+            symbol="BTCUSDT",
+        )
+
+        self.assertGreater(len(events), 0)
+        for event in events:
+            payload = event.get("payload", {})
+            if isinstance(payload, dict) and "symbol" in payload:
+                self.assertEqual(payload["symbol"], "BTCUSDT")
+
 
 if __name__ == "__main__":
     unittest.main()

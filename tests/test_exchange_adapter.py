@@ -148,6 +148,44 @@ class ExchangeAdapterTest(unittest.TestCase):
         self.assertFalse(status.reachable)
         self.assertIn("unsupported provider", status.detail)
 
+    @patch("oracle.infrastructure.exchange_adapter.urlopen")
+    def test_should_list_bybit_symbols_filtered_by_quote_coin(self, mock_urlopen) -> None:
+        mock_urlopen.return_value = _FakeResponse(
+            '{"retCode":0,"retMsg":"OK","result":{"list":['
+            '{"symbol":"BTCUSDT","quoteCoin":"USDT"},'
+            '{"symbol":"BTCUSDC","quoteCoin":"USDC"}]}}'
+        )
+
+        with patch.dict(
+            os.environ,
+            {
+                "ORACLE_EXCHANGE_SYMBOL_QUOTE_COIN": "USDT",
+            },
+            clear=False,
+        ):
+            adapter = BybitExchangeAdapter("https://api-testnet.bybit.com", timeout_seconds=1.0)
+            symbols = adapter.list_symbols()
+
+        self.assertEqual(symbols, ["BTCUSDT"])
+
+    @patch("oracle.infrastructure.exchange_adapter.urlopen")
+    def test_should_list_bybit_symbols_across_pages(self, mock_urlopen) -> None:
+        mock_urlopen.side_effect = [
+            _FakeResponse(
+                '{"retCode":0,"retMsg":"OK","result":{"list":['
+                '{"symbol":"BTCUSDT","quoteCoin":"USDT"}],"nextPageCursor":"abc"}}'
+            ),
+            _FakeResponse(
+                '{"retCode":0,"retMsg":"OK","result":{"list":['
+                '{"symbol":"ETHUSDT","quoteCoin":"USDT"}],"nextPageCursor":""}}'
+            ),
+        ]
+
+        adapter = BybitExchangeAdapter("https://api-testnet.bybit.com", timeout_seconds=1.0)
+        symbols = adapter.list_symbols()
+
+        self.assertEqual(symbols, ["BTCUSDT", "ETHUSDT"])
+
 
 if __name__ == "__main__":
     unittest.main()

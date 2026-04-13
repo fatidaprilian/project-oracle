@@ -2,6 +2,10 @@
 
 Project Oracle Phase 7 adds multi-symbol trading support, modern React dashboard, API authentication, and production-ready security.
 
+Status note:
+- Dokumen ini adalah snapshot fase implementasi.
+- Untuk deployment aktif dan endpoint kontrak terbaru, gunakan `docs/deployment.md` dan Swagger di `https://project-oracle-133425616833.asia-southeast2.run.app/docs`.
+
 ## What's New
 
 ### Backend Enhancements
@@ -87,7 +91,7 @@ ORACLE_EXCHANGE_ENV=testnet
 
 **Frontend:**
 ```env
-REACT_APP_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000
 ```
 
 ## Architecture
@@ -222,13 +226,17 @@ curl -X POST http://localhost:8000/api/v1/governance/promote
 
 ## Deployment
 
-Current deployment via Cloud Build + Cloud Run (Tokyo/Jakarta regions):
+Current deployment reference:
 
 ```bash
-git push origin main
-# Cloud Build auto-triggers
-# Docker builds from root Dockerfile
-# Deploys to: https://project-oracle-xxxxx.asia-southeast2.run.app
+# Frontend (Vercel)
+# https://project-oracle-nine.vercel.app/
+
+# API (Cloud Run)
+# https://project-oracle-133425616833.asia-southeast2.run.app
+
+# Swagger API docs
+# https://project-oracle-133425616833.asia-southeast2.run.app/docs
 ```
 
 Frontend deployment (optional):

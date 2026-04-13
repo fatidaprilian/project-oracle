@@ -5,6 +5,7 @@ import hmac
 import json
 import os
 from pathlib import Path
+import time
 from typing import Any
 
 try:
@@ -23,6 +24,7 @@ from oracle.application.strategy_intelligence import (
     summarize_parameter_change_registry,
     update_request_status_by_id,
 )
+from oracle.application.replay_runner import load_replay_symbols
 from oracle.application.weekly_workflow import run_weekly_workflow
 from oracle.infrastructure.ai_analyst_adapter import build_ai_analyst_adapter_from_env
 from oracle.infrastructure.exchange_adapter import build_exchange_adapter_from_env
@@ -56,6 +58,11 @@ app.add_middleware(
 # Configuration
 DEFAULT_REGISTRY_PATH = Path("registry/parameter_change_requests.jsonl")
 DEFAULT_STRATEGY_CONFIG_PATH = Path("reports/strategy-configs")
+DEFAULT_REPLAY_DATASET_PATH = Path("data/replay/sample_snapshots.jsonl")
+DEFAULT_SYMBOL_CACHE_PATH = Path(
+    os.getenv("ORACLE_SYMBOL_CACHE_FILE", "runtime-fallback/exchange-symbols-cache.json")
+)
+DEFAULT_SYMBOL_CACHE_TTL_SECONDS = int(os.getenv("ORACLE_SYMBOL_CACHE_TTL_SECONDS", "21600"))
 
 API_AUTH_ENABLED = os.getenv("ORACLE_API_AUTH_ENABLED", "false").lower() == "true"
 API_AUTH_TOKEN = os.getenv("ORACLE_API_AUTH_TOKEN", "")
@@ -311,6 +318,74 @@ def _build_governance_summary(symbol: str = "") -> dict[str, int]:
     return summary
 
 
+def _empty_symbol_summary() -> dict[str, int]:
+    return {
+        "total": 0,
+        "pending": 0,
+        "approved": 0,
+        "rejected": 0,
+        "ready_to_promote": 0,
+    }
+
+
+def _read_symbol_cache(cache_path: Path = DEFAULT_SYMBOL_CACHE_PATH) -> tuple[list[str], float] | None:
+    if not cache_path.exists():
+        return None
+
+    try:
+        payload = json.loads(cache_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+    if not isinstance(payload, dict):
+        return None
+
+    symbols_raw = payload.get("symbols", [])
+    if not isinstance(symbols_raw, list):
+        return None
+
+    symbols = sorted({str(item).strip() for item in symbols_raw if str(item).strip()})
+    fetched_at_epoch = float(payload.get("fetched_at_epoch", 0))
+    return symbols, fetched_at_epoch
+
+
+def _write_symbol_cache(symbols: list[str], cache_path: Path = DEFAULT_SYMBOL_CACHE_PATH) -> None:
+    if not symbols:
+        return
+
+    try:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "fetched_at_epoch": int(time.time()),
+            "symbols": sorted({symbol.strip() for symbol in symbols if symbol.strip()}),
+        }
+        cache_path.write_text(json.dumps(payload, ensure_ascii=True), encoding="utf-8")
+    except Exception:
+        # Cache is an optimization only; API should keep working if writes fail.
+        return
+
+
+def _load_market_symbols(refresh: bool = False) -> list[str]:
+    now = time.time()
+    cached = _read_symbol_cache()
+    if not refresh and cached is not None:
+        cached_symbols, fetched_at_epoch = cached
+        if (now - fetched_at_epoch) <= max(60, DEFAULT_SYMBOL_CACHE_TTL_SECONDS):
+            return cached_symbols
+
+    market_symbols = build_exchange_adapter_from_env().list_symbols()
+    if market_symbols:
+        _write_symbol_cache(market_symbols)
+        return market_symbols
+
+    # If exchange fetch fails, reuse stale cache when available.
+    if cached is not None:
+        return cached[0]
+
+    # Keep local and paper-mode UX usable without live exchange fetch.
+    return load_replay_symbols(DEFAULT_REPLAY_DATASET_PATH)
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(status="healthy", version="0.1.0")
@@ -478,7 +553,12 @@ def trigger_weekly_workflow(
     symbol: str = "",
     _: dict[str, str] = Depends(require_role("operator")),
 ) -> WorkflowResponse:
-    result = run_weekly_workflow()
+    result = run_weekly_workflow(
+        ai_provider=os.getenv("ORACLE_AI_PROVIDER", "gemini"),
+        runtime_mode=os.getenv("ORACLE_RUNTIME_MODE", "paper"),
+        exchange_env=os.getenv("ORACLE_EXCHANGE_ENV", "testnet"),
+        symbol=symbol.strip(),
+    )
     return WorkflowResponse(
         success=result.success,
         ai_review_packet_path=str(
@@ -566,7 +646,7 @@ def list_governance_requests(symbol: str = "") -> list[RequestRecord]:
 
 
 @app.get("/api/v1/symbols", response_model=list[SymbolInfoResponse])
-def list_symbols() -> list[SymbolInfoResponse]:
+def list_symbols(refresh: bool = False) -> list[SymbolInfoResponse]:
     try:
         records = load_parameter_change_requests(DEFAULT_REGISTRY_PATH)
         symbol_info: dict[str, dict[str, int]] = {}
@@ -574,13 +654,7 @@ def list_symbols() -> list[SymbolInfoResponse]:
         for record in records:
             symbol = record.get("symbol", "default")
             if symbol not in symbol_info:
-                symbol_info[symbol] = {
-                    "total": 0,
-                    "pending": 0,
-                    "approved": 0,
-                    "rejected": 0,
-                    "ready_to_promote": 0,
-                }
+                symbol_info[symbol] = _empty_symbol_summary()
 
             summary = symbol_info[symbol]
             summary["total"] += 1
@@ -592,6 +666,14 @@ def list_symbols() -> list[SymbolInfoResponse]:
                             ) if isinstance(validation, dict) else False
             if status == "approved" and is_valid:
                 summary["ready_to_promote"] += 1
+
+        for symbol in _load_market_symbols(refresh=refresh):
+            if symbol not in symbol_info:
+                symbol_info[symbol] = _empty_symbol_summary()
+
+        if not symbol_info:
+            for symbol in load_replay_symbols(DEFAULT_REPLAY_DATASET_PATH):
+                symbol_info[symbol] = _empty_symbol_summary()
 
         return [
             SymbolInfoResponse(

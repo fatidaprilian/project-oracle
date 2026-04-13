@@ -125,12 +125,16 @@ export default function Dashboard({ role }: DashboardProps) {
     }
   }, [lastLiveUpdateAt])
 
-  const loadSymbols = async () => {
+  const loadSymbols = async (refresh = false) => {
     try {
-      const { data } = await withRetry(() => api.getSymbols())
+      const { data } = await withRetry(() => api.getSymbols(refresh))
       setSymbols(data)
       if (data.length > 0) {
-        setSelectedSymbol(data[0].symbol)
+        if (selectedSymbol && data.some((item) => item.symbol === selectedSymbol)) {
+          setSelectedSymbol(selectedSymbol)
+        } else {
+          setSelectedSymbol(data[0].symbol)
+        }
       }
     } catch (err) {
       setError('Failed to load symbols')
@@ -270,6 +274,15 @@ export default function Dashboard({ role }: DashboardProps) {
                 </option>
               ))}
             </select>
+            <button
+              onClick={() => {
+                void loadSymbols(true)
+              }}
+              className="mt-2 text-xs text-blue-300 hover:text-blue-200"
+              type="button"
+            >
+              Refresh symbol catalog from exchange
+            </button>
           </div>
 
           <div className="flex gap-3">

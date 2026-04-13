@@ -122,7 +122,7 @@ Progress saat ini:
 - integration tests: implemented (3 tests passing)
 - total tests: 38 passing
 
-## Phase 7 - Frontend and Multi-Symbol (In Progress)
+## Phase 7 - Frontend and Multi-Symbol (Done)
 Tujuan:
 - user interface untuk monitoring dan governance
 - support multi-symbol portfolio trading
@@ -149,8 +149,10 @@ Progress saat ini:
 - login flow without register (username/password from DB auth_users -> role token): implemented
 - observability frontend baseline (web vitals + error tracking hooks): implemented
 - multi-symbol replay guard test: implemented
+- production frontend deployed: https://project-oracle-nine.vercel.app/
+- symbol-specific weekly workflow path wired end-to-end: implemented
 
-## Phase 8 - Market Connectivity and Provider Abstraction (In Progress)
+## Phase 8 - Market Connectivity and Provider Abstraction (Done)
 Tujuan:
 - menyiapkan konektivitas market/exchange secara aman tanpa lock-in vendor
 - menyiapkan integrasi AI analyst provider yang bisa diganti tanpa ubah core domain
@@ -171,20 +173,23 @@ Definition of done:
 Progress saat ini:
 - exchange adapter interface (vendor-agnostic): implemented
 - adapter awal Bybit testnet (market time ping): implemented
+- bybit market symbol catalog fetch + cache (refreshable): implemented
 - endpoint health exchange (`/api/v1/config/exchange`): implemented
 - endpoint private preflight exchange account (`/api/v1/config/exchange/account`): implemented
 - AI analyst adapter interface (vendor-agnostic): implemented
 - endpoint health AI analyst (`/api/v1/config/ai-analyst`): implemented
 - konfigurasi env provider abstraction (toggle + health path): implemented
+- production API deployed: https://project-oracle-133425616833.asia-southeast2.run.app
+- runbook/deployment guide sudah sinkron dengan Swagger production
 
 ## Status Keseluruhan
 
 Sudah Selesai:
-- Phase 0-6: Foundation, Paper Trading, Runtime, Quality Analytics, Persistence, Strategy Intelligence, API Service
-- Total: 38 unit tests passing
+- Phase 0-8: Foundation, Paper Trading, Runtime, Quality Analytics, Persistence, Strategy Intelligence, API Service, Frontend+Multi-Symbol, Connectivity Abstraction
+- Total: 58 unit tests passing
 - Commits: 5b30b2c (latest)
 
-Ready untuk Phase 7 atau parallel frontend development (React + Vite scaffold).
+Ready untuk fase lanjutan: production hardening dan optional integrations.
 
 ## Urutan Kerja Praktis Mingguan
 1. Selesaikan fase aktif dan checklist test-nya.
@@ -197,7 +202,7 @@ Dokumen detail frontend ada di docs/frontend-roadmap.md.
 
 Keputusan saat ini:
 - UI stack: React + Vite
-- deployment: single Railway dulu
+- deployment: frontend di Vercel, backend API di Cloud Run
 
 Trigger split Railway + Vercel:
 - butuh SEO/edge delivery publik

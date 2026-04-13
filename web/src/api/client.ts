@@ -148,8 +148,10 @@ export const api = {
       params: { symbol }
     }),
   
-  getSymbols: () =>
-    apiClient.get<SymbolInfo[]>('/api/v1/symbols'),
+  getSymbols: (refresh = false) =>
+    apiClient.get<SymbolInfo[]>('/api/v1/symbols', {
+      params: { refresh }
+    }),
 
   getConnections: () =>
     apiClient.get<ConfigConnections>('/api/v1/config/connections'),
