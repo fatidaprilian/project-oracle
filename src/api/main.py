@@ -212,6 +212,44 @@ async def dashboard_action(payload: DashboardActionPayload):
         print(f"Error on dashboard action: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/v1/dashboard/watchlist")
+async def get_watchlist_api():
+    try:
+        from oracle.infrastructure.postgres_repository import get_watchlist
+        if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
+            return {"watchlist": []}
+        return {"watchlist": get_watchlist()}
+    except Exception as e:
+        print(f"Error fetching watchlist: {e}")
+        return {"watchlist": []}
+
+class WatchlistPayload(BaseModel):
+    ticker: str
+
+@app.post("/api/v1/dashboard/watchlist")
+async def add_watchlist_api(payload: WatchlistPayload):
+    try:
+        from oracle.infrastructure.postgres_repository import add_to_watchlist
+        if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
+            raise HTTPException(status_code=400, detail="Postgres is not enabled")
+        add_to_watchlist(payload.ticker.upper())
+        return {"status": "success", "ticker": payload.ticker.upper()}
+    except Exception as e:
+        print(f"Error adding to watchlist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/v1/dashboard/watchlist/{ticker}")
+async def remove_watchlist_api(ticker: str):
+    try:
+        from oracle.infrastructure.postgres_repository import remove_from_watchlist
+        if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
+            raise HTTPException(status_code=400, detail="Postgres is not enabled")
+        remove_from_watchlist(ticker.upper())
+        return {"status": "success", "ticker": ticker.upper()}
+    except Exception as e:
+        print(f"Error removing from watchlist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
