@@ -126,3 +126,48 @@ def get_tracking_status(ticker: str) -> str:
             if cur.fetchone():
                 return "IGNORED"
     return "NONE"
+
+def get_active_trackings() -> list[dict]:
+    dsn = get_dsn()
+    if not dsn:
+        return []
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, ticker, tracked_since, last_checked_at
+                FROM active_tracking
+                WHERE is_active = TRUE
+            """)
+            rows = cur.fetchall()
+            return [{"id": str(r[0]), "ticker": r[1]} for r in rows]
+
+def update_last_checked(tracking_id: str) -> None:
+    dsn = get_dsn()
+    if not dsn:
+        return
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE active_tracking 
+                SET last_checked_at = NOW() 
+                WHERE id = %s
+            """, (tracking_id,))
+        conn.commit()
+
+def close_tracking(ticker: str) -> None:
+    dsn = get_dsn()
+    if not dsn:
+        return
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE active_tracking 
+                SET is_active = FALSE 
+                WHERE ticker = %s AND is_active = TRUE
+            """, (ticker,))
+            # Add to ignore list so we don't buy it again immediately
+            cur.execute("""
+                INSERT INTO ignore_list (ticker, expires_at) 
+                VALUES (%s, NOW() + INTERVAL '3 days')
+            """, (ticker,))
+        conn.commit()

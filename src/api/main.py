@@ -32,6 +32,12 @@ def on_startup():
             init_db()
         except Exception as e:
             print(f"Failed to init DB: {e}")
+            
+    try:
+        from oracle.application.active_tracker import start_daemon
+        start_daemon()
+    except Exception as e:
+        print(f"Failed to start tracking daemon: {e}")
 
 class HealthResponse(BaseModel):
     status: str
