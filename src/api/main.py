@@ -150,6 +150,56 @@ async def telegram_webhook(request: Request):
 
     return {"status": "success"}
 
+@app.get("/api/v1/dashboard/signals")
+async def get_dashboard_signals():
+    try:
+        from oracle.infrastructure.postgres_repository import get_recent_signals, get_tracking_status
+        if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
+            return {"signals": []}
+            
+        signals = get_recent_signals(50)
+        # enrich with status
+        for s in signals:
+            s["status"] = get_tracking_status(s["ticker"])
+            
+        return {"signals": signals}
+    except Exception as e:
+        print(f"Error fetching signals: {e}")
+        return {"signals": []}
+
+class DashboardActionPayload(BaseModel):
+    ticker: str
+    action: str
+
+@app.post("/api/v1/dashboard/action")
+async def dashboard_action(payload: DashboardActionPayload):
+    try:
+        from oracle.infrastructure.postgres_repository import track_symbol, ignore_symbol
+        if payload.action == "buy":
+            track_symbol(payload.ticker)
+            message = f"*[🟢 Tracking Active for {payload.ticker}]* (Triggered from Web)"
+        elif payload.action == "ignore":
+            ignore_symbol(payload.ticker)
+            message = f"*[🔴 Muted {payload.ticker} for 3 days]* (Triggered from Web)"
+        else:
+            raise HTTPException(status_code=400, detail="Invalid action")
+            
+        telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+        telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
+        if telegram_bot_token and telegram_chat_id:
+            url = f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage"
+            async with httpx.AsyncClient() as client:
+                await client.post(url, json={
+                    "chat_id": telegram_chat_id,
+                    "text": message,
+                    "parse_mode": "Markdown"
+                })
+        
+        return {"status": "success", "action": payload.action, "ticker": payload.ticker}
+    except Exception as e:
+        print(f"Error on dashboard action: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

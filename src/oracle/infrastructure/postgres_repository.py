@@ -85,3 +85,44 @@ def ignore_symbol(ticker: str) -> None:
                 VALUES (%s, NOW() + INTERVAL '3 days')
             """, (ticker,))
         conn.commit()
+
+def get_recent_signals(limit: int = 20) -> list[dict]:
+    dsn = get_dsn()
+    if not dsn:
+        return []
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, ticker, technical_signal, news_context, ai_reasoning, bias, created_at
+                FROM signal_history
+                ORDER BY created_at DESC
+                LIMIT %s
+            """, (limit,))
+            rows = cur.fetchall()
+            
+            signals = []
+            for row in rows:
+                signals.append({
+                    "id": str(row[0]),
+                    "ticker": row[1],
+                    "technical_signal": row[2],
+                    "news_context": row[3],
+                    "ai_reasoning": row[4],
+                    "bias": row[5],
+                    "created_at": row[6].isoformat() if row[6] else None
+                })
+            return signals
+
+def get_tracking_status(ticker: str) -> str:
+    dsn = get_dsn()
+    if not dsn:
+        return "NONE"
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM active_tracking WHERE ticker = %s AND is_active = TRUE", (ticker,))
+            if cur.fetchone():
+                return "TRACKING"
+            cur.execute("SELECT 1 FROM ignore_list WHERE ticker = %s AND expires_at > NOW()", (ticker,))
+            if cur.fetchone():
+                return "IGNORED"
+    return "NONE"
