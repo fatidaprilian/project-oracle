@@ -38,6 +38,12 @@ def on_startup():
         start_daemon()
     except Exception as e:
         print(f"Failed to start tracking daemon: {e}")
+        
+    try:
+        from oracle.application.auto_signal_generator import start_auto_signal_daemon
+        start_auto_signal_daemon()
+    except Exception as e:
+        print(f"Failed to start auto signal daemon: {e}")
 
 class HealthResponse(BaseModel):
     status: str
