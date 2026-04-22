@@ -3,11 +3,12 @@ import httpx
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from oracle.application.signal_synthesizer import fetch_news_for_ticker, synthesize_signal
+from oracle.infrastructure.postgres_repository import init_db, save_signal, track_symbol, ignore_symbol
 
 app = FastAPI(
     title="Project Oracle API (Stock Pivot)",
@@ -23,6 +24,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+def on_startup():
+    if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
+        try:
+            init_db()
+        except Exception as e:
+            print(f"Failed to init DB: {e}")
 
 class HealthResponse(BaseModel):
     status: str
@@ -49,6 +58,13 @@ async def tradingview_webhook(payload: WebhookPayload):
     news = fetch_news_for_ticker(payload.ticker)
     decision = synthesize_signal(payload.ticker, payload.signal_type, payload.price, news)
     
+    # Save to database
+    try:
+        if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
+            save_signal(payload.ticker, payload.signal_type, news, decision['reason'], decision['bias'])
+    except Exception as e:
+        print(f"Failed to save signal to DB: {e}")
+
     bias_emoji = "✅" if decision["bias"] == "BUY" else "❌"
 
     message = f"🚨 *Oracle Signal*\n"
@@ -80,6 +96,59 @@ async def tradingview_webhook(payload: WebhookPayload):
             raise HTTPException(status_code=500, detail="Failed to send telegram notification")
 
     return {"status": "success", "decision": decision}
+
+@app.post("/api/v1/webhook/telegram")
+async def telegram_webhook(request: Request):
+    payload = await request.json()
+    
+    if "callback_query" not in payload:
+        return {"status": "ignored", "reason": "Not a callback query"}
+
+    callback_query = payload["callback_query"]
+    callback_data = callback_query.get("data", "")
+    message = callback_query.get("message", {})
+    chat_id = message.get("chat", {}).get("id")
+    message_id = message.get("message_id")
+    callback_id = callback_query.get("id")
+    
+    telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if not telegram_bot_token:
+        return {"status": "error", "reason": "telegram credentials missing"}
+
+    new_text = message.get("text", "") + "\n\n"
+    
+    try:
+        if callback_data.startswith("buy_"):
+            ticker = callback_data.split("_")[1]
+            if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
+                track_symbol(ticker)
+            new_text += f"*[🟢 Tracking Active for {ticker}]*"
+        elif callback_data.startswith("ignore_"):
+            ticker = callback_data.split("_")[1]
+            if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
+                ignore_symbol(ticker)
+            new_text += f"*[🔴 Muted {ticker} for 3 days]*"
+    except Exception as e:
+        print(f"DB Error on Callback: {e}")
+
+    # Edit the message to remove buttons and show state
+    edit_url = f"https://api.telegram.org/bot{telegram_bot_token}/editMessageText"
+    answer_url = f"https://api.telegram.org/bot{telegram_bot_token}/answerCallbackQuery"
+    
+    async with httpx.AsyncClient() as client:
+        # Edit Message
+        await client.post(edit_url, json={
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": new_text,
+            "parse_mode": "Markdown"
+        })
+        # Acknowledge callback to remove loading state on button
+        await client.post(answer_url, json={
+            "callback_query_id": callback_id
+        })
+
+    return {"status": "success"}
 
 if __name__ == "__main__":
     import uvicorn
