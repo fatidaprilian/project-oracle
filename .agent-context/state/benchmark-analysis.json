@@ -1,0 +1,431 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "created": "2026-04-02",
+    "purpose": "Consolidate skill coverage from 3 benchmark repositories (antigravity, awesome-copilot, MiniMax) to guide Agentic-Senior-Core skill platform development",
+    "benchmark_repos": [
+      {
+        "name": "antigravity-awesome-skills",
+        "owner": "sickn33",
+        "url": "https://github.com/sickn33/antigravity-awesome-skills",
+        "skill_count": "300+",
+        "strength": "Reasoning chains, anti-patterns, debugging pedagogy, LLM/AI systems, skill routing/bundling"
+      },
+      {
+        "name": "awesome-copilot",
+        "owner": "github",
+        "url": "https://github.com/github/awesome-copilot",
+        "skill_count": "150+",
+        "strength": "Architecture standards, clean code laws, multi-language instruction sets, plugin orchestration, SoC patterns"
+      },
+      {
+        "name": "MiniMax-AI/skills",
+        "owner": "MiniMax-AI",
+        "url": "https://github.com/MiniMax-AI/skills",
+        "skill_count": "80+",
+        "strength": "Document generation sophistication, multimodal/media generation, mobile frameworks (Flutter/RN/iOS/Android), design systems, AI/LLM capabilities"
+      }
+    ]
+  },
+  "domain_coverage_matrix": {
+    "frontend": {
+      "antigravity": {
+        "topics": [
+          "React patterns & hooks",
+          "Next.js full-stack",
+          "TypeScript for UI",
+          "Component design",
+          "CSS-in-JS & Tailwind",
+          "Performance optimization",
+          "Accessibility",
+          "State management"
+        ],
+        "depth": "comprehensive",
+        "unique": "React/Next.js bias, component reusability patterns"
+      },
+      "awesome_copilot": {
+        "topics": [
+          "Smart/Dumb UI separation",
+          "TanStack Query vs Zustand",
+          "Routing patterns",
+          "Accessibility & WCAG",
+          "Frontend architecture principles"
+        ],
+        "depth": "standards-focused",
+        "unique": "SoC principles applied to UI, state management decision frameworks"
+      },
+      "minimax": {
+        "topics": [
+          "Design systems",
+          "40+ animation patterns",
+          "Anti-slop techniques",
+          "Asset generation (TTS, music, video)",
+          "Design token strategies",
+          "Glassmorphism, Bento grid patterns",
+          "Color theory & typography"
+        ],
+        "depth": "design-engineer focused",
+        "unique": "Creative patterns, anti-patterns for slop, multimodal asset integration, aesthetic rules"
+      },
+      "gaps_to_fill": [
+        "Micro-frontend architecture (all repos light on this)",
+        "Responsive design framework beyond media queries",
+        "Design-to-code pipeline automation",
+        "Component library maintenance at scale",
+        "Frontend observability & debugging UX"
+      ],
+      "our_above_line": [
+        "Unified design system → code → deployed component library workflow",
+        "Anti-slop enforcer with measurable aesthetic rules",
+        "Automated accessibility audit with auto-remediation suggestions",
+        "Performance budgeting integrated from design phase",
+        "Component API contract validation (props, variants, logic)"
+      ]
+    },
+    "backend": {
+      "antigravity": {
+        "topics": [
+          "FastAPI patterns",
+          "Django best practices",
+          "Node.js/Express",
+          "NestJS architecture",
+          "GraphQL server design",
+          "Microservices patterns",
+          "Error handling",
+          "API documentation"
+        ],
+        "depth": "comprehensive framework coverage",
+        "unique": "Framework-specific gotchas, error handling pedagogy"
+      },
+      "awesome_copilot": {
+        "topics": [
+          "Layered architecture (Transport → Service → Repository)",
+          "Database design (3NF normalization)",
+          "Index foreign keys",
+          "Safe migrations",
+          "Input validation & schema validation",
+          "Secret management"
+        ],
+        "depth": "architectural principles",
+        "unique": "SoC layer separation, database governance, schema-first thinking"
+      },
+      "minimax": {
+        "topics": [
+          "Django best practices (40+ rules)",
+          "Fullstack project structure",
+          "Error handling patterns",
+          "Background job orchestration",
+          "Database patterns",
+          "Authentication & authorization"
+        ],
+        "depth": "fullstack integration",
+        "unique": "Django-specific rules, document generation backend integration, 6-gate release checklist"
+      },
+      "gaps_to_fill": [
+        "Event-driven architecture patterns (awesome-copilot covers lightly)",
+        "CQRS patterns in different languages",
+        "Distributed tracing & observability",
+        "Rate limiting & throttling strategies",
+        "Multi-tenancy patterns"
+      ],
+      "our_above_line": [
+        "Database schema evolution with zero-downtime migration validator",
+        "Event-driven architecture decision tree (monolith vs saga vs event sourcing)",
+        "Observability-first backend architecture (OpenTelemetry integration)",
+        "API versioning & contract testing framework",
+        "GraphQL vs REST decision matrix with migration path"
+      ]
+    },
+    "fullstack": {
+      "antigravity": {
+        "topics": [
+          "Monolith vs microservices",
+          "Full-stack patterns",
+          "API contracts",
+          "Deployment patterns"
+        ],
+        "depth": "moderate",
+        "unique": "Component-driven fullstack thinking"
+      },
+      "awesome_copilot": {
+        "topics": [
+          "Monorepo vs microservices decision",
+          "Feature-based architecture",
+          "API documentation standards",
+          "Release gates"
+        ],
+        "depth": "standards-driven",
+        "unique": "Monorepo vs microservices framework, OpenAPI 3.1 mandatory"
+      },
+      "minimax": {
+        "topics": [
+          "Project structure",
+          "Config management",
+          "Error handling",
+          "Auth patterns",
+          "Logging",
+          "Background jobs",
+          "Caching",
+          "File uploads",
+          "Real-time systems",
+          "6-gate release checklist"
+        ],
+        "depth": "comprehensive",
+        "unique": "Concrete project structure, 6-gate verification checklist, multi-framework coverage"
+      },
+      "gaps_to_fill": [
+        "Frontend-backend contract enforcement (OpenAPI coverage weak)",
+        "Type safety across api boundary",
+        "Feature flag strategies",
+        "Gradual migration patterns for monolith→microservices",
+        "Cross-cutting concerns (logging, tracing, metrics)"
+      ],
+      "our_above_line": [
+        "API contract enforcement at build time (Zod + OpenAPI + tests)",
+        "Feature flag decision tree with canary deployment guide",
+        "Cross-service type safety (validate at API boundary, not endpoint)",
+        "Monolith→microservices strangler fig with risk calculator",
+        "Unified logging/tracing/metrics stack initialization"
+      ]
+    },
+    "cli": {
+      "antigravity": {
+        "topics": [
+          "CLI design",
+          "Argument parsing",
+          "Help text generation"
+        ],
+        "depth": "light",
+        "unique": "None"
+      },
+      "awesome_copilot": {
+        "topics": [
+          "CLI scaffolding",
+          "Blueprint generation",
+          "Initialization workflows"
+        ],
+        "depth": "moderate",
+        "unique": "Language-specific CLI patterns"
+      },
+      "minimax": {
+        "topics": [
+          "Unified CLI (check/fix/run/demo pattern)",
+          "Document generation CLI",
+          "Media processing CLI"
+        ],
+        "depth": "framework-specific",
+        "unique": "check/fix/run/demo pattern, media pipeline CLI"
+      },
+      "gaps_to_fill": [
+        "Interactive prompts & TUI design",
+        "Progress indication & logging",
+        "Configuration file generation",
+        "Plugin/extension system",
+        "Command composition & piping"
+      ],
+      "our_above_line": [
+        "Interactive CLI initialization with live-reload preview",
+        "Configuration validator & fix suggestions",
+        "Skill selector CLI with auto-detection",
+        "Automated upgrade CLI with dry-run & rollback",
+        "Plugin ecosystem for skill extensions"
+      ]
+    },
+    "distribution": {
+      "antigravity": {
+        "topics": [
+          "Publishing workflows",
+          "Version management",
+          "Release notes"
+        ],
+        "depth": "light",
+        "unique": "None"
+      },
+      "awesome_copilot": {
+        "topics": [
+          "Artifact publishing",
+          "Plugin distribution",
+          "Dependency management"
+        ],
+        "depth": "moderate",
+        "unique": "Plugin ecosystem distribution"
+      },
+      "minimax": {
+        "topics": [
+          "Release checklist",
+          "Compatibility matrix",
+          "Rollback procedures",
+          "Breaking change management"
+        ],
+        "depth": "comprehensive",
+        "unique": "6-gate release process, version compatibility tracking"
+      },
+      "gaps_to_fill": [
+        "Semantic versioning enforcement",
+        "Changelog automation",
+        "Platform-specific distribution (npm, PyPI, Maven, Cargo)",
+        "Breaking change detection",
+        "Dependency vulnerability scanning"
+      ],
+      "our_above_line": [
+        "Automated changelog + breaking change detection (git history analysis)",
+        "Multi-platform publish automation (npm, PyPI, crate, GemRegistry)",
+        "Version compatibility matrix validator (prevent diamond dependency)",
+        "Rollback automation with health checks",
+        "SBOM generation + supply chain security integration"
+      ]
+    },
+    "review_quality": {
+      "antigravity": {
+        "topics": [
+          "Code review patterns",
+          "Reasoning chains in review",
+          "Anti-pattern identification",
+          "Security halt protocols"
+        ],
+        "depth": "comprehensive",
+        "unique": "Pedagogical review approach, security halt, reasoning clause enforcement"
+      },
+      "awesome_copilot": {
+        "topics": [
+          "Architecture review checklist",
+          "Security audit checklist",
+          "Performance audit checklist",
+          "PR gates"
+        ],
+        "depth": "checklist-driven",
+        "unique": "Separate checklists (architecture, security, performance, not just PR gate)"
+      },
+      "minimax": {
+        "topics": [
+          "6-gate release checklist",
+          "Quality standards",
+          "Deployment gates"
+        ],
+        "depth": "gates-focused",
+        "unique": "Concrete 6-gate verification: functional → security → deployment"
+      },
+      "gaps_to_fill": [
+        "Algorithmic complexity review",
+        "Dependency audit automation",
+        "Accessibility review automation",
+        "Performance regression detection",
+        "Threat modeling guidance"
+      ],
+      "our_above_line": [
+        "AI-assisted code review with benchmark comparison (detect regressions vs 3 repos)",
+        "Automated security vulnerability scanner + remediation suggestions",
+        "Performance regression gate (before/after benchmarks, SLO enforcement)",
+        "Accessibility auto-audit + remediation",
+        "Dependency audit with license compliance checking"
+      ]
+    }
+  },
+  "cross_cutting_gaps": {
+    "missing_coverage": [
+      "Mobile development (iOS/Android/Flutter/React Native) - only in MiniMax, weak elsewhere",
+      "Multimodal/Media generation - only in MiniMax (TTS, music, video, image)",
+      "Document generation (docx, pdf, pptx) - only in MiniMax",
+      "Shader/Graphics programming - only in MiniMax",
+      "Web3/Blockchain - none of the 3 repos",
+      "Observability/Tracing - all repos light on this",
+      "Multi-tenancy patterns - none strong",
+      "API gateway patterns - light coverage"
+    ],
+    "our_expansion_domains": [
+      {
+        "domain": "mobile",
+        "topics": ["ios-native", "android-native", "react-native", "flutter", "cross-platform"],
+        "why": "MiniMax has strong foundation, we can add testing/CI/CD/distribution layers",
+        "above_line": ["Mobile-to-backend contract testing", "Over-the-air update strategies", "Mobile observability & crash reporting"]
+      },
+      {
+        "domain": "multimodal",
+        "topics": ["vision-analysis", "speech-synthesis", "music-generation", "video-generation", "image-generation"],
+        "why": "MiniMax has API docs, we can add prompt engineering patterns + error handling",
+        "above_line": ["Multimodal error recovery", "Latency optimization for media pipelines", "Batch processing strategies"]
+      },
+      {
+        "domain": "observability",
+        "topics": ["distributed-tracing", "metrics", "logging", "profiling", "alerting"],
+        "why": "None of 3 repos strong, critical for production systems",
+        "above_line": ["OpenTelemetry integration patterns", "SLO/SLI definition framework", "Alert fatigue mitigation"]
+      }
+    ]
+  },
+  "pain_points_summary": {
+    "debugging": {
+      "common_bugs": [
+        "Guess-and-check debugging (antigravity emphasizes this)",
+        "Not stopping at 3+ failures → architectural problem (antigravity)",
+        "Silent failures, broad exception catching (awesome-copilot)",
+        "Poor error messages hindering root cause analysis"
+      ],
+      "our_solution": "Systematic debugging framework with architectural redesign trigger + typed error codes"
+    },
+    "frontend": {
+      "common_bugs": [
+        "Global component state / prop drilling (awesome-copilot)",
+        "CSS clashes across features (awesome-copilot)",
+        "Performance: unnecessary re-renders, N+1 component updates",
+        "Slop in design (MiniMax anti-patterns)"
+      ],
+      "our_solution": "Smart/Dumb component enforcer + CSS module validator + render profiler + slop detector"
+    },
+    "backend": {
+      "common_bugs": [
+        "Circular dependencies between layers (awesome-copilot)",
+        "N+1 queries & unoptimized indexes (awesome-copilot)",
+        "Hardcoded secrets (awesome-copilot)",
+        "Unvalidated input at API boundary (awesome-copilot)"
+      ],
+      "our_solution": "Dependency graph auditor + query optimizer + secret scanner + schema validation enforcer"
+    },
+    "architecture": {
+      "common_bugs": [
+        "Premature optimization (antigravity)",
+        "Big-bang refactors (antigravity)",
+        "Wrong monolith vs microservices choice (awesome-copilot)",
+        "Skipping documentation (antigravity)"
+      ],
+      "our_solution": "Evolutionary design checklist + strangler fig migration guide + living docs mandate"
+    },
+    "security": {
+      "common_bugs": [
+        "XSS in frontend (awesome-copilot)",
+        "SQL injection in queries (awesome-copilot)",
+        "Bypassed API auth (awesome-copilot)",
+        "Safe migration forgotten (awesome-copilot)"
+      ],
+      "our_solution": "Security halt protocol + migration validator + input sanitizer rules"
+    }
+  },
+  "tier_strategy": {
+    "standard": "Match minimum coverage of 3 repos (fallback only)",
+    "advance": "Exceed 2 out of 3 repos in depth + add reasoning chains (default)",
+    "expert": "Exceed all 3 repos + add cross-repo patterns + pain point solutions",
+    "above": "Add unique insights: automation, enforcement, cross-cutting patterns + new domains (mobile, multimodal, observability)"
+  },
+  "action_plan": {
+    "phase_1": {
+      "name": "High-Impact Domains (Weeks 1-2)",
+      "order": ["backend", "frontend", "fullstack"],
+      "per_domain": "Extract + consolidate + add above_line improvements"
+    },
+    "phase_2": {
+      "name": "CLI & Distribution (Weeks 3-4)",
+      "order": ["cli", "distribution"],
+      "per_domain": "Incorporate patterns + add automation"
+    },
+    "phase_3": {
+      "name": "Review & Quality Gates (Week 5)",
+      "order": ["review_quality"],
+      "per_domain": "Build on-repo quality enforcement"
+    },
+    "phase_4": {
+      "name": "Expansion Domains (Weeks 6-8)",
+      "order": ["mobile", "multimodal", "observability"],
+      "per_domain": "New domains with full tier structure"
+    }
+  }
+}

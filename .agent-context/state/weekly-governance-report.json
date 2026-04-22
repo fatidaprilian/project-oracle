@@ -1,0 +1,126 @@
+{
+  "generatedAt": "2026-04-11T12:21:37.776Z",
+  "reportName": "weekly-governance-report",
+  "methodology": {
+    "qualityTrendSource": "state-file",
+    "qualityTrendGeneratedAt": "2026-04-11T12:21:35.779Z",
+    "commitWindowDays": 7,
+    "requiredVerifiedDomains": [
+      "cli",
+      "frontend",
+      "fullstack",
+      "distribution",
+      "review-quality"
+    ]
+  },
+  "qualitySignals": {
+    "governanceHealth": {
+      "availableGateCount": 3,
+      "passedGateCount": 3,
+      "gatePassRatePercent": 100
+    },
+    "rejectionCategories": [],
+    "tokenEfficiency": {
+      "isAvailable": true,
+      "generatedAt": "2026-04-11T06:14:10.052Z",
+      "averageNativeSavingsPercent": 83.64,
+      "averageRtkSavingsPercent": 18.95,
+      "scenarioCount": 3
+    }
+  },
+  "skillTrust": {
+    "domains": [
+      {
+        "domain": "backend",
+        "tier": "experimental",
+        "score": 25
+      },
+      {
+        "domain": "cli",
+        "tier": "verified",
+        "score": 100
+      },
+      {
+        "domain": "distribution",
+        "tier": "verified",
+        "score": 100
+      },
+      {
+        "domain": "frontend",
+        "tier": "verified",
+        "score": 100
+      },
+      {
+        "domain": "fullstack",
+        "tier": "verified",
+        "score": 100
+      },
+      {
+        "domain": "review-quality",
+        "tier": "verified",
+        "score": 100
+      }
+    ],
+    "tierCounts": {
+      "verified": 5,
+      "community": 0,
+      "experimental": 1
+    },
+    "requiredVerifiedDomains": [
+      "cli",
+      "frontend",
+      "fullstack",
+      "distribution",
+      "review-quality"
+    ],
+    "requiredVerifiedDomainFailures": [],
+    "allRequiredVerified": true
+  },
+  "commitSignals": {
+    "windowDays": 7,
+    "commitCount": 18,
+    "releaseCommitCount": 7,
+    "rollbackCommitCount": 1,
+    "releaseFrequencyPercent": 38.89,
+    "rollbackFrequencyPercent": 5.56,
+    "error": null
+  },
+  "releaseReadiness": {
+    "isReady": true,
+    "blockers": [],
+    "summary": "Weekly governance posture is ready for maintenance releases."
+  },
+  "artifact": {
+    "path": "E:\\Project\\Agentic-Senior-Core\\.agent-context\\state\\weekly-governance-report.json",
+    "writeMode": "stdout-and-file"
+  },
+  "history": [
+    {
+      "generatedAt": "2026-04-11T12:14:52.483Z",
+      "readinessStatus": "blocked",
+      "blockerCount": 1,
+      "gatePassRatePercent": 100,
+      "verifiedSkillDomainCount": 1,
+      "releaseFrequencyPercent": 38.89,
+      "rollbackFrequencyPercent": 5.56
+    },
+    {
+      "generatedAt": "2026-04-11T12:19:25.182Z",
+      "readinessStatus": "ready",
+      "blockerCount": 0,
+      "gatePassRatePercent": 100,
+      "verifiedSkillDomainCount": 5,
+      "releaseFrequencyPercent": 38.89,
+      "rollbackFrequencyPercent": 5.56
+    },
+    {
+      "generatedAt": "2026-04-11T12:21:37.776Z",
+      "readinessStatus": "ready",
+      "blockerCount": 0,
+      "gatePassRatePercent": 100,
+      "verifiedSkillDomainCount": 5,
+      "releaseFrequencyPercent": 38.89,
+      "rollbackFrequencyPercent": 5.56
+    }
+  ]
+}

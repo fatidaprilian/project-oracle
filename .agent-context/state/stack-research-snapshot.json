@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "1.0.0",
+  "snapshotId": "ecosystem-signals-2026-04-18",
+  "generatedAt": "2026-04-18T00:00:00.000Z",
+  "deterministic": true,
+  "sourceName": "Agentic-Senior-Core deterministic stack research snapshot",
+  "sourceUrl": "state://stack-research-snapshot/2026-04-18",
+  "trustedRealtimeSources": [
+    {
+      "sourceId": "awwwards-trend-feed",
+      "sourceName": "Awwwards Trend Feed",
+      "sourceUrl": "https://www.awwwards.com"
+    },
+    {
+      "sourceId": "github-ecosystem-signals",
+      "sourceName": "GitHub Ecosystem Signals",
+      "sourceUrl": "https://github.com"
+    }
+  ],
+  "stackSignals": [
+    {
+      "stackFileName": "typescript.md",
+      "measuredAt": "2026-04-18T00:00:00.000Z",
+      "metrics": {
+        "ecosystemMaturity": 0.91,
+        "talentAvailability": 0.9,
+        "deliveryVelocity": 0.89
+      }
+    },
+    {
+      "stackFileName": "python.md",
+      "measuredAt": "2026-04-18T00:00:00.000Z",
+      "metrics": {
+        "ecosystemMaturity": 0.92,
+        "talentAvailability": 0.88,
+        "deliveryVelocity": 0.9
+      }
+    },
+    {
+      "stackFileName": "java.md",
+      "measuredAt": "2026-04-18T00:00:00.000Z",
+      "metrics": {
+        "ecosystemMaturity": 0.89,
+        "talentAvailability": 0.83,
+        "deliveryVelocity": 0.8
+      }
+    },
+    {
+      "stackFileName": "php.md",
+      "measuredAt": "2026-04-18T00:00:00.000Z",
+      "metrics": {
+        "ecosystemMaturity": 0.79,
+        "talentAvailability": 0.75,
+        "deliveryVelocity": 0.84
+      }
+    },
+    {
+      "stackFileName": "go.md",
+      "measuredAt": "2026-04-18T00:00:00.000Z",
+      "metrics": {
+        "ecosystemMaturity": 0.84,
+        "talentAvailability": 0.78,
+        "deliveryVelocity": 0.82
+      }
+    },
+    {
+      "stackFileName": "csharp.md",
+      "measuredAt": "2026-04-18T00:00:00.000Z",
+      "metrics": {
+        "ecosystemMaturity": 0.86,
+        "talentAvailability": 0.8,
+        "deliveryVelocity": 0.79
+      }
+    },
+    {
+      "stackFileName": "rust.md",
+      "measuredAt": "2026-04-18T00:00:00.000Z",
+      "metrics": {
+        "ecosystemMaturity": 0.74,
+        "talentAvailability": 0.63,
+        "deliveryVelocity": 0.67
+      }
+    },
+    {
+      "stackFileName": "ruby.md",
+      "measuredAt": "2026-04-18T00:00:00.000Z",
+      "metrics": {
+        "ecosystemMaturity": 0.7,
+        "talentAvailability": 0.62,
+        "deliveryVelocity": 0.72
+      }
+    },
+    {
+      "stackFileName": "react-native.md",
+      "measuredAt": "2026-04-18T00:00:00.000Z",
+      "metrics": {
+        "ecosystemMaturity": 0.72,
+        "talentAvailability": 0.67,
+        "deliveryVelocity": 0.74
+      }
+    },
+    {
+      "stackFileName": "flutter.md",
+      "measuredAt": "2026-04-18T00:00:00.000Z",
+      "metrics": {
+        "ecosystemMaturity": 0.75,
+        "talentAvailability": 0.69,
+        "deliveryVelocity": 0.76
+      }
+    }
+  ]
+}

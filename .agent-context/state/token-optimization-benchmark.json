@@ -1,0 +1,130 @@
+{
+  "generatedAt": "2026-04-11T06:14:10.052Z",
+  "reportName": "token-optimization-benchmark",
+  "methodology": {
+    "tokenEstimate": "estimated_tokens = ceil(output_chars / 4)",
+    "scope": "command-output estimate only; model-specific tokenization differs by provider",
+    "repositoryRoot": "E:\\Project\\Agentic-Senior-Core"
+  },
+  "environment": {
+    "nodeVersion": "v22.22.0",
+    "platform": "win32",
+    "rtk": {
+      "isAvailable": true,
+      "version": "0.35.0",
+      "source": "local-tools",
+      "executablePath": "E:\\Project\\Agentic-Senior-Core\\.benchmarks\\tools\\rtk\\rtk.exe",
+      "reason": null
+    }
+  },
+  "scenarios": [
+    {
+      "scenarioId": "git-show",
+      "scenarioName": "Latest commit detail review",
+      "baseline": {
+        "command": "git show HEAD --stat --patch --no-color",
+        "exitCode": 0,
+        "outputChars": 15191,
+        "outputLines": 368,
+        "estimatedTokens": 3798
+      },
+      "nativeOptimized": {
+        "command": "git show HEAD --stat --no-color",
+        "exitCode": 0,
+        "outputChars": 706,
+        "outputLines": 14,
+        "estimatedTokens": 177
+      },
+      "nativeSavings": {
+        "tokenDelta": 3621,
+        "savingsPercent": 95.34
+      },
+      "rtk": {
+        "command": "E:\\Project\\Agentic-Senior-Core\\.benchmarks\\tools\\rtk\\rtk.exe git show HEAD --stat --patch --no-color",
+        "exitCode": 0,
+        "outputChars": 15191,
+        "outputLines": 368,
+        "estimatedTokens": 3798
+      },
+      "rtkSavings": {
+        "tokenDelta": 0,
+        "savingsPercent": 0
+      }
+    },
+    {
+      "scenarioId": "git-log",
+      "scenarioName": "Commit history review",
+      "baseline": {
+        "command": "git log -n 50",
+        "exitCode": 0,
+        "outputChars": 14918,
+        "outputLines": 385,
+        "estimatedTokens": 3730
+      },
+      "nativeOptimized": {
+        "command": "git log --oneline -n 50",
+        "exitCode": 0,
+        "outputChars": 3555,
+        "outputLines": 50,
+        "estimatedTokens": 889
+      },
+      "nativeSavings": {
+        "tokenDelta": 2841,
+        "savingsPercent": 76.17
+      },
+      "rtk": {
+        "command": "E:\\Project\\Agentic-Senior-Core\\.benchmarks\\tools\\rtk\\rtk.exe git log -n 50",
+        "exitCode": 0,
+        "outputChars": 6437,
+        "outputLines": 74,
+        "estimatedTokens": 1610
+      },
+      "rtkSavings": {
+        "tokenDelta": 2120,
+        "savingsPercent": 56.84
+      }
+    },
+    {
+      "scenarioId": "search-token",
+      "scenarioName": "Search result scan",
+      "baseline": {
+        "command": "git grep -n token",
+        "exitCode": 0,
+        "outputChars": 21353,
+        "outputLines": 190,
+        "estimatedTokens": 5339
+      },
+      "nativeOptimized": {
+        "command": "git grep -n token README.md docs",
+        "exitCode": 0,
+        "outputChars": 4395,
+        "outputLines": 38,
+        "estimatedTokens": 1099
+      },
+      "nativeSavings": {
+        "tokenDelta": 4240,
+        "savingsPercent": 79.42
+      },
+      "rtk": {
+        "command": "E:\\Project\\Agentic-Senior-Core\\.benchmarks\\tools\\rtk\\rtk.exe git grep -n token",
+        "exitCode": 0,
+        "outputChars": 21353,
+        "outputLines": 190,
+        "estimatedTokens": 5339
+      },
+      "rtkSavings": {
+        "tokenDelta": 0,
+        "savingsPercent": 0
+      }
+    }
+  ],
+  "summary": {
+    "scenarioCount": 3,
+    "averageNativeSavingsPercent": 83.64,
+    "averageRtkSavingsPercent": 18.95
+  },
+  "artifact": {
+    "path": "E:\\Project\\Agentic-Senior-Core\\.agent-context\\state\\token-optimization-benchmark.json",
+    "writeMode": "stdout-and-file"
+  }
+}

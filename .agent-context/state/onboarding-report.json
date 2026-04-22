@@ -1,0 +1,407 @@
+{
+  "cliVersion": "3.0.16",
+  "generatedAt": "2026-04-22T13:10:34.611Z",
+  "operationMode": "upgrade",
+  "selectedProfile": "balanced",
+  "projectScope": null,
+  "projectTopology": null,
+  "selectedStack": "typescript.md",
+  "selectedAdditionalStacks": [],
+  "selectedBlueprint": "api-nextjs.md",
+  "selectedAdditionalBlueprints": [],
+  "ruleLoadingPolicy": {
+    "canonicalSource": ".instructions.md",
+    "stackLoadingMode": "lazy",
+    "loadedOnDemand": true,
+    "primaryStack": "typescript.md",
+    "additionalStacks": []
+  },
+  "ciGuardrailsEnabled": true,
+  "setupDurationMs": 368,
+  "runtimeEnvironment": null,
+  "tokenOptimization": {
+    "schemaVersion": "token-optimization-v1",
+    "enabled": true,
+    "selectedAgent": "copilot",
+    "preferredShellProxy": "native-fallback",
+    "externalProxy": {
+      "detected": false,
+      "version": null,
+      "detectionError": "Unknown external proxy detection error"
+    },
+    "commandRewriteMappings": [
+      {
+        "rawCommand": "ls -la",
+        "optimizedCommand": "rtk ls .",
+        "reason": "Directory listings are grouped and compacted before entering the model context."
+      },
+      {
+        "rawCommand": "tree",
+        "optimizedCommand": "rtk ls .",
+        "reason": "Large trees are summarized without losing high-signal structure."
+      },
+      {
+        "rawCommand": "cat file.ext",
+        "optimizedCommand": "rtk read file.ext",
+        "reason": "File reads keep signatures and relevant lines while trimming boilerplate."
+      },
+      {
+        "rawCommand": "rg pattern .",
+        "optimizedCommand": "rtk grep \"pattern\" .",
+        "reason": "Search hits are grouped and deduplicated for faster reasoning."
+      },
+      {
+        "rawCommand": "git status",
+        "optimizedCommand": "rtk git status",
+        "reason": "Status output is condensed to actionable file changes."
+      },
+      {
+        "rawCommand": "git diff",
+        "optimizedCommand": "rtk git diff",
+        "reason": "Diff noise is trimmed while preserving code-review context."
+      },
+      {
+        "rawCommand": "git log -n 10",
+        "optimizedCommand": "rtk git log -n 10",
+        "reason": "History is converted to compact one-line summaries."
+      },
+      {
+        "rawCommand": "npm test",
+        "optimizedCommand": "rtk test npm test",
+        "reason": "Test results emphasize failures and suppress repetitive pass logs."
+      },
+      {
+        "rawCommand": "npm run build",
+        "optimizedCommand": "rtk err npm run build",
+        "reason": "Build runs return errors and warnings only for quicker remediation."
+      },
+      {
+        "rawCommand": "tsc --noEmit",
+        "optimizedCommand": "rtk tsc",
+        "reason": "TypeScript diagnostics are grouped by file with less repetition."
+      },
+      {
+        "rawCommand": "eslint .",
+        "optimizedCommand": "rtk lint",
+        "reason": "Lint output is grouped by rule and location to reduce token churn."
+      },
+      {
+        "rawCommand": "docker ps",
+        "optimizedCommand": "rtk docker ps",
+        "reason": "Container state is summarized into compact rows."
+      },
+      {
+        "rawCommand": "kubectl get pods",
+        "optimizedCommand": "rtk kubectl pods",
+        "reason": "Kubernetes output is condensed and stable for agent consumption."
+      }
+    ],
+    "generatedAt": "2026-04-12T02:59:20.510Z"
+  },
+  "memoryContinuity": null,
+  "architectRecommendation": null,
+  "autoDetection": {
+    "recommendedStack": "typescript.md",
+    "recommendedAdditionalStacks": [
+      "python.md"
+    ],
+    "recommendedBlueprint": "api-nextjs.md",
+    "recommendedAdditionalBlueprints": [
+      "fastapi-service.md"
+    ],
+    "confidenceLabel": "high",
+    "confidenceScore": 0.97,
+    "confidenceGap": 0.01,
+    "detectionReasoning": "Top signal Typescript is close to Python (confidence gap 0.01).",
+    "rankedCandidates": [
+      {
+        "stackFileName": "typescript.md",
+        "confidenceScore": 0.97,
+        "evidence": [
+          "web: package.json",
+          "web: tsconfig.json",
+          "web: Vite config"
+        ]
+      },
+      {
+        "stackFileName": "python.md",
+        "confidenceScore": 0.96,
+        "evidence": [
+          "pyproject.toml"
+        ]
+      }
+    ],
+    "evidence": [
+      "web: package.json",
+      "web: tsconfig.json",
+      "web: Vite config",
+      "multiple stack signals detected"
+    ],
+    "detectionTransparency": {
+      "declaredAt": "2026-04-22T13:10:34.324Z",
+      "declarationType": "existing-project",
+      "declarationShown": true,
+      "detectionSummary": "This folder looks like Typescript with high confidence based on web: package.json, web: tsconfig.json, web: Vite config, multiple stack signals detected. Confidence gap: 0.01. Secondary stack signals: Python.",
+      "activeRulesSummary": {
+        "canonicalSource": ".instructions.md",
+        "compiledEntrypoints": [
+          ".cursorrules",
+          ".windsurfrules"
+        ],
+        "stackLoadingMode": "lazy",
+        "selectedProfile": "balanced",
+        "selectedProfileDisplayName": "Balanced",
+        "blockingSeverities": [
+          "critical",
+          "high"
+        ],
+        "ciGuardrailsEnabled": true
+      },
+      "majorConstraints": [
+        "Preserve existing project markers and avoid forced stack migration.",
+        "Keep stack rule loading lazy and scoped to touched code.",
+        "Upgrade keeps prior onboarding choices unless user overrides them."
+      ],
+      "quickConfirmation": {
+        "offered": false,
+        "response": "upgrade-auto",
+        "source": "upgrade-assistant"
+      },
+      "decision": {
+        "mode": "upgrade-auto",
+        "selectedStackFileName": "typescript.md",
+        "selectedBlueprintFileName": "api-nextjs.md"
+      }
+    },
+    "uiScope": {
+      "isUiScopeLikely": true,
+      "signalReasons": [
+        "ui markers: src",
+        "workspace web: ui markers: src, tailwind.config.ts, vite.config.ts, index.html",
+        "workspace web: ui dependencies: react, react-dom, tailwindcss",
+        "workspace web/src: ui markers: pages, components"
+      ],
+      "workspaceUiEntries": [
+        {
+          "relativePath": "web",
+          "detectedUiMarkers": [
+            "src",
+            "tailwind.config.ts",
+            "vite.config.ts",
+            "index.html"
+          ],
+          "detectedUiDependencies": [
+            "react",
+            "react-dom",
+            "tailwindcss"
+          ]
+        },
+        {
+          "relativePath": "web/src",
+          "detectedUiMarkers": [
+            "pages",
+            "components"
+          ],
+          "detectedUiDependencies": []
+        }
+      ],
+      "frontendEvidenceMetrics": {
+        "scannedFileCount": 35,
+        "hardcodedColorCount": 14,
+        "propDrillingCandidateCount": 0,
+        "mediaQueryCount": 0,
+        "tailwindBreakpointUsageCount": 4,
+        "arbitraryBreakpointCount": 0,
+        "uniqueMediaWidthCount": 0
+      },
+      "designEvidenceSummary": {
+        "summaryVersion": "v1",
+        "source": "lightweight-static-scan",
+        "scanRootRelativePaths": [
+          "web",
+          "web/src"
+        ],
+        "scannedFileCount": 35,
+        "cssVariables": {
+          "definitionCount": 0,
+          "referenceCount": 0,
+          "sampleNames": [],
+          "categoryCounts": {
+            "color": 0,
+            "spacing": 0,
+            "radius": 0,
+            "shadow": 0,
+            "typography": 0,
+            "motion": 0,
+            "other": 0
+          }
+        },
+        "colors": {
+          "hardcodedCount": 14,
+          "kindCounts": {
+            "hex": 14,
+            "rgb": 0,
+            "hsl": 0,
+            "oklch": 0,
+            "other": 0
+          },
+          "sampleValues": [
+            "#0f172a",
+            "#1e293b",
+            "#f8fafc",
+            "#f1f5f9",
+            "#e2e8f0",
+            "#cbd5e1",
+            "#94a3b8",
+            "#64748b",
+            "#475569",
+            "#334155"
+          ]
+        },
+        "spacing": {
+          "rawValueCount": 2,
+          "sampleValues": [
+            "100vh"
+          ]
+        },
+        "radius": {
+          "rawValueCount": 0,
+          "sampleValues": []
+        },
+        "shadow": {
+          "rawValueCount": 0,
+          "sampleValues": []
+        },
+        "typography": {
+          "fontFamilyCount": 0,
+          "fontSizeCount": 0,
+          "lineHeightCount": 0,
+          "letterSpacingCount": 0,
+          "fontFamilySamples": [],
+          "fontSizeSamples": [],
+          "lineHeightSamples": [],
+          "letterSpacingSamples": []
+        },
+        "motion": {
+          "transitionCount": 10,
+          "animationCount": 0,
+          "durationCount": 0,
+          "durationSamples": []
+        },
+        "tailwind": {
+          "breakpointUsageCount": 4,
+          "arbitraryBreakpointCount": 0,
+          "utilityFamilyCounts": {
+            "app": 2,
+            "min": 2,
+            "linear": 2,
+            "react-router": 4,
+            "weekly": 2,
+            "ai": 2,
+            "min-h": 6,
+            "bg-slate": 38,
+            "text-slate": 66,
+            "items": 34,
+            "justify": 26,
+            "p": 16,
+            "max-w": 8,
+            "w": 22,
+            "border-slate": 22,
+            "rounded": 38,
+            "space-y": 30,
+            "text": 90,
+            "font": 34,
+            "text-red": 24,
+            "overflow-x": 2,
+            "btn": 18,
+            "bg-gradient": 6,
+            "from-slate": 4,
+            "via-slate": 4,
+            "to-slate": 4,
+            "border": 6,
+            "backdrop-blur": 2,
+            "mx": 4,
+            "px": 30,
+            "py": 34,
+            "gap": 18,
+            "h": 8,
+            "from-blue": 2,
+            "to-purple": 2,
+            "transition": 10,
+            "bg-blue": 12,
+            "ml": 6,
+            "text-green": 18,
+            "bg-yellow": 2,
+            "text-yellow": 2,
+            "bg-green": 4,
+            "bg-red": 8,
+            "text-blue": 12,
+            "flex": 2,
+            "animate": 4,
+            "border-t": 2,
+            "border-b": 2,
+            "border-blue": 10,
+            "mt": 10,
+            "border-red": 6,
+            "bg-amber": 4,
+            "border-amber": 4,
+            "text-amber": 10,
+            "border-green": 2,
+            "card": 6,
+            "mb": 10,
+            "react": 2,
+            "web": 4,
+            "frontend": 6,
+            "first-contentful": 2,
+            "largest-contentful": 2,
+            "layout": 2,
+            "first": 2,
+            "outline": 8,
+            "opacity": 6,
+            "grid-cols": 8,
+            "current": 2,
+            "read": 2,
+            "pt": 4,
+            "plugin": 1
+          },
+          "utilityFamilySamples": [
+            "app",
+            "min",
+            "linear",
+            "react-router",
+            "weekly",
+            "ai",
+            "min-h",
+            "bg-slate",
+            "text-slate",
+            "items",
+            "justify",
+            "p"
+          ]
+        },
+        "componentInventory": {
+          "componentFileCount": 16,
+          "pageFileCount": 8,
+          "layoutFileCount": 2,
+          "surfaceFileSamples": [
+            "web/src/App.css",
+            "web/src/App.tsx",
+            "web/src/components/ErrorBoundary.tsx",
+            "web/src/components/Layout.tsx",
+            "web/src/components/UI.tsx",
+            "web/src/index.css",
+            "web/src/pages/Dashboard.tsx",
+            "web/src/pages/Login.tsx",
+            "web/src/pages/Requests.tsx"
+          ]
+        },
+        "tokenBypassSignals": {
+          "hardcodedColorCount": 14,
+          "rawSpacingCount": 2,
+          "rawRadiusCount": 0,
+          "rawShadowCount": 0
+        }
+      }
+    }
+  }
+}

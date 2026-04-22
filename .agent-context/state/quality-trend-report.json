@@ -1,0 +1,89 @@
+{
+  "generatedAt": "2026-04-11T12:21:35.779Z",
+  "reportName": "quality-trend-report",
+  "methodology": {
+    "gateSources": [
+      "scripts/release-gate.mjs",
+      "scripts/benchmark-gate.mjs",
+      "scripts/benchmark-intelligence.mjs"
+    ],
+    "rollbackSource": "git log commit subjects within 30-day window",
+    "tokenSource": ".agent-context/state/token-optimization-benchmark.json"
+  },
+  "governanceHealth": {
+    "gateSummaries": [
+      {
+        "scriptPath": "scripts/release-gate.mjs",
+        "gateName": "release-gate",
+        "exitCode": 0,
+        "passed": true,
+        "parseError": null,
+        "failureCount": 0,
+        "generatedAt": "2026-04-11T12:21:35.292Z"
+      },
+      {
+        "scriptPath": "scripts/benchmark-gate.mjs",
+        "gateName": "benchmark-gate",
+        "exitCode": 0,
+        "passed": true,
+        "parseError": null,
+        "failureCount": 0,
+        "generatedAt": "2026-04-11T12:21:35.433Z"
+      },
+      {
+        "scriptPath": "scripts/benchmark-intelligence.mjs",
+        "gateName": "benchmark-intelligence",
+        "exitCode": 0,
+        "passed": true,
+        "parseError": null,
+        "failureCount": 0,
+        "generatedAt": "2026-04-11T12:21:35.480Z"
+      }
+    ],
+    "availableGateCount": 3,
+    "passedGateCount": 3,
+    "gatePassRatePercent": 100
+  },
+  "rejectionCategories": [],
+  "rollbackSignals": {
+    "windowDays": 30,
+    "commitCount": 46,
+    "rollbackCommitCount": 1,
+    "rollbackFrequencyPercent": 2.17,
+    "source": "git-log",
+    "error": null
+  },
+  "tokenEfficiency": {
+    "isAvailable": true,
+    "generatedAt": "2026-04-11T06:14:10.052Z",
+    "averageNativeSavingsPercent": 83.64,
+    "averageRtkSavingsPercent": 18.95,
+    "scenarioCount": 3
+  },
+  "artifact": {
+    "path": "E:\\Project\\Agentic-Senior-Core\\.agent-context\\state\\quality-trend-report.json",
+    "writeMode": "stdout-and-file"
+  },
+  "history": [
+    {
+      "generatedAt": "2026-04-11T09:46:02.646Z",
+      "gatePassRatePercent": 100,
+      "passedGateCount": 3,
+      "availableGateCount": 3,
+      "rollbackFrequencyPercent": 2.27,
+      "averageNativeSavingsPercent": 83.64,
+      "averageRtkSavingsPercent": 18.95,
+      "rejectionCategoryCount": 0
+    },
+    {
+      "generatedAt": "2026-04-11T12:21:35.779Z",
+      "gatePassRatePercent": 100,
+      "passedGateCount": 3,
+      "availableGateCount": 3,
+      "rollbackFrequencyPercent": 2.17,
+      "averageNativeSavingsPercent": 83.64,
+      "averageRtkSavingsPercent": 18.95,
+      "rejectionCategoryCount": 0
+    }
+  ]
+}

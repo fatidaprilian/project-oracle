@@ -1,0 +1,38 @@
+{
+  "defaultTier": "advance",
+  "tiers": [
+    {
+      "name": "standard",
+      "role": "compatibility",
+      "description": "Minimal fallback mode for legacy support"
+    },
+    {
+      "name": "advance",
+      "role": "default",
+      "description": "Efficient, opinionated, production-aware baseline"
+    },
+    {
+      "name": "expert",
+      "role": "complexity",
+      "description": "For advanced integration, architecture, and critical refactors"
+    },
+    {
+      "name": "above",
+      "role": "governance",
+      "description": "For release-critical and enterprise control-plane work"
+    }
+  ],
+  "domains": [
+    "frontend",
+    "backend",
+    "fullstack",
+    "cli",
+    "distribution",
+    "review-quality"
+  ],
+  "benchmarkSources": [
+    "sickn33/antigravity-awesome-skills",
+    "github/awesome-copilot",
+    "MiniMax-AI/skills"
+  ]
+}

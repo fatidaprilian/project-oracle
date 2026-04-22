@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "trust-tiers-v1",
+  "version": "1.0.0",
+  "description": "Defines trust tiers for marketplace artifacts. Each tier sets the minimum evidence and quality thresholds required for acceptance.",
+  "tiers": {
+    "verified": {
+      "displayName": "Verified",
+      "description": "Meets all quality gates, has complete evidence bundles, and is actively maintained. Ready for production use.",
+      "badge": "verified",
+      "minimumScore": 85,
+      "requirements": {
+        "hasReadme": true,
+        "hasTests": true,
+        "hasEvidence": true,
+        "hasCompatManifest": true,
+        "hasChangelog": true,
+        "minDocScore": 80,
+        "minTestScore": 80,
+        "minEvidenceScore": 80,
+        "minMaintenanceScore": 80,
+        "maxDaysSinceUpdate": 90,
+        "forbiddenContentClean": true
+      }
+    },
+    "community": {
+      "displayName": "Community",
+      "description": "Has basic documentation and some evidence. Functional but may lack comprehensive test coverage or recent maintenance.",
+      "badge": "community",
+      "minimumScore": 50,
+      "requirements": {
+        "hasReadme": true,
+        "hasTests": false,
+        "hasEvidence": false,
+        "hasCompatManifest": false,
+        "hasChangelog": false,
+        "minDocScore": 50,
+        "minTestScore": 0,
+        "minEvidenceScore": 0,
+        "minMaintenanceScore": 0,
+        "maxDaysSinceUpdate": 365,
+        "forbiddenContentClean": true
+      }
+    },
+    "experimental": {
+      "displayName": "Experimental",
+      "description": "Newly submitted or under development. No quality guarantees. Use at own risk.",
+      "badge": "experimental",
+      "minimumScore": 0,
+      "requirements": {
+        "hasReadme": true,
+        "hasTests": false,
+        "hasEvidence": false,
+        "hasCompatManifest": false,
+        "hasChangelog": false,
+        "minDocScore": 0,
+        "minTestScore": 0,
+        "minEvidenceScore": 0,
+        "minMaintenanceScore": 0,
+        "maxDaysSinceUpdate": null,
+        "forbiddenContentClean": true
+      }
+    }
+  },
+  "scorecard": {
+    "description": "Weighted scorecard used to calculate the trust score of marketplace artifacts. Total weight sums to 100.",
+    "dimensions": {
+      "documentation": {
+        "weight": 25,
+        "description": "Quality and completeness of documentation. Checks README, inline docs, usage examples, and API descriptions.",
+        "gates": [
+          "README.md exists and is non-empty",
+          "Contains usage examples or getting started section",
+          "Contains API or configuration reference",
+          "Contains license declaration",
+          "No placeholder or TODO-only content"
+        ]
+      },
+      "tests": {
+        "weight": 25,
+        "description": "Test coverage and quality. Checks for test files, pass rate, and coverage of core functionality.",
+        "gates": [
+          "At least one test file exists",
+          "Tests pass without errors",
+          "Core functions have corresponding tests",
+          "No skipped or TODO tests in critical paths",
+          "Test command is documented"
+        ]
+      },
+      "evidence": {
+        "weight": 25,
+        "description": "Completeness of evidence bundles. Checks for compatibility manifests, SBOM excerpts, and validation reports.",
+        "gates": [
+          "Evidence bundle directory exists",
+          "Compatibility manifest is present",
+          "Validation report is present",
+          "SBOM excerpt or dependency list is present",
+          "Evidence files are not stale (updated within maxDaysSinceUpdate)"
+        ]
+      },
+      "maintenance": {
+        "weight": 25,
+        "description": "Maintenance activity and health. Checks for recent updates, changelog entries, and responsiveness.",
+        "gates": [
+          "Last update within maxDaysSinceUpdate threshold",
+          "CHANGELOG.md exists with recent entries",
+          "No known security vulnerabilities in dependencies",
+          "Version follows semantic versioning",
+          "Owner or maintainer is declared"
+        ]
+      }
+    },
+    "totalWeight": 100
+  }
+}

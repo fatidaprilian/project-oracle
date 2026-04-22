@@ -60,13 +60,4 @@ reports/ai-review/
 reports/strategy-configs/
 registry/
 
-# AI instruction and agent config
-AGENTS.md
-.instructions.md
-.github/copilot-instructions.md
-.agent-context/
-.agents/
-.agent-override.md
-.cursorrules
-.windsurfrules
-.gemini/
+

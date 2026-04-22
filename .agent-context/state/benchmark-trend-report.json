@@ -1,0 +1,140 @@
+{
+  "generatedAt": "2026-04-17T03:20:15.400Z",
+  "reportName": "benchmark-trend-report",
+  "releaseVersion": "2.0.26",
+  "historyCount": 4,
+  "releaseDelta": {
+    "currentReleaseVersion": "2.0.26",
+    "previousReleaseVersion": "2.0.26",
+    "comparedSnapshot": {
+      "currentGeneratedAt": "2026-04-17T03:20:15.400Z",
+      "previousGeneratedAt": "2026-04-17T03:19:31.047Z"
+    },
+    "top1AccuracyDelta": 0,
+    "manualCorrectionRateDelta": 0,
+    "staleWatchlistCountDelta": 0,
+    "vulnerabilityTotalDelta": 0,
+    "summary": [
+      "top1Accuracy: +0",
+      "manualCorrectionRate: +0",
+      "staleWatchlistCount: +0",
+      "vulnerabilityTotal: +0"
+    ]
+  },
+  "trendTable": [
+    {
+      "snapshotIndex": 1,
+      "generatedAt": "2026-04-17T02:54:01.239Z",
+      "releaseVersion": "2.0.26",
+      "top1Accuracy": 0.9167,
+      "manualCorrectionRate": 0.0833,
+      "incorrectDetectionRate": 0.0833,
+      "lowConfidenceRate": 0.0833,
+      "staleWatchlistCount": 0,
+      "vulnerabilityTotal": null,
+      "criticalVulnerabilityCount": null,
+      "benchmarkGatePassed": true,
+      "intelligencePassed": true,
+      "reliabilityPassed": true,
+      "reliabilityRiskLevel": "monitor"
+    },
+    {
+      "snapshotIndex": 2,
+      "generatedAt": "2026-04-17T02:54:57.419Z",
+      "releaseVersion": "2.0.26",
+      "top1Accuracy": 0.9167,
+      "manualCorrectionRate": 0.0833,
+      "incorrectDetectionRate": 0.0833,
+      "lowConfidenceRate": 0.0833,
+      "staleWatchlistCount": 0,
+      "vulnerabilityTotal": null,
+      "criticalVulnerabilityCount": null,
+      "benchmarkGatePassed": true,
+      "intelligencePassed": true,
+      "reliabilityPassed": true,
+      "reliabilityRiskLevel": "monitor"
+    },
+    {
+      "snapshotIndex": 3,
+      "generatedAt": "2026-04-17T03:19:31.047Z",
+      "releaseVersion": "2.0.26",
+      "top1Accuracy": 0.9167,
+      "manualCorrectionRate": 0.0833,
+      "incorrectDetectionRate": 0.0833,
+      "lowConfidenceRate": 0.0833,
+      "staleWatchlistCount": 0,
+      "vulnerabilityTotal": null,
+      "criticalVulnerabilityCount": null,
+      "benchmarkGatePassed": true,
+      "intelligencePassed": true,
+      "reliabilityPassed": true,
+      "reliabilityRiskLevel": "monitor"
+    },
+    {
+      "snapshotIndex": 4,
+      "generatedAt": "2026-04-17T03:20:15.400Z",
+      "releaseVersion": "2.0.26",
+      "top1Accuracy": 0.9167,
+      "manualCorrectionRate": 0.0833,
+      "incorrectDetectionRate": 0.0833,
+      "lowConfidenceRate": 0.0833,
+      "staleWatchlistCount": 0,
+      "vulnerabilityTotal": null,
+      "criticalVulnerabilityCount": null,
+      "benchmarkGatePassed": true,
+      "intelligencePassed": true,
+      "reliabilityPassed": true,
+      "reliabilityRiskLevel": "monitor"
+    }
+  ],
+  "chartSeries": {
+    "generatedAt": [
+      "2026-04-17T02:54:01.239Z",
+      "2026-04-17T02:54:57.419Z",
+      "2026-04-17T03:19:31.047Z",
+      "2026-04-17T03:20:15.400Z"
+    ],
+    "top1Accuracy": [
+      0.9167,
+      0.9167,
+      0.9167,
+      0.9167
+    ],
+    "manualCorrectionRate": [
+      0.0833,
+      0.0833,
+      0.0833,
+      0.0833
+    ],
+    "incorrectDetectionRate": [
+      0.0833,
+      0.0833,
+      0.0833,
+      0.0833
+    ],
+    "lowConfidenceRate": [
+      0.0833,
+      0.0833,
+      0.0833,
+      0.0833
+    ],
+    "staleWatchlistCount": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "vulnerabilityTotal": [
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "artifacts": {
+    "historyPath": ".agent-context/state/benchmark-history.json",
+    "jsonPath": ".agent-context/state/benchmark-trend-report.json",
+    "csvPath": ".agent-context/state/benchmark-trend-report.csv",
+    "writeMode": "stdout-and-file"
+  }
+}

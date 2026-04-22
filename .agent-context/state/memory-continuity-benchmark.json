@@ -1,0 +1,132 @@
+{
+  "generatedAt": "2026-04-22T12:33:03.350Z",
+  "reportName": "memory-continuity-benchmark",
+  "schemaVersion": "1.0.0",
+  "passed": true,
+  "failureCount": 0,
+  "thresholds": {
+    "minimumRelevantRecall": 0.8,
+    "minimumSessionStartTokenSavingsPercent": 35,
+    "maximumUnsafeObservationCount": 0
+  },
+  "adapterCoverage": {
+    "requiredAdapterIds": [
+      "claude-code",
+      "gemini-cli",
+      "vscode-chat"
+    ],
+    "availableAdapterIds": [
+      "claude-code",
+      "gemini-cli",
+      "vscode-chat"
+    ],
+    "missingAdapterIds": [],
+    "passed": true
+  },
+  "privacyControls": {
+    "redactedObservationCount": 2,
+    "privateTagRedactionCount": 1,
+    "inlineRedactionCount": 1,
+    "unsafeObservationCount": 0
+  },
+  "continuitySummary": {
+    "totalObservationCount": 5,
+    "scenarioCount": 3,
+    "averageRelevantRecall": 1,
+    "averageSessionStartTokenSavingsPercent": 63.17
+  },
+  "scenarios": [
+    {
+      "scenarioId": "docker-lane-hydration",
+      "query": "what is docker strategy for development and production",
+      "expectedObservationIds": [
+        "obs-001"
+      ],
+      "indexObservationIds": [
+        "obs-001",
+        "obs-005",
+        "obs-003",
+        "obs-002",
+        "obs-004"
+      ],
+      "hydratedObservationIds": [
+        "obs-001"
+      ],
+      "relevantRecall": 1,
+      "fullContextTokenEstimate": 267,
+      "sessionStartTokenEstimate": 103,
+      "sessionStartTokenSavingsPercent": 61.42
+    },
+    {
+      "scenarioId": "runtime-hydration",
+      "query": "which runtime target should we prefer on windows with wsl",
+      "expectedObservationIds": [
+        "obs-002"
+      ],
+      "indexObservationIds": [
+        "obs-002",
+        "obs-001",
+        "obs-005",
+        "obs-004",
+        "obs-003"
+      ],
+      "hydratedObservationIds": [
+        "obs-002"
+      ],
+      "relevantRecall": 1,
+      "fullContextTokenEstimate": 267,
+      "sessionStartTokenEstimate": 97,
+      "sessionStartTokenSavingsPercent": 63.67
+    },
+    {
+      "scenarioId": "frontend-quality-hydration",
+      "query": "show frontend rubric quality decisions",
+      "expectedObservationIds": [
+        "obs-003"
+      ],
+      "indexObservationIds": [
+        "obs-003",
+        "obs-005",
+        "obs-004",
+        "obs-002",
+        "obs-001"
+      ],
+      "hydratedObservationIds": [
+        "obs-003"
+      ],
+      "relevantRecall": 1,
+      "fullContextTokenEstimate": 267,
+      "sessionStartTokenEstimate": 95,
+      "sessionStartTokenSavingsPercent": 64.42
+    }
+  ],
+  "references": {
+    "memorySchemaPath": ".agent-context/state/memory-schema-v1.json",
+    "memoryAdapterContractPath": ".agent-context/state/memory-adapter-contract.json",
+    "benchmarkOutputPath": ".agent-context/state/memory-continuity-benchmark.json",
+    "schemaDeclaredVersion": "1.0.0",
+    "adapterContractVersion": "1.0.0"
+  },
+  "checks": [
+    {
+      "checkName": "adapter-coverage",
+      "passed": true,
+      "details": "required=3 missing=0"
+    },
+    {
+      "checkName": "continuity-recall-threshold",
+      "passed": true,
+      "details": "averageRelevantRecall=1 minimum=0.8"
+    },
+    {
+      "checkName": "session-start-token-savings-threshold",
+      "passed": true,
+      "details": "averageSessionStartTokenSavingsPercent=63.17 minimum=35"
+    },
+    {
+      "checkName": "privacy-redaction-safety",
+      "passed": true,
+      "details": "unsafeObservationCount=0 max=0"
+    }
+  ]
+}

@@ -1,0 +1,1040 @@
+{
+  "generatedAt": "2026-04-17T03:20:15.400Z",
+  "reportName": "benchmark-evidence-bundle",
+  "phase": "v2.5.2",
+  "releaseVersion": "2.0.26",
+  "passed": true,
+  "failureCount": 0,
+  "methodology": {
+    "deterministicRuntime": {
+      "timezone": "UTC",
+      "locale": "C",
+      "nodeMajor": "22",
+      "lineEndings": "LF-preferred",
+      "shellNotes": "PowerShell and POSIX shells are supported; prefer portable commands for benchmark reruns."
+    },
+    "scenarioCount": 4,
+    "commandCount": 8
+  },
+  "rerunInstructions": [
+    "Run npm run benchmark:detection to regenerate detection benchmark output.",
+    "Run npm run benchmark:gate to validate benchmark anti-regression thresholds.",
+    "Run npm run benchmark:intelligence to validate benchmark watchlist freshness.",
+    "Run npm run benchmark:bundle to emit a reproducible benchmark evidence bundle.",
+    "Run npm run benchmark:writer-judge to emit writer-judge side-by-side matrix output.",
+    "Run npm run benchmark:continuity to validate cross-agent memory hydration, privacy redaction, and token-savings behavior."
+  ],
+  "commandExamples": [
+    "npm run benchmark:detection",
+    "npm run benchmark:gate",
+    "npm run benchmark:intelligence",
+    "npm run benchmark:bundle",
+    "npm run benchmark:writer-judge",
+    "node ./scripts/benchmark-evidence-bundle.mjs --stdout-only",
+    "npm run benchmark:continuity",
+    "node ./scripts/memory-continuity-benchmark.mjs --stdout-only"
+  ],
+  "rawInputs": {
+    "scenarios": [
+      {
+        "id": "planning",
+        "category": "planning",
+        "inputReferences": [
+          ".agent-context/state/architecture-map.md",
+          ".agent-context/state/dependency-map.md",
+          ".agent-context/rules/architecture.md"
+        ],
+        "expectedSignals": [
+          "clear sequencing",
+          "risk mapping",
+          "rollback path"
+        ],
+        "primaryCommand": "npm run benchmark:detection"
+      },
+      {
+        "id": "refactor",
+        "category": "refactor",
+        "inputReferences": [
+          "tests/cli-smoke.test.mjs",
+          "scripts/validate.mjs"
+        ],
+        "expectedSignals": [
+          "regression awareness",
+          "small safe diffs",
+          "test-backed changes"
+        ],
+        "primaryCommand": "npm run benchmark:gate"
+      },
+      {
+        "id": "security",
+        "category": "security",
+        "inputReferences": [
+          ".agent-context/rules/security.md",
+          "scripts/forbidden-content-check.mjs"
+        ],
+        "expectedSignals": [
+          "secret hygiene",
+          "unsafe pattern detection",
+          "release blocking on risk"
+        ],
+        "primaryCommand": "npm run gate:release"
+      },
+      {
+        "id": "delivery",
+        "category": "delivery",
+        "inputReferences": [
+          "scripts/release-gate.mjs",
+          "scripts/benchmark-intelligence.mjs",
+          ".agent-context/state/benchmark-watchlist.json"
+        ],
+        "expectedSignals": [
+          "release readiness",
+          "competitive coverage",
+          "SLA freshness"
+        ],
+        "primaryCommand": "npm run benchmark:intelligence"
+      }
+    ],
+    "benchmarkThresholds": {
+      "minimumTop1Accuracy": 0.9,
+      "maximumManualCorrectionRate": 0.12,
+      "maximumTop1AccuracyDrop": 0.02,
+      "maximumManualCorrectionIncrease": 0.03,
+      "previousReleaseBaseline": {
+        "top1Accuracy": 0.9167,
+        "manualCorrectionRate": 0.0833
+      }
+    },
+    "benchmarkWatchlist": [
+      {
+        "repository": "sickn33/antigravity-awesome-skills",
+        "owner": "core-architecture",
+        "lastReviewedAt": "2026-04-17"
+      },
+      {
+        "repository": "github/awesome-copilot",
+        "owner": "core-architecture",
+        "lastReviewedAt": "2026-04-17"
+      },
+      {
+        "repository": "MiniMax-AI/skills",
+        "owner": "frontend-governance",
+        "lastReviewedAt": "2026-04-17"
+      }
+    ],
+    "memorySchema": {
+      "schemaVersion": "1.0.0",
+      "schemaName": "cross-agent-memory-observation",
+      "description": "Provider-agnostic schema for persistent memory observations shared across coding agents and IDE hosts.",
+      "requiredFields": [
+        "id",
+        "projectId",
+        "sessionId",
+        "adapterId",
+        "eventType",
+        "timestamp",
+        "title",
+        "summary",
+        "detail",
+        "privacy"
+      ],
+      "fieldDefinitions": {
+        "id": {
+          "type": "string",
+          "description": "Stable unique observation identifier."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Repository or workspace identifier."
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "Source session identifier from host adapter."
+        },
+        "adapterId": {
+          "type": "string",
+          "allowedValues": [
+            "claude-code",
+            "gemini-cli",
+            "vscode-chat",
+            "custom"
+          ],
+          "description": "Host adapter that captured this observation."
+        },
+        "eventType": {
+          "type": "string",
+          "allowedValues": [
+            "prompt",
+            "tool-use",
+            "decision",
+            "summary",
+            "issue",
+            "context"
+          ],
+          "description": "Observation type for retrieval filtering."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when observation was captured."
+        },
+        "title": {
+          "type": "string",
+          "description": "Compact human-readable headline."
+        },
+        "summary": {
+          "type": "string",
+          "description": "Compact session-start payload used for progressive disclosure."
+        },
+        "detail": {
+          "type": "string",
+          "description": "Expanded observation text fetched on demand."
+        },
+        "tags": {
+          "type": "array",
+          "items": "string",
+          "description": "Optional normalized tags for query refinement."
+        },
+        "privacy": {
+          "type": "object",
+          "requiredFields": [
+            "level",
+            "redactionApplied"
+          ],
+          "fieldDefinitions": {
+            "level": {
+              "type": "string",
+              "allowedValues": [
+                "public",
+                "internal",
+                "restricted"
+              ],
+              "description": "Privacy classification level."
+            },
+            "redactionApplied": {
+              "type": "boolean",
+              "description": "Indicates whether privacy sanitization modified payload content."
+            },
+            "redactionReasons": {
+              "type": "array",
+              "items": "string",
+              "description": "Redaction reason tags such as private-tag or token-like-value."
+            }
+          }
+        }
+      },
+      "retrievalContract": {
+        "sessionStartPayload": [
+          "id",
+          "adapterId",
+          "eventType",
+          "timestamp",
+          "title",
+          "summary"
+        ],
+        "onDemandPayload": [
+          "detail",
+          "tags",
+          "privacy"
+        ],
+        "progressiveDisclosure": true
+      }
+    },
+    "memoryAdapterContract": {
+      "schemaVersion": "1.0.0",
+      "contractName": "cross-agent-memory-adapter",
+      "description": "Adapter contract for ingesting and retrieving shared memory observations across IDE hosts.",
+      "requiredAdapters": [
+        "claude-code",
+        "gemini-cli",
+        "vscode-chat"
+      ],
+      "requiredOperations": {
+        "ingestion": [
+          "captureObservation",
+          "captureSessionSummary"
+        ],
+        "retrieval": [
+          "searchIndex",
+          "getTimeline",
+          "getObservations"
+        ],
+        "privacy": [
+          "applyPrivateTagRedaction",
+          "applyInlineSecretRedaction"
+        ]
+      },
+      "adapters": [
+        {
+          "adapterId": "claude-code",
+          "hostType": "plugin-hooks",
+          "status": "pilot-ready",
+          "ingestionEvents": [
+            "SessionStart",
+            "UserPromptSubmit",
+            "PostToolUse",
+            "Stop",
+            "SessionEnd"
+          ],
+          "retrievalMode": "mcp-tools"
+        },
+        {
+          "adapterId": "gemini-cli",
+          "hostType": "plugin-hooks",
+          "status": "pilot-ready",
+          "ingestionEvents": [
+            "session_start",
+            "prompt_submit",
+            "post_tool",
+            "session_end"
+          ],
+          "retrievalMode": "mcp-tools"
+        },
+        {
+          "adapterId": "vscode-chat",
+          "hostType": "chat-customization-plugin",
+          "status": "pilot-ready",
+          "ingestionEvents": [
+            "chatStart",
+            "promptSubmit",
+            "postToolUse",
+            "chatEnd"
+          ],
+          "retrievalMode": "mcp-tools"
+        }
+      ],
+      "notes": [
+        "Web chat hosts are explicitly out of scope for this pilot because local runtime hooks are unavailable.",
+        "Adapters should emit provider-agnostic payloads matching .agent-context/state/memory-schema-v1.json."
+      ]
+    }
+  },
+  "rubric": {
+    "benchmarkThresholds": {
+      "minimumTop1Accuracy": 0.9,
+      "maximumManualCorrectionRate": 0.12,
+      "maximumTop1AccuracyDrop": 0.02,
+      "maximumManualCorrectionIncrease": 0.03
+    },
+    "intelligenceSlaDays": 14,
+    "reliabilityThresholds": {
+      "minimumConfidenceGap": 0.1,
+      "maximumLowConfidenceRate": 0.2,
+      "maximumIncorrectDetectionRate": 0.1
+    },
+    "continuityThresholds": {
+      "minimumRelevantRecall": 0.8,
+      "minimumSessionStartTokenSavingsPercent": 35,
+      "maximumUnsafeObservationCount": 0
+    }
+  },
+  "bugIndicators": {
+    "incorrectFixtureCount": 1,
+    "incorrectDetectionRate": 0.0833,
+    "manualCorrectionFixtureCount": 1,
+    "manualCorrectionRate": 0.0833,
+    "lowConfidenceFixtureCount": 1,
+    "lowConfidenceRate": 0.0833,
+    "flaggedFixtures": [
+      {
+        "fixtureName": "mixed-ts-python",
+        "confidenceGap": 0.02,
+        "detectedStack": "python.md",
+        "expectedStack": "typescript.md",
+        "isCorrect": false,
+        "needsManualCorrection": true
+      }
+    ]
+  },
+  "reliabilitySignals": {
+    "passed": true,
+    "failureCount": 0,
+    "riskLevel": "monitor",
+    "thresholds": {
+      "minimumConfidenceGap": 0.1,
+      "maximumLowConfidenceRate": 0.2,
+      "maximumIncorrectDetectionRate": 0.1
+    },
+    "metrics": {
+      "fixtureCount": 12,
+      "incorrectFixtureCount": 1,
+      "lowConfidenceFixtureCount": 1,
+      "manualCorrectionFixtureCount": 1,
+      "incorrectDetectionRate": 0.0833,
+      "lowConfidenceRate": 0.0833,
+      "manualCorrectionRate": 0.0833
+    },
+    "checks": [
+      {
+        "checkName": "incorrect-detection-rate",
+        "passed": true,
+        "details": "incorrectRate=0.0833 max=0.1"
+      },
+      {
+        "checkName": "low-confidence-rate",
+        "passed": true,
+        "details": "lowConfidenceRate=0.0833 max=0.2"
+      },
+      {
+        "checkName": "manual-correction-early-warning",
+        "passed": true,
+        "details": "manualCorrectionRate=0.0833 warningThreshold=0.12"
+      }
+    ],
+    "flaggedFixtures": [
+      {
+        "fixtureName": "mixed-ts-python",
+        "confidenceGap": 0.02,
+        "detectedStack": "python.md",
+        "expectedStack": "typescript.md",
+        "isCorrect": false,
+        "needsManualCorrection": true
+      }
+    ]
+  },
+  "securityIndicators": {
+    "forbiddenContent": {
+      "checkName": "forbidden-content-scan",
+      "passed": true,
+      "exitCode": 0,
+      "details": "No forbidden content detected"
+    },
+    "vulnerabilityScan": {
+      "checkName": "npm-audit-indicator",
+      "isAvailable": false,
+      "hasKnownVulnerabilities": null,
+      "severityCounts": null,
+      "exitCode": 1,
+      "error": "Payload is empty"
+    }
+  },
+  "releaseDelta": {
+    "currentReleaseVersion": "2.0.26",
+    "previousReleaseVersion": "2.0.26",
+    "comparedSnapshot": {
+      "currentGeneratedAt": "2026-04-17T03:20:15.400Z",
+      "previousGeneratedAt": "2026-04-17T03:19:31.047Z"
+    },
+    "top1AccuracyDelta": 0,
+    "manualCorrectionRateDelta": 0,
+    "staleWatchlistCountDelta": 0,
+    "vulnerabilityTotalDelta": 0,
+    "summary": [
+      "top1Accuracy: +0",
+      "manualCorrectionRate: +0",
+      "staleWatchlistCount: +0",
+      "vulnerabilityTotal: +0"
+    ]
+  },
+  "history": [
+    {
+      "generatedAt": "2026-04-17T02:54:01.239Z",
+      "releaseVersion": "2.0.26",
+      "fixtureCount": 12,
+      "top1Accuracy": 0.9167,
+      "manualCorrectionRate": 0.0833,
+      "benchmarkGatePassed": true,
+      "intelligencePassed": true,
+      "staleWatchlistCount": 0,
+      "reliabilityPassed": true,
+      "reliabilityRiskLevel": "monitor",
+      "incorrectDetectionRate": 0.0833,
+      "lowConfidenceRate": 0.0833,
+      "vulnerabilityTotal": null,
+      "criticalVulnerabilityCount": null,
+      "forbiddenContentPassed": true
+    },
+    {
+      "generatedAt": "2026-04-17T02:54:57.419Z",
+      "releaseVersion": "2.0.26",
+      "fixtureCount": 12,
+      "top1Accuracy": 0.9167,
+      "manualCorrectionRate": 0.0833,
+      "benchmarkGatePassed": true,
+      "intelligencePassed": true,
+      "staleWatchlistCount": 0,
+      "reliabilityPassed": true,
+      "reliabilityRiskLevel": "monitor",
+      "incorrectDetectionRate": 0.0833,
+      "lowConfidenceRate": 0.0833,
+      "vulnerabilityTotal": null,
+      "criticalVulnerabilityCount": null,
+      "forbiddenContentPassed": true
+    },
+    {
+      "generatedAt": "2026-04-17T03:19:31.047Z",
+      "releaseVersion": "2.0.26",
+      "fixtureCount": 12,
+      "top1Accuracy": 0.9167,
+      "manualCorrectionRate": 0.0833,
+      "benchmarkGatePassed": true,
+      "intelligencePassed": true,
+      "staleWatchlistCount": 0,
+      "reliabilityPassed": true,
+      "reliabilityRiskLevel": "monitor",
+      "incorrectDetectionRate": 0.0833,
+      "lowConfidenceRate": 0.0833,
+      "vulnerabilityTotal": null,
+      "criticalVulnerabilityCount": null,
+      "forbiddenContentPassed": true
+    },
+    {
+      "generatedAt": "2026-04-17T03:20:15.400Z",
+      "releaseVersion": "2.0.26",
+      "fixtureCount": 12,
+      "top1Accuracy": 0.9167,
+      "manualCorrectionRate": 0.0833,
+      "benchmarkGatePassed": true,
+      "intelligencePassed": true,
+      "staleWatchlistCount": 0,
+      "reliabilityPassed": true,
+      "reliabilityRiskLevel": "monitor",
+      "incorrectDetectionRate": 0.0833,
+      "lowConfidenceRate": 0.0833,
+      "vulnerabilityTotal": null,
+      "criticalVulnerabilityCount": null,
+      "forbiddenContentPassed": true
+    }
+  ],
+  "trendReport": {
+    "generatedAt": "2026-04-17T03:20:15.400Z",
+    "reportName": "benchmark-trend-report",
+    "releaseVersion": "2.0.26",
+    "historyCount": 4,
+    "releaseDelta": {
+      "currentReleaseVersion": "2.0.26",
+      "previousReleaseVersion": "2.0.26",
+      "comparedSnapshot": {
+        "currentGeneratedAt": "2026-04-17T03:20:15.400Z",
+        "previousGeneratedAt": "2026-04-17T03:19:31.047Z"
+      },
+      "top1AccuracyDelta": 0,
+      "manualCorrectionRateDelta": 0,
+      "staleWatchlistCountDelta": 0,
+      "vulnerabilityTotalDelta": 0,
+      "summary": [
+        "top1Accuracy: +0",
+        "manualCorrectionRate: +0",
+        "staleWatchlistCount: +0",
+        "vulnerabilityTotal: +0"
+      ]
+    },
+    "trendTable": [
+      {
+        "snapshotIndex": 1,
+        "generatedAt": "2026-04-17T02:54:01.239Z",
+        "releaseVersion": "2.0.26",
+        "top1Accuracy": 0.9167,
+        "manualCorrectionRate": 0.0833,
+        "incorrectDetectionRate": 0.0833,
+        "lowConfidenceRate": 0.0833,
+        "staleWatchlistCount": 0,
+        "vulnerabilityTotal": null,
+        "criticalVulnerabilityCount": null,
+        "benchmarkGatePassed": true,
+        "intelligencePassed": true,
+        "reliabilityPassed": true,
+        "reliabilityRiskLevel": "monitor"
+      },
+      {
+        "snapshotIndex": 2,
+        "generatedAt": "2026-04-17T02:54:57.419Z",
+        "releaseVersion": "2.0.26",
+        "top1Accuracy": 0.9167,
+        "manualCorrectionRate": 0.0833,
+        "incorrectDetectionRate": 0.0833,
+        "lowConfidenceRate": 0.0833,
+        "staleWatchlistCount": 0,
+        "vulnerabilityTotal": null,
+        "criticalVulnerabilityCount": null,
+        "benchmarkGatePassed": true,
+        "intelligencePassed": true,
+        "reliabilityPassed": true,
+        "reliabilityRiskLevel": "monitor"
+      },
+      {
+        "snapshotIndex": 3,
+        "generatedAt": "2026-04-17T03:19:31.047Z",
+        "releaseVersion": "2.0.26",
+        "top1Accuracy": 0.9167,
+        "manualCorrectionRate": 0.0833,
+        "incorrectDetectionRate": 0.0833,
+        "lowConfidenceRate": 0.0833,
+        "staleWatchlistCount": 0,
+        "vulnerabilityTotal": null,
+        "criticalVulnerabilityCount": null,
+        "benchmarkGatePassed": true,
+        "intelligencePassed": true,
+        "reliabilityPassed": true,
+        "reliabilityRiskLevel": "monitor"
+      },
+      {
+        "snapshotIndex": 4,
+        "generatedAt": "2026-04-17T03:20:15.400Z",
+        "releaseVersion": "2.0.26",
+        "top1Accuracy": 0.9167,
+        "manualCorrectionRate": 0.0833,
+        "incorrectDetectionRate": 0.0833,
+        "lowConfidenceRate": 0.0833,
+        "staleWatchlistCount": 0,
+        "vulnerabilityTotal": null,
+        "criticalVulnerabilityCount": null,
+        "benchmarkGatePassed": true,
+        "intelligencePassed": true,
+        "reliabilityPassed": true,
+        "reliabilityRiskLevel": "monitor"
+      }
+    ],
+    "chartSeries": {
+      "generatedAt": [
+        "2026-04-17T02:54:01.239Z",
+        "2026-04-17T02:54:57.419Z",
+        "2026-04-17T03:19:31.047Z",
+        "2026-04-17T03:20:15.400Z"
+      ],
+      "top1Accuracy": [
+        0.9167,
+        0.9167,
+        0.9167,
+        0.9167
+      ],
+      "manualCorrectionRate": [
+        0.0833,
+        0.0833,
+        0.0833,
+        0.0833
+      ],
+      "incorrectDetectionRate": [
+        0.0833,
+        0.0833,
+        0.0833,
+        0.0833
+      ],
+      "lowConfidenceRate": [
+        0.0833,
+        0.0833,
+        0.0833,
+        0.0833
+      ],
+      "staleWatchlistCount": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "vulnerabilityTotal": [
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "artifacts": {
+      "historyPath": ".agent-context/state/benchmark-history.json",
+      "jsonPath": ".agent-context/state/benchmark-trend-report.json",
+      "csvPath": ".agent-context/state/benchmark-trend-report.csv",
+      "writeMode": "stdout-and-file"
+    }
+  },
+  "outputs": {
+    "detectionBenchmark": {
+      "generatedAt": "2026-04-17T03:20:15.113Z",
+      "fixtureCount": 12,
+      "top1Accuracy": 0.9167,
+      "manualCorrectionRate": 0.0833,
+      "fixtures": [
+        {
+          "fixtureName": "typescript-basic",
+          "expectedStack": "typescript.md",
+          "detectedStack": "typescript.md",
+          "confidenceGap": 0.94,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "typescript-next",
+          "expectedStack": "typescript.md",
+          "detectedStack": "typescript.md",
+          "confidenceGap": 0.97,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "python-poetry",
+          "expectedStack": "python.md",
+          "detectedStack": "python.md",
+          "confidenceGap": 0.96,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "python-requirements",
+          "expectedStack": "python.md",
+          "detectedStack": "python.md",
+          "confidenceGap": 0.78,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "java-maven",
+          "expectedStack": "java.md",
+          "detectedStack": "java.md",
+          "confidenceGap": 0.95,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "java-gradle",
+          "expectedStack": "java.md",
+          "detectedStack": "java.md",
+          "confidenceGap": 0.84,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "php-composer",
+          "expectedStack": "php.md",
+          "detectedStack": "php.md",
+          "confidenceGap": 0.95,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "go-module",
+          "expectedStack": "go.md",
+          "detectedStack": "go.md",
+          "confidenceGap": 0.96,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "dotnet-solution",
+          "expectedStack": "csharp.md",
+          "detectedStack": "csharp.md",
+          "confidenceGap": 0.95,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "rust-cargo",
+          "expectedStack": "rust.md",
+          "detectedStack": "rust.md",
+          "confidenceGap": 0.96,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "ruby-gemfile",
+          "expectedStack": "ruby.md",
+          "detectedStack": "ruby.md",
+          "confidenceGap": 0.95,
+          "needsManualCorrection": false,
+          "isCorrect": true
+        },
+        {
+          "fixtureName": "mixed-ts-python",
+          "expectedStack": "typescript.md",
+          "detectedStack": "python.md",
+          "confidenceGap": 0.02,
+          "needsManualCorrection": true,
+          "isCorrect": false
+        }
+      ]
+    },
+    "benchmarkGate": {
+      "generatedAt": "2026-04-17T03:20:15.211Z",
+      "gateName": "benchmark-gate",
+      "passed": true,
+      "failureCount": 0,
+      "benchmarkResult": {
+        "fixtureCount": 12,
+        "top1Accuracy": 0.9167,
+        "manualCorrectionRate": 0.0833
+      },
+      "thresholds": {
+        "minimumTop1Accuracy": 0.9,
+        "maximumManualCorrectionRate": 0.12,
+        "maximumTop1AccuracyDrop": 0.02,
+        "maximumManualCorrectionIncrease": 0.03,
+        "previousReleaseBaseline": {
+          "top1Accuracy": 0.9167,
+          "manualCorrectionRate": 0.0833
+        }
+      },
+      "results": [
+        {
+          "checkName": "minimum-top1-accuracy",
+          "passed": true,
+          "details": "top1Accuracy=0.9167 minimum=0.9"
+        },
+        {
+          "checkName": "maximum-manual-correction-rate",
+          "passed": true,
+          "details": "manualCorrectionRate=0.0833 maximum=0.12"
+        },
+        {
+          "checkName": "maximum-top1-accuracy-drop",
+          "passed": true,
+          "details": "drop=0 maximum=0.02"
+        },
+        {
+          "checkName": "maximum-manual-correction-increase",
+          "passed": true,
+          "details": "increase=0 maximum=0.03"
+        }
+      ]
+    },
+    "benchmarkIntelligence": {
+      "generatedAt": "2026-04-17T03:20:15.258Z",
+      "reportName": "benchmark-intelligence",
+      "passed": true,
+      "failureCount": 0,
+      "reviewSlaDays": 14,
+      "watchlist": [
+        {
+          "repository": "sickn33/antigravity-awesome-skills",
+          "owner": "core-architecture",
+          "lastReviewedAt": "2026-04-17",
+          "ageInDays": 0,
+          "stale": false
+        },
+        {
+          "repository": "github/awesome-copilot",
+          "owner": "core-architecture",
+          "lastReviewedAt": "2026-04-17",
+          "ageInDays": 0,
+          "stale": false
+        },
+        {
+          "repository": "MiniMax-AI/skills",
+          "owner": "frontend-governance",
+          "lastReviewedAt": "2026-04-17",
+          "ageInDays": 0,
+          "stale": false
+        }
+      ],
+      "results": [
+        {
+          "checkName": "required-benchmark-repository",
+          "repository": "sickn33/antigravity-awesome-skills",
+          "passed": true,
+          "details": "sickn33/antigravity-awesome-skills is present in watchlist"
+        },
+        {
+          "checkName": "required-benchmark-repository",
+          "repository": "github/awesome-copilot",
+          "passed": true,
+          "details": "github/awesome-copilot is present in watchlist"
+        },
+        {
+          "checkName": "required-benchmark-repository",
+          "repository": "MiniMax-AI/skills",
+          "passed": true,
+          "details": "MiniMax-AI/skills is present in watchlist"
+        },
+        {
+          "checkName": "watchlist-owner-defined",
+          "repository": "sickn33/antigravity-awesome-skills",
+          "passed": true,
+          "details": "Owner core-architecture is defined"
+        },
+        {
+          "checkName": "review-sla-compliance",
+          "repository": "sickn33/antigravity-awesome-skills",
+          "passed": true,
+          "details": "ageInDays=0 slaDays=14"
+        },
+        {
+          "checkName": "watchlist-owner-defined",
+          "repository": "github/awesome-copilot",
+          "passed": true,
+          "details": "Owner core-architecture is defined"
+        },
+        {
+          "checkName": "review-sla-compliance",
+          "repository": "github/awesome-copilot",
+          "passed": true,
+          "details": "ageInDays=0 slaDays=14"
+        },
+        {
+          "checkName": "watchlist-owner-defined",
+          "repository": "MiniMax-AI/skills",
+          "passed": true,
+          "details": "Owner frontend-governance is defined"
+        },
+        {
+          "checkName": "review-sla-compliance",
+          "repository": "MiniMax-AI/skills",
+          "passed": true,
+          "details": "ageInDays=0 slaDays=14"
+        }
+      ]
+    },
+    "memoryContinuityBenchmark": {
+      "generatedAt": "2026-04-17T03:20:15.324Z",
+      "reportName": "memory-continuity-benchmark",
+      "schemaVersion": "1.0.0",
+      "passed": true,
+      "failureCount": 0,
+      "thresholds": {
+        "minimumRelevantRecall": 0.8,
+        "minimumSessionStartTokenSavingsPercent": 35,
+        "maximumUnsafeObservationCount": 0
+      },
+      "adapterCoverage": {
+        "requiredAdapterIds": [
+          "claude-code",
+          "gemini-cli",
+          "vscode-chat"
+        ],
+        "availableAdapterIds": [
+          "claude-code",
+          "gemini-cli",
+          "vscode-chat"
+        ],
+        "missingAdapterIds": [],
+        "passed": true
+      },
+      "privacyControls": {
+        "redactedObservationCount": 2,
+        "privateTagRedactionCount": 1,
+        "inlineRedactionCount": 1,
+        "unsafeObservationCount": 0
+      },
+      "continuitySummary": {
+        "totalObservationCount": 5,
+        "scenarioCount": 3,
+        "averageRelevantRecall": 1,
+        "averageSessionStartTokenSavingsPercent": 63.17
+      },
+      "scenarios": [
+        {
+          "scenarioId": "docker-lane-hydration",
+          "query": "what is docker strategy for development and production",
+          "expectedObservationIds": [
+            "obs-001"
+          ],
+          "indexObservationIds": [
+            "obs-001",
+            "obs-005",
+            "obs-003",
+            "obs-002",
+            "obs-004"
+          ],
+          "hydratedObservationIds": [
+            "obs-001"
+          ],
+          "relevantRecall": 1,
+          "fullContextTokenEstimate": 267,
+          "sessionStartTokenEstimate": 103,
+          "sessionStartTokenSavingsPercent": 61.42
+        },
+        {
+          "scenarioId": "runtime-hydration",
+          "query": "which runtime target should we prefer on windows with wsl",
+          "expectedObservationIds": [
+            "obs-002"
+          ],
+          "indexObservationIds": [
+            "obs-002",
+            "obs-001",
+            "obs-005",
+            "obs-004",
+            "obs-003"
+          ],
+          "hydratedObservationIds": [
+            "obs-002"
+          ],
+          "relevantRecall": 1,
+          "fullContextTokenEstimate": 267,
+          "sessionStartTokenEstimate": 97,
+          "sessionStartTokenSavingsPercent": 63.67
+        },
+        {
+          "scenarioId": "frontend-quality-hydration",
+          "query": "show frontend rubric quality decisions",
+          "expectedObservationIds": [
+            "obs-003"
+          ],
+          "indexObservationIds": [
+            "obs-003",
+            "obs-005",
+            "obs-004",
+            "obs-002",
+            "obs-001"
+          ],
+          "hydratedObservationIds": [
+            "obs-003"
+          ],
+          "relevantRecall": 1,
+          "fullContextTokenEstimate": 267,
+          "sessionStartTokenEstimate": 95,
+          "sessionStartTokenSavingsPercent": 64.42
+        }
+      ],
+      "references": {
+        "memorySchemaPath": ".agent-context/state/memory-schema-v1.json",
+        "memoryAdapterContractPath": ".agent-context/state/memory-adapter-contract.json",
+        "benchmarkOutputPath": ".agent-context/state/memory-continuity-benchmark.json",
+        "schemaDeclaredVersion": "1.0.0",
+        "adapterContractVersion": "1.0.0"
+      },
+      "checks": [
+        {
+          "checkName": "adapter-coverage",
+          "passed": true,
+          "details": "required=3 missing=0"
+        },
+        {
+          "checkName": "continuity-recall-threshold",
+          "passed": true,
+          "details": "averageRelevantRecall=1 minimum=0.8"
+        },
+        {
+          "checkName": "session-start-token-savings-threshold",
+          "passed": true,
+          "details": "averageSessionStartTokenSavingsPercent=63.17 minimum=35"
+        },
+        {
+          "checkName": "privacy-redaction-safety",
+          "passed": true,
+          "details": "unsafeObservationCount=0 max=0"
+        }
+      ]
+    }
+  },
+  "executions": [
+    {
+      "scriptPath": "scripts/detection-benchmark.mjs",
+      "exitCode": 0,
+      "parseError": null,
+      "stderr": null,
+      "reportName": null,
+      "passed": null
+    },
+    {
+      "scriptPath": "scripts/benchmark-gate.mjs",
+      "exitCode": 0,
+      "parseError": null,
+      "stderr": null,
+      "reportName": "benchmark-gate",
+      "passed": true
+    },
+    {
+      "scriptPath": "scripts/benchmark-intelligence.mjs",
+      "exitCode": 0,
+      "parseError": null,
+      "stderr": null,
+      "reportName": "benchmark-intelligence",
+      "passed": true
+    },
+    {
+      "scriptPath": "scripts/memory-continuity-benchmark.mjs",
+      "exitCode": 0,
+      "parseError": null,
+      "stderr": null,
+      "reportName": "memory-continuity-benchmark",
+      "passed": true
+    }
+  ]
+}
