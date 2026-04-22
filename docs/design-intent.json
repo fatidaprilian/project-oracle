@@ -1,12 +1,12 @@
 {
   "mode": "dynamic",
-  "status": "seed-generated-during-upgrade",
+  "status": "active",
   "project": {
     "name": "project-oracle-frontend",
-    "context": "Existing web application detected during upgrade. Create a project-specific dynamic design contract before shipping new UI work.",
-    "domain": "Web application",
-    "stack": "Typescript",
-    "blueprint": "Api Nextjs"
+    "context": "Stock Signal Pivot Dashboard. A single-page terminal-inspired UI for validating AI stock signals.",
+    "domain": "Web application (Dashboard)",
+    "stack": "React, Vite, Tailwind CSS",
+    "blueprint": "Single Page Dashboard"
   },
   "designPhilosophy": "Project-specific clarity with one authored tension and one memorable visual bet.",
   "brandAdjectives": [
