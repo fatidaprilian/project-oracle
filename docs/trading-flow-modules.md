@@ -1,170 +1,99 @@
-# Project Oracle - Trading Flow per Modul
+# Project Oracle - Signal Flow per Modul (Stock Pivot)
 
 ## 1. Tujuan Dokumen
-Dokumen ini merinci tanggung jawab, input/output, dan kontrak antar modul untuk fase 1 paper trading pipeline.
+Dokumen ini merinci tanggung jawab, input/output, dan kontrak antar modul untuk arsitektur *Telegram-Driven Stock Signal*.
 
 ## 2. Modul dan Kontrak
 
-### 2.1 Market Ingestor
+### 2.1 Webhook Listener
 Tugas:
-- menerima snapshot market per simbol dan timeframe
-- menormalkan data OHLCV
-- menambahkan metadata waktu pemrosesan
+- Menerima HTTP POST (webhook) dari TradingView atau sumber sinyal eksternal.
+- Memvalidasi *payload* dan mendeteksi duplikasi sinyal (via Redis lock).
 
 Input:
-- raw candle stream
+- HTTP Request (JSON payload)
+  - ticker
+  - signal_type (contoh: "MA_CROSS", "MACD_BULLISH")
+  - price
 
 Output:
-- MarketSnapshot
+- `RawSignal` object diteruskan ke internal message bus/queue.
 
-### 2.2 Structure Engine
+### 2.2 News Fetcher Gate
 Tugas:
-- klasifikasi regime: uptrend, downtrend, chop
-- validasi struktur HH/HL atau LH/LL
+- Menerima `RawSignal` dan melakukan *query* berita terkini untuk *ticker* terkait.
+- Menggunakan Free API (contoh: NewsAPI, Yahoo Finance).
+- Caching berita (1-4 jam) agar tidak memboroskan kuota API.
 
 Input:
-- MarketSnapshot
+- `RawSignal`
 
 Output:
-- StructureSignal
-  - market_regime
-  - structure_strength
-  - is_tradeable
+- `ContextualSignal`
+  - ticker
+  - signal_type
+  - price
+  - recent_news (list of strings/headlines)
 
-### 2.3 Zone Engine
+### 2.3 Oracle Synthesizer (Gemini API)
 Tugas:
-- deteksi order block aktif
-- deteksi supply/demand zone yang masih fresh
+- Membuat koneksi ke Gemini 3.1 Pro via API.
+- Menyuntikkan prompt: "Ada sinyal teknikal X di harga Y untuk saham Z. Berita terbarunya adalah A, B, C. Apakah ini valid untuk dibeli atau harus diabaikan? Berikan alasan maksimal 2 kalimat."
 
 Input:
-- MarketSnapshot
-- StructureSignal
+- `ContextualSignal`
 
 Output:
-- ZoneSignal
-  - zone_low
-  - zone_high
-  - zone_type
-  - freshness_score
+- `OracleDecision`
+  - bias ("BUY" atau "IGNORE")
+  - reasoning_text
 
-### 2.4 Confluence Engine
+### 2.4 Telegram Controller
 Tugas:
-- hitung fib retracement pada swing valid
-- hitung overlap dengan zone dan S/R
-- hasilkan confluence score
+- Mengambil `OracleDecision` dan memformatnya menjadi pesan Markdown Telegram.
+- Memasang *Inline Keyboard Buttons*: `[✅ Beli]` dan `[❌ Abaikan]`.
+- Mengirim pesan ke chat ID *user*.
 
 Input:
-- MarketSnapshot
-- ZoneSignal
+- `OracleDecision`
 
 Output:
-- ConfluenceSignal
-  - confluence_score
-  - fib_618_price
-  - cluster_price
-  - is_valid
+- Telegram Message ID (disimpan di database jika butuh update state nanti).
 
-### 2.5 Sentiment and News Gate
+### 2.5 State Management & Callback Handler
 Tugas:
-- ambil bias sentimen eksternal
-- cek event berisiko tinggi
-- aktif/nonaktifkan news shield
+- Menangani *callback query* dari Telegram saat *user* menekan tombol.
+- Jika "Beli": Masukkan ke tabel `active_tracking`. Edit pesan Telegram menjadi `[🟢 Tracking Active]`.
+- Jika "Abaikan": Masukkan ke tabel `ignore_list`. Edit pesan Telegram menjadi `[🔴 Muted]`.
 
 Input:
-- symbol
-- optional social/news feed
+- Telegram Callback Query (action, ticker, message_id)
 
 Output:
-- SentimentSignal
-  - sentiment_bias
-  - event_risk_level
-  - shield_status
+- Database update (`active_tracking` atau `ignore_list`).
+- HTTP Response 200 ke Telegram API.
 
-### 2.6 Sniper Entry Engine
+### 2.6 Active Tracker Daemon (Cron Job)
 Tugas:
-- validasi setup limit entry
-- validasi liquidity sweep dan rejection
-- hitung stop loss dan size plan
+- Berjalan setiap interval tertentu (misal: tiap 4 jam saat market buka).
+- Mengambil semua saham dari tabel `active_tracking`.
+- Mencari berita *breaking bad news* atau lonjakan harga anomali.
+- Jika ada kondisi berbahaya, menembak alert ke Telegram Controller.
 
 Input:
-- ConfluenceSignal
-- SentimentSignal
-- MarketSnapshot
+- Tabel `active_tracking`
+- News API / Price API
 
 Output:
-- EntryPlan
-  - should_place_order
-  - entry_price
-  - stop_loss
-  - take_profit_primary
-  - take_profit_secondary
-  - reason_codes
+- Push Alert Telegram (Urgent)
+- Catat di tabel `tracking_alerts`.
 
-### 2.7 Paper Execution Gateway
-Tugas:
-- simulasi lifecycle order limit
-- transisi candidate -> pending -> filled/expired
-- simpan event keputusan
-
-Input:
-- EntryPlan
-- current price stream
-
-Output:
-- PaperOrder
-- PositionState
-
-### 2.8 Exit Engine
-Tugas:
-- aktifkan breakeven di R >= 1.0
-- close di fib extension
-- forced exit saat structural shift
-
-Input:
-- PositionState
-- MarketSnapshot
-
-Output:
-- ExitDecision
-  - should_close
-  - exit_reason
-  - updated_stop_loss
-
-### 2.9 Journal and Learning Feed
-Tugas:
-- simpan trade event dan final journal
-- tandai trade gagal untuk review mingguan
-
-Input:
-- PositionState
-- ExitDecision
-
-Output:
-- TradeJournalEntry
-- LearningCandidate
-
-## 3. Orkestrasi Fase 1 (Paper)
-1. Ambil snapshot market.
-2. Jalankan Structure -> Zone -> Confluence.
-3. Jalankan Sentiment Gate.
-4. Jika shield aktif, batalkan setup.
-5. Jika valid, buat EntryPlan limit.
-6. Simulasikan eksekusi paper order.
-7. Kelola exit: breakeven, fib TP, structural shift.
-8. Simpan journal + reason codes.
-
-## 4. Reason Code Minimum
-- REGIME_NOT_TRADEABLE
-- ZONE_NOT_FRESH
-- LOW_CONFLUENCE
-- NEWS_SHIELD_ACTIVE
-- SWEEP_NOT_CONFIRMED
-- LIMIT_NOT_FILLED
-- BREAK_EVEN_ARMED
-- FIB_EXTENSION_TP_HIT
-- STRUCTURAL_SHIFT_EXIT
-
-## 5. Definition of Ready Fase Implementasi
-- semua modul punya interface input/output yang typed
-- semua keputusan mengembalikan reason codes
-- pipeline bisa dijalankan untuk satu simbol secara replay
+## 3. Orkestrasi Penuh (End-to-End)
+1. TradingView mengirim webhook "AAPL Breakout".
+2. Webhook Listener menerima dan memvalidasi `RawSignal`.
+3. News Fetcher Gate mengambil headline AAPL 24 jam terakhir.
+4. Oracle Synthesizer (Gemini) menggabungkan data: teknikal "Breakout" + berita "Laba naik 20%". Kesimpulan: **BUY**. Reason: "Breakout valid didukung fundamental laporan Q3 positif."
+5. Telegram Controller mem-push pesan ke HP User dengan tombol `[Beli]` dan `[Abaikan]`.
+6. User menekan `[Beli]`.
+7. State Management menyimpan AAPL ke `active_tracking` dan mengedit tombol di chat menjadi `[Tracking Active]`.
+8. Active Tracker Daemon memonitor AAPL secara berkala hingga user memutuskan untuk take profit manual di broker mereka.

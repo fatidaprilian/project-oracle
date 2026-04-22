@@ -1,210 +1,59 @@
-# Project Oracle Roadmap
+# Project Oracle - Roadmap (Stock Pivot)
 
-## Prinsip Eksekusi
-- Urutan fase wajib linear: fase berikutnya dimulai jika fase saat ini sudah memenuhi definition of done.
-- Setiap fase harus menghasilkan artefak yang bisa diuji (docs, test pass, atau runtime output).
-- Semua perubahan strategy harus terekam reason code dan audit trail.
+## Status Perubahan Arah (Pivot)
+Sistem sebelumnya (Crypto Auto-Trade) dengan 8 fase telah diarsip. Pengembangan sekarang fokus pada pivot menuju *Telegram-Driven Stock Signal Engine* menggunakan arsitektur semi-otomatis (Beli/Abaikan).
 
-## Fase 0 - Foundation (Done)
+Infrastruktur tidak berubah:
+- Backend di GCP Cloud Run (Python / FastAPI)
+- Frontend di Vercel (React / Vite)
+- Database: PostgreSQL
+
+## Fase 1 - Pondasi Webhook & Telegram (Drafting)
 Tujuan:
-- pondasi arsitektur dan tata kelola
+- Menerima sinyal mentah dan merespons via Telegram.
 
 Deliverables:
-- architecture blueprint
-- data model draft
-- trading flow per modul
+- Membersihkan tabel database lama (crypto/orders) dan mengaplikasikan schema baru (`signal_history`, `active_tracking`, `ignore_list`).
+- Implementasi endpoint FastAPI `/api/v1/webhook/tradingview`.
+- Setup bot Telegram dan integrasi `python-telegram-bot` atau request HTTP raw ke API Telegram.
 
-Definition of done:
-- docs utama tersedia dan sinkron
-- repository bootstrap siap dipush
+Definition of Done:
+- Saat webhook ditembak via Postman, bot Telegram mengirim pesan *dummy* ke user.
 
-## Fase 1 - Paper Trading Core (Done)
+## Fase 2 - Oracle Synthesizer (Gemini) & News Gate
 Tujuan:
-- pipeline teknikal end-to-end di mode paper
+- Menyuntikkan otak (Gemini API) ke dalam alur pesan Telegram.
 
 Deliverables:
-- structure, zone, confluence, sentiment gate, sniper entry, exit engine
-- replay runner multi simbol
-- unit test dasar
+- Integrasi Free News API (misal: NewsAPI, Yahoo Finance RSS) ke dalam sistem untuk mengambil berita berdasarkan *ticker*.
+- Integrasi Gemini API (`google-genai` atau endpoint Gemini standard).
+- Penyusunan prompt AI untuk mengambil keputusan fundamental + teknikal.
 
-Definition of done:
-- pipeline replay berjalan
-- test suite hijau
+Definition of Done:
+- Pesan di Telegram bukan lagi *dummy*, melainkan hasil justifikasi/alasan aktual dari Gemini berdasarkan simulasi *ticker* dan beritanya.
 
-## Fase 2 - Runtime Wiring (Done)
+## Fase 3 - Interactive State & Dashboard
 Tujuan:
-- runtime fleksibel dengan adapter opsional
+- Membuat sistem menjadi interaktif (User bisa merespons sinyal) dan mensinkronisasikan ke Frontend Vercel.
 
 Deliverables:
-- runtime bootstrap berdasarkan environment
-- optional persistence adapters (PostgreSQL/Redis)
-- weekly report generator
+- Menambahkan *Inline Keyboard Buttons* (Beli / Abaikan) di pesan Telegram.
+- Implementasi endpoint penangkap *Callback Query* dari Telegram.
+- Penyimpanan status ke tabel `active_tracking` atau `ignore_list`.
+- Frontend dashboard menampilkan list saham yang sedang di `active_tracking`.
 
-Definition of done:
-- fallback in-memory tetap jalan
-- report mingguan dapat digenerate
+Definition of Done:
+- Tombol di Telegram merespons klik dan meng-update database serta memperbarui teks pesan Telegram secara real-time.
+- Vercel Frontend bisa melakukan GET *active tracking* dan menampilkannya.
 
-## Fase 3 - Quality Analytics (Done)
+## Fase 4 - Active Tracking Daemon & Alerts
 Tujuan:
-- ukur kualitas entry dan outcome secara objektif
+- Menjaga posisi "Beli" agar tetap aman dari berita buruk mendadak.
 
 Deliverables:
-- metrik MAE/MFE per trade
-- quality score per closed trade
-- weekly report menampilkan ringkasan quality
+- Implementasi `APScheduler` (cron job) di backend untuk memeriksa saham-saham di `active_tracking`.
+- Pengecekan difokuskan pada perubahan drastis berita / sentimen market.
+- Jika terdeteksi anomali, tembak push notification ke Telegram (Urgent Alert).
 
-Definition of done:
-- event quality tercatat di journal
-- report mingguan menampilkan rata-rata quality score
-
-## Fase 4 - Persistence Hardening (Done)
-Tujuan:
-- persistence production-ready
-
-Deliverables:
-- migrasi schema PostgreSQL formal
-- penyimpanan state risk harian di Redis dengan TTL/policy
-- fallback dan retry policy pada sink persisten
-
-Definition of done:
-- operasi tetap aman saat dependency eksternal gagal
-- data audit tidak hilang saat replay berulang
-
-## Fase 5 - Strategy Intelligence (Done)
-Tujuan:
-- pembelajaran mingguan semi-otomatis
-
-Deliverables:
-- top 10 worst trade selector
-- paket input AI analyst
-- parameter change request registry
-- weekly workflow orchestrator dengan scheduler APScheduler
-- REST API untuk governance (summary, list, approve, promote)
-
-Definition of done:
-- workflow review mingguan dapat dijalankan end-to-end
-- usulan perubahan parameter tercatat dan bisa di-approve
-
-Progress saat ini:
-- top 10 worst trade selector: implemented
-- paket input AI analyst: implemented (file output)
-- parameter change request registry: implemented (jsonl append)
-- request validation rules and status governance: implemented
-- weekly report governance summary: implemented
-- governance CLI (summary/list/approve/reject/promote): implemented
-- candidate strategy config promotion from approved valid requests: implemented
-- weekly workflow orchestrator (weekly_workflow.py): implemented
-- APScheduler daemon (scheduler.py): implemented
-- REST API endpoints (FastAPI, api/main.py): implemented
-- API tests: implemented (test_api_endpoints.py)
-
-## Fase 6 - API Service and Operations (Done)
-Tujuan:
-- service API production-ready dan operasi rutin terautomasi
-
-Deliverables:
-- API server FastAPI (governance, workflow, health checks)
-- scheduler daemon untuk weekly workflow terjadwal
-- runbook incident dan kill switch ops
-- parameter runtime integration (load promoted configs)
-- deployment docs (Railway, environment setup)
-
-Definition of done:
-- API server berjalan stabil dengan auth basic (opsional untuk v1)
-- weekly workflow dapat dijadwalkan dan dimonitor
-- kesiapan operasi mingguan tanpa intervensi manual berat
-
-Progress saat ini:
-- API endpoints (FastAPI): implemented
-- parameter runtime loading: implemented
-- operations runbook: implemented
-- deployment guide (Railway + VPS): implemented
-- integration tests: implemented (3 tests passing)
-- total tests: 38 passing
-
-## Phase 7 - Frontend and Multi-Symbol (Done)
-Tujuan:
-- user interface untuk monitoring dan governance
-- support multi-symbol portfolio trading
-
-Deliverables:
-- React + Vite frontend dengan layout dan routing
-- governance dashboard (request approval, promotion)
-- strategy performance KPI display
-- multi-symbol support dalam core pipeline
-- real-time live updates (SSE/WebSocket)
-
-Definition of done:
-- frontend accessible di Railway atau Vercel
-- governance approval dapat dilakukan via UI
-- multi-symbol replay berjalan tanpa error
-
-Progress saat ini:
-- React + Vite frontend dengan routing: implemented
-- governance dashboard (request approval, promotion): implemented
-- strategy performance KPI display (governance summary + infra connectivity): implemented
-- stream update near real-time via SSE endpoint: implemented
-- frontend hardening (error boundary, skeleton loading, retry UX): implemented
-- role-based view restriction (viewer/operator/admin): implemented
-- login flow without register (username/password from DB auth_users -> role token): implemented
-- observability frontend baseline (web vitals + error tracking hooks): implemented
-- multi-symbol replay guard test: implemented
-- production frontend deployed: https://project-oracle-nine.vercel.app/
-- symbol-specific weekly workflow path wired end-to-end: implemented
-
-## Phase 8 - Market Connectivity and Provider Abstraction (Done)
-Tujuan:
-- menyiapkan konektivitas market/exchange secara aman tanpa lock-in vendor
-- menyiapkan integrasi AI analyst provider yang bisa diganti tanpa ubah core domain
-
-Deliverables:
-- exchange adapter interface (vendor-agnostic) dengan mode testnet sebagai default
-- implementasi adapter awal untuk Bybit testnet (read/ping + market sanity check)
-- health endpoint untuk status koneksi exchange adapter
-- AI analyst adapter interface (vendor-agnostic) dengan fallback jika API key belum aktif
-- konfigurasi environment standar untuk provider selection (grok/gemini/custom)
-
-Definition of done:
-- runtime tetap aman dalam mode paper saat kredensial exchange/provider tidak tersedia
-- minimal satu adapter exchange berjalan di testnet tanpa memengaruhi governance flow
-- pergantian provider tidak membutuhkan perubahan di modul domain utama
-- runbook konfigurasi provider/exchange tersedia
-
-Progress saat ini:
-- exchange adapter interface (vendor-agnostic): implemented
-- adapter awal Bybit testnet (market time ping): implemented
-- bybit market symbol catalog fetch + cache (refreshable): implemented
-- endpoint health exchange (`/api/v1/config/exchange`): implemented
-- endpoint private preflight exchange account (`/api/v1/config/exchange/account`): implemented
-- AI analyst adapter interface (vendor-agnostic): implemented
-- endpoint health AI analyst (`/api/v1/config/ai-analyst`): implemented
-- konfigurasi env provider abstraction (toggle + health path): implemented
-- production API deployed: https://project-oracle-133425616833.asia-southeast2.run.app
-- runbook/deployment guide sudah sinkron dengan Swagger production
-
-## Status Keseluruhan
-
-Sudah Selesai:
-- Phase 0-8: Foundation, Paper Trading, Runtime, Quality Analytics, Persistence, Strategy Intelligence, API Service, Frontend+Multi-Symbol, Connectivity Abstraction
-- Total: 58 unit tests passing
-- Commits: 5b30b2c (latest)
-
-Ready untuk fase lanjutan: production hardening dan optional integrations.
-
-## Urutan Kerja Praktis Mingguan
-1. Selesaikan fase aktif dan checklist test-nya.
-2. Commit dan push artefak fase.
-3. Jalankan replay dan generate weekly report.
-4. Review hasil, lalu buka fase berikutnya.
-
-## Roadmap Frontend
-Dokumen detail frontend ada di docs/frontend-roadmap.md.
-
-Keputusan saat ini:
-- UI stack: React + Vite
-- deployment: frontend di Vercel, backend API di Cloud Run
-
-Trigger split Railway + Vercel:
-- butuh SEO/edge delivery publik
-- cadence release frontend/backend sudah berbeda
-- traffic frontend menuntut optimasi CDN/edge khusus
+Definition of Done:
+- Sistem dapat otomatis mem-push notifikasi darurat tanpa ada trigger webhook baru, berdasarkan evaluasi berkala dari cron job.

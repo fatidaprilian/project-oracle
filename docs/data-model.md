@@ -1,150 +1,62 @@
-# Project Oracle - Data Model Draft
+# Project Oracle - Data Model (Stock Pivot)
 
 ## 1. Tujuan
-Dokumen ini mendefinisikan struktur data minimum untuk mendukung:
-- audit keputusan entry/exit
-- evaluasi performa strategi
-- loop pembelajaran mingguan
+Dokumen ini mendefinisikan struktur data minimum untuk mendukung arsitektur Telegram-Driven Stock Signal:
+- pencatatan riwayat sinyal dari indikator
+- penyimpanan status *tracking* posisi (Beli/Abaikan)
+- audit log alasan (reasoning) AI
 
 ## 2. Entitas PostgreSQL
 
-### 2.1 strategy_parameters
-Menyimpan konfigurasi aktif strategi.
+### 2.1 signal_history
+Menyimpan riwayat sinyal teknikal dan hasil analisis fundamental dari AI.
 
 Kolom utama:
 - id (uuid, pk)
-- version (text, unique)
-- market_structure_window (int)
-- min_confluence_score (numeric)
-- min_volume_threshold (numeric)
-- sweep_tolerance_bps (int)
-- breakeven_r_multiple (numeric)
-- fib_tp_primary (numeric)
-- fib_tp_secondary (numeric)
-- is_active (boolean)
+- ticker (text)
+- technical_signal (text) - contoh: "MA_CROSSOVER", "BREAKOUT"
+- news_context (text) - ringkasan berita yang diambil
+- ai_reasoning (text) - justifikasi dari Gemini
+- bias (text) - "BUY", "IGNORE"
 - created_at (timestamptz)
-- approved_by (text)
 
-### 2.2 trade_candidates
-Snapshot kandidat setelah lolos filter.
+### 2.2 active_tracking
+Menyimpan daftar saham yang di-klik "Beli" oleh user di Telegram.
 
 Kolom utama:
 - id (uuid, pk)
-- symbol (text)
-- timeframe (text)
-- market_regime (text)
-- structure_score (numeric)
-- order_block_zone (jsonb)
-- fib_levels (jsonb)
-- confluence_score (numeric)
-- sentiment_bias (text)
-- event_risk_level (text)
-- shield_status (boolean)
-- candidate_state (text)
-- created_at (timestamptz)
-- expires_at (timestamptz)
+- signal_id (uuid, fk -> signal_history.id)
+- ticker (text)
+- target_price (numeric) - opsional
+- is_active (boolean) - true jika masih dipantau
+- tracked_since (timestamptz)
+- last_checked_at (timestamptz)
 
-### 2.3 orders
-Rencana dan hasil eksekusi order.
+### 2.3 ignore_list
+Menyimpan daftar saham yang di-klik "Abaikan" agar tidak meng-spam notifikasi Telegram untuk beberapa waktu.
 
 Kolom utama:
 - id (uuid, pk)
-- candidate_id (uuid, fk -> trade_candidates.id)
-- exchange_order_id (text)
-- order_type (text)
-- side (text)
-- price (numeric)
-- size (numeric)
-- leverage (numeric)
-- status (text)
-- rejection_reason (text)
+- ticker (text)
+- reason (text) - opsional, misal "too volatile"
+- expires_at (timestamptz) - kapan saham ini boleh di-alert lagi
 - created_at (timestamptz)
-- updated_at (timestamptz)
 
-### 2.4 positions
-Posisi aktif dan histori close.
+### 2.4 tracking_alerts
+Menyimpan riwayat *push notification* anomali/peringatan yang dikirim ke user (misal: ada berita buruk saat *active tracking*).
 
 Kolom utama:
 - id (uuid, pk)
-- order_id (uuid, fk -> orders.id)
-- symbol (text)
-- side (text)
-- entry_price (numeric)
-- stop_loss (numeric)
-- take_profit_primary (numeric)
-- take_profit_secondary (numeric)
-- break_even_armed (boolean)
-- status (text)
-- closed_at (timestamptz)
+- tracking_id (uuid, fk -> active_tracking.id)
+- alert_type (text) - "BAD_NEWS", "PRICE_DROP"
+- message (text)
+- sent_at (timestamptz)
 
-### 2.5 trade_events
-Event detail selama lifecycle.
-
-Kolom utama:
-- id (bigserial, pk)
-- position_id (uuid, fk -> positions.id)
-- event_type (text)
-- payload (jsonb)
-- created_at (timestamptz)
-
-### 2.6 trade_journal
-Ringkasan hasil final per trade.
-
-Kolom utama:
-- id (uuid, pk)
-- position_id (uuid, fk -> positions.id)
-- pnl_usd (numeric)
-- r_multiple (numeric)
-- max_adverse_excursion (numeric)
-- max_favorable_excursion (numeric)
-- exit_reason (text)
-- reason_codes (text[])
-- snapshot_ref (text)
-- created_at (timestamptz)
-
-### 2.7 learning_reviews
-Output analisis mingguan dari AI.
-
-Kolom utama:
-- id (uuid, pk)
-- week_key (text)
-- reviewed_trade_ids (uuid[])
-- findings (jsonb)
-- suggested_parameter_changes (jsonb)
-- confidence_score (numeric)
-- status (text)
-- created_at (timestamptz)
-
-### 2.8 parameter_change_requests
-Workflow perubahan parameter.
-
-Kolom utama:
-- id (uuid, pk)
-- source_review_id (uuid, fk -> learning_reviews.id)
-- change_set (jsonb)
-- impact_estimate (jsonb)
-- approval_status (text)
-- approved_by (text)
-- applied_version (text)
-- created_at (timestamptz)
-
-## 3. Redis Keys (Draft)
-- oracle:candidate:{symbol}:{tf} -> candidate state (ttl pendek)
-- oracle:lock:execution:{symbol} -> distributed lock
-- oracle:risk:daily_loss -> running daily loss
-- oracle:sentiment:latest:{symbol} -> sentiment snapshot
-- oracle:news:shield:{symbol} -> shield flag
+## 3. Redis Keys (Opsional untuk Caching)
+- `oracle:news_cache:{ticker}` -> menyimpan sentimen berita terkini (TTL 1-4 jam) agar tidak spam News API
+- `oracle:webhook_lock:{ticker}` -> mencegah *duplicate* pemrosesan webhook dalam waktu bersamaan
 
 ## 4. Indexing Guidance
-- trade_candidates(symbol, timeframe, created_at desc)
-- orders(status, created_at desc)
-- positions(status, symbol)
-- trade_journal(created_at desc, pnl_usd)
-- learning_reviews(week_key)
-
-## 5. Audit and Traceability
-Setiap record kritikal harus punya:
-- correlation_id
-- strategy_version
-- provider_metadata (untuk sentimen/berita)
-- exchange_latency_ms
+- signal_history(created_at desc, ticker)
+- active_tracking(is_active, last_checked_at)
+- ignore_list(expires_at, ticker)
