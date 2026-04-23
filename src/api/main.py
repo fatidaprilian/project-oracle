@@ -589,6 +589,18 @@ async def get_stats_endpoint():
         print(f"Error fetching stats: {e}")
         return {"total": 0, "wins": 0, "losses": 0, "win_rate": 0, "avg_pnl": 0}
 
+@app.post("/api/v1/admin/scan-now")
+async def trigger_scan_api():
+    try:
+        from oracle.application.auto_signal_generator import generate_auto_signals
+        # We run it in a background task so the API doesn't timeout
+        import asyncio
+        asyncio.create_task(generate_auto_signals())
+        return {"status": "success", "message": "Scan triggered in background. Check Telegram/Dashboard in a few minutes."}
+    except Exception as e:
+        print(f"Error triggering scan: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

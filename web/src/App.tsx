@@ -146,6 +146,15 @@ function App() {
     }
   };
 
+  const scanNow = async () => {
+    try {
+      await axios.post(`${API_BASE}/api/v1/admin/scan-now`);
+      alert("Scan triggered in background! Sinyal akan muncul dalam beberapa menit.");
+    } catch (err) {
+      console.error("Failed to trigger scan", err);
+    }
+  };
+
   const pendingSignals = signals.filter(s => s.status === 'PENDING');
 
   const tabs: { key: TabKey; label: string; count: number }[] = [
@@ -165,19 +174,25 @@ function App() {
             <p className="text-neutral-400 mt-2">AI-Driven Quantitative Intelligence.</p>
           </div>
 
-          <div className="flex gap-4 items-end">
-            <form onSubmit={addWatchlist} className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Add Ticker (e.g. AAPL, GOTO.JK)"
-                value={newTicker}
-                onChange={e => setNewTicker(e.target.value.toUpperCase())}
-                className="bg-neutral-900 border border-neutral-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-500 uppercase"
-              />
-              <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-semibold transition-colors">
-                Track
+          <div className="flex flex-wrap items-center gap-4">
+              <form onSubmit={addWatchlist} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add ticker (e.g. BBRI.JK)"
+                  className="bg-neutral-900 border border-neutral-800 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors w-40"
+                  value={newTicker}
+                  onChange={(e) => setNewTicker(e.target.value.toUpperCase())}
+                />
+                <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-emerald-900/20">
+                  + Add
+                </button>
+              </form>
+              <button 
+                onClick={scanNow}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-lg shadow-indigo-900/20 flex items-center gap-2"
+              >
+                <span>⚡</span> Scan Now
               </button>
-            </form>
             <button
               onClick={fetchData}
               className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm transition-colors border border-neutral-700"
