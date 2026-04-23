@@ -113,20 +113,20 @@ async def run_tracking_daemon():
 
             # Check target reached
             if target_price and current_price >= target_price:
-                message = (
+                base_message = (
                     f"🎯 *TARGET REACHED: {ticker}*\n\n"
                     f"*Current Price:* {current_price:.2f}\n"
                     f"*Target Price:* {target_price:.2f}\n"
                     f"*Entry Price:* {entry_price:.2f if entry_price else 'N/A'}\n"
                     f"*PnL:* {pnl_percent:+.2f}%\n"
-                    f"*Waktu:* {time_str}\n\n"
-                    f"✅ Posisi otomatis ditutup (Auto-Sell)."
+                    f"*Waktu:* {time_str}"
                 )
-                await _send_telegram_alert(telegram_bot_token, telegram_chat_id, message)
+                
+                private_message = base_message + "\n\n✅ Posisi otomatis ditutup (Auto-Sell)."
+                await _send_telegram_alert(telegram_bot_token, telegram_chat_id, private_message)
                 
                 if telegram_public_channel_id:
-                    public_message = f"✅ *TARGET REACHED: {ticker}* | PnL: {pnl_percent:+.2f}%\n\n🕒 {time_str}"
-                    await _send_telegram_alert(telegram_bot_token, telegram_public_channel_id, public_message)
+                    await _send_telegram_alert(telegram_bot_token, telegram_public_channel_id, base_message)
 
                 try:
                     close_tracking(ticker)
@@ -136,20 +136,20 @@ async def run_tracking_daemon():
 
             # Check stop loss hit
             if stop_loss and current_price <= stop_loss:
-                message = (
+                base_message = (
                     f"🛑 *STOP LOSS HIT: {ticker}*\n\n"
                     f"*Current Price:* {current_price:.2f}\n"
                     f"*Stop Loss:* {stop_loss:.2f}\n"
                     f"*Entry Price:* {entry_price:.2f if entry_price else 'N/A'}\n"
                     f"*PnL:* {pnl_percent:+.2f}%\n"
-                    f"*Waktu:* {time_str}\n\n"
-                    f"❌ Posisi otomatis ditutup (Auto-Cutloss)."
+                    f"*Waktu:* {time_str}"
                 )
-                await _send_telegram_alert(telegram_bot_token, telegram_chat_id, message)
+                
+                private_message = base_message + "\n\n❌ Posisi otomatis ditutup (Auto-Cutloss)."
+                await _send_telegram_alert(telegram_bot_token, telegram_chat_id, private_message)
                 
                 if telegram_public_channel_id:
-                    public_message = f"🚨 *STOP LOSS HIT: {ticker}* | PnL: {pnl_percent:+.2f}%\n\n🕒 {time_str}"
-                    await _send_telegram_alert(telegram_bot_token, telegram_public_channel_id, public_message)
+                    await _send_telegram_alert(telegram_bot_token, telegram_public_channel_id, base_message)
 
                 try:
                     close_tracking(ticker)
