@@ -578,6 +578,17 @@ async def remove_watchlist_api(ticker: str):
         print(f"Error removing from watchlist: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/v1/dashboard/stats")
+async def get_stats_endpoint():
+    try:
+        from oracle.infrastructure.postgres_repository import get_trading_stats
+        if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
+            return {"total": 0, "wins": 0, "losses": 0, "win_rate": 0, "avg_pnl": 0}
+        return get_trading_stats()
+    except Exception as e:
+        print(f"Error fetching stats: {e}")
+        return {"total": 0, "wins": 0, "losses": 0, "win_rate": 0, "avg_pnl": 0}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -46,6 +46,14 @@ interface HistoryItem {
   resolved_action?: string | null;
 }
 
+interface Stats {
+  total: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  avg_pnl: number;
+}
+
 type TabKey = 'signals' | 'portfolio' | 'history';
 
 function timeAgo(dateStr: string): string {
@@ -73,6 +81,7 @@ function App() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [anomalies, setAnomalies] = useState<string[]>([]);
+  const [stats, setStats] = useState<Stats>({ total: 0, wins: 0, losses: 0, win_rate: 0, avg_pnl: 0 });
   const [newTicker, setNewTicker] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('signals');
@@ -80,18 +89,20 @@ function App() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [sigRes, watchRes, portRes, histRes, anomRes] = await Promise.all([
+      const [sigRes, watchRes, portRes, histRes, anomRes, statsRes] = await Promise.all([
         axios.get(`${API_BASE}/api/v1/dashboard/signals`),
         axios.get(`${API_BASE}/api/v1/dashboard/watchlist`),
         axios.get(`${API_BASE}/api/v1/dashboard/portfolio`),
         axios.get(`${API_BASE}/api/v1/dashboard/history`),
         axios.get(`${API_BASE}/api/v1/dashboard/anomalies`),
+        axios.get(`${API_BASE}/api/v1/dashboard/stats`),
       ]);
       setSignals(sigRes.data.signals || []);
       setWatchlist(watchRes.data.watchlist || []);
       setPortfolio(portRes.data.portfolio || []);
       setHistory(histRes.data.history || []);
       setAnomalies(anomRes.data.anomalies || []);
+      setStats(statsRes.data || { total: 0, wins: 0, losses: 0, win_rate: 0, avg_pnl: 0 });
     } catch (err) {
       console.error("Failed to fetch data", err);
     } finally {
@@ -215,6 +226,36 @@ function App() {
             </div>
           );
         })()}
+
+        {/* Trading Stats Summary */}
+        {stats.total > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl flex flex-col items-center justify-center">
+              <span className="text-xs text-neutral-500 uppercase tracking-widest font-bold mb-1">Win Rate</span>
+              <span className={`text-2xl font-black ${stats.win_rate >= 50 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {stats.win_rate}%
+              </span>
+            </div>
+            <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl flex flex-col items-center justify-center">
+              <span className="text-xs text-neutral-500 uppercase tracking-widest font-bold mb-1">Total Trades</span>
+              <span className="text-2xl font-black text-white">{stats.total}</span>
+            </div>
+            <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl flex flex-col items-center justify-center">
+              <span className="text-xs text-neutral-500 uppercase tracking-widest font-bold mb-1">Win/Loss</span>
+              <div className="flex gap-2 items-center">
+                <span className="text-xl font-bold text-emerald-500">{stats.wins}W</span>
+                <span className="text-neutral-700">/</span>
+                <span className="text-xl font-bold text-rose-500">{stats.losses}L</span>
+              </div>
+            </div>
+            <div className="bg-neutral-900 border border-neutral-800 p-4 rounded-xl flex flex-col items-center justify-center">
+              <span className="text-xs text-neutral-500 uppercase tracking-widest font-bold mb-1">Avg PnL</span>
+              <span className={`text-2xl font-black ${stats.avg_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {stats.avg_pnl > 0 ? '+' : ''}{stats.avg_pnl}%
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Tab Navigation */}
         <div className="flex gap-1 mb-8 bg-neutral-900 p-1 rounded-xl border border-neutral-800">

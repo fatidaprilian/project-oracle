@@ -790,18 +790,37 @@ def close_tracking(ticker: str) -> float | None:
     return pnl
 
 
-def save_tracking_alert(tracking_id: str, alert_type: str, message: str) -> None:
-    """Log an alert that was sent for a tracked position."""
+def get_trading_stats() -> dict:
+    """Calculate win/loss stats from closed positions."""
     dsn = get_dsn()
     if not dsn:
-        return
+        return {"total": 0, "wins": 0, "losses": 0, "win_rate": 0, "avg_pnl": 0}
+    
     with psycopg.connect(dsn) as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO tracking_alerts (tracking_id, alert_type, message)
-                VALUES (%s, %s, %s)
-                """,
-                (tracking_id, alert_type, message),
-            )
-        conn.commit()
+            cur.execute("""
+                SELECT 
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE pnl_percent > 0) as wins,
+                    COUNT(*) FILTER (WHERE pnl_percent < 0) as losses,
+                    AVG(pnl_percent) as avg_pnl
+                FROM active_tracking
+                WHERE is_active = FALSE AND pnl_percent IS NOT NULL
+            """)
+            row = cur.fetchone()
+            if not row or row[0] == 0:
+                return {"total": 0, "wins": 0, "losses": 0, "win_rate": 0, "avg_pnl": 0}
+            
+            total = row[0]
+            wins = row[1]
+            losses = row[2]
+            avg_pnl = float(row[3]) if row[3] is not None else 0
+            win_rate = (wins / total) * 100 if total > 0 else 0
+            
+            return {
+                "total": total,
+                "wins": wins,
+                "losses": losses,
+                "win_rate": round(win_rate, 2),
+                "avg_pnl": round(avg_pnl, 2)
+            }
