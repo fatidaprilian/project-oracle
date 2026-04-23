@@ -2,6 +2,7 @@ import os
 import asyncio
 import httpx
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from oracle.application.signal_synthesizer import fetch_news_for_ticker
@@ -14,6 +15,7 @@ DEFAULT_WATCHLIST = ["AAPL", "NVDA", "TSLA", "BBCA.JK", "GOTO.JK", "AMZN"]
 _AUTO_SIGNAL_SCHEDULER: AsyncIOScheduler | None = None
 _LAST_ACTIONABLE_SIGNAL_AT: datetime | None = None
 _LAST_HEARTBEAT_SENT_AT: datetime | None = None
+_INVALID_TICKER_UNTIL: dict[str, datetime] = {}
 
 class AutoSignalDecision(BaseModel):
     bias: str = Field(description="Must be BUY, SELL, or IGNORE")
@@ -36,6 +38,70 @@ def _safe_float(raw_value: object) -> float | None:
         return float(raw_value)
     except (TypeError, ValueError):
         return None
+
+
+def _normalize_ticker(raw_ticker: str) -> str:
+    return raw_ticker.strip().upper()
+
+
+def _get_alt_suffixes() -> list[str]:
+    raw_suffixes = os.getenv("ORACLE_AUTO_SIGNAL_ALT_SUFFIXES", ".JK")
+    suffixes = [segment.strip().upper() for segment in raw_suffixes.split(",")]
+    return [suffix for suffix in suffixes if suffix]
+
+
+def _build_ticker_candidates(ticker: str) -> list[str]:
+    normalized = _normalize_ticker(ticker)
+    candidates = [normalized]
+    if "." not in normalized:
+        for suffix in _get_alt_suffixes():
+            alias = f"{normalized}{suffix}"
+            if alias not in candidates:
+                candidates.append(alias)
+    return candidates
+
+
+def _is_on_invalid_cooldown(ticker: str, now: datetime) -> bool:
+    expiry = _INVALID_TICKER_UNTIL.get(ticker)
+    if expiry is None:
+        return False
+    if now >= expiry:
+        _INVALID_TICKER_UNTIL.pop(ticker, None)
+        return False
+    return True
+
+
+def _mark_invalid_cooldown(ticker: str, now: datetime) -> None:
+    cooldown_hours = float(
+        os.getenv("ORACLE_AUTO_SIGNAL_INVALID_TICKER_COOLDOWN_HOURS", "24")
+    )
+    _INVALID_TICKER_UNTIL[ticker] = now + timedelta(hours=max(cooldown_hours, 1.0))
+
+
+def _load_technical_data(yf_module: object, ticker: str) -> tuple[str | None, str | None]:
+    errors: list[str] = []
+    for candidate in _build_ticker_candidates(ticker):
+        try:
+            stock = yf_module.Ticker(candidate)
+            hist = stock.history(period="1mo")
+            if hist.empty:
+                errors.append(f"No price data for {candidate}")
+                continue
+
+            current_price = hist["Close"].iloc[-1]
+            high_30d = hist["High"].max()
+            low_30d = hist["Low"].min()
+            volume = hist["Volume"].iloc[-1]
+
+            technical_context = f"Current Price: {current_price:.2f}\n"
+            technical_context += f"30-Day High (Resistance): {high_30d:.2f}\n"
+            technical_context += f"30-Day Low (Support): {low_30d:.2f}\n"
+            technical_context += f"Latest Volume: {volume}"
+            return candidate, technical_context
+        except Exception as e:
+            errors.append(f"{candidate}: {e}")
+
+    return None, "; ".join(errors) if errors else "No price data"
 
 
 def _should_send_stale_heartbeat(now: datetime, stale_hours: float, cooldown_minutes: int) -> bool:
@@ -100,6 +166,9 @@ async def generate_auto_signals():
     except Exception as e:
         print(f"Missing dependency yfinance for Auto Signal Generator: {e}")
         return
+
+    # Reduce noisy yfinance stderr logs on invalid symbols; we handle retries/fallbacks ourselves.
+    logging.getLogger("yfinance").setLevel(logging.CRITICAL)
         
     client = genai.Client(api_key=api_key)
 
@@ -115,37 +184,33 @@ async def generate_auto_signals():
 
     actionable_signals = 0
 
-    for ticker in watchlist:
+    for raw_ticker in watchlist:
+        ticker = _normalize_ticker(raw_ticker)
+        now = _utc_now()
+
+        if _is_on_invalid_cooldown(ticker, now):
+            print(f"Skipping {ticker}: on invalid-symbol cooldown")
+            continue
+
         print(f"Analyzing {ticker} for auto-signal...")
         
         # 2. Fetch Fundamental News
         news = fetch_news_for_ticker(ticker, max_headlines=5)
         
-        # 3. Fetch Technical Data via yfinance
-        try:
-            stock = yf.Ticker(ticker)
-            hist = stock.history(period="1mo")
-            if hist.empty:
-                print(f"No price data for {ticker}")
-                continue
-                
-            current_price = hist['Close'].iloc[-1]
-            high_30d = hist['High'].max()
-            low_30d = hist['Low'].min()
-            volume = hist['Volume'].iloc[-1]
-            
-            technical_context = f"Current Price: {current_price:.2f}\n"
-            technical_context += f"30-Day High (Resistance): {high_30d:.2f}\n"
-            technical_context += f"30-Day Low (Support): {low_30d:.2f}\n"
-            technical_context += f"Latest Volume: {volume}"
-        except Exception as e:
-            print(f"Failed to fetch yfinance data for {ticker}: {e}")
+        # 3. Fetch Technical Data via yfinance with ticker fallback aliases.
+        resolved_ticker, technical_context = _load_technical_data(yf, ticker)
+        if resolved_ticker is None:
+            print(f"No price data for {ticker}. Details: {technical_context}")
+            _mark_invalid_cooldown(ticker, now)
             continue
+
+        if resolved_ticker != ticker:
+            print(f"Using fallback symbol {resolved_ticker} for {ticker}")
 
         # 4. Synthesize with Gemini
         prompt = f"""
 You are Oracle Pro 2026, an elite quantitative analyst.
-Analyze the following stock: {ticker}
+Analyze the following stock: {resolved_ticker}
 
 TECHNICAL DATA:
 {technical_context}
@@ -183,7 +248,7 @@ Keep reasoning under 2 sentences.
                 if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
                     try:
                         save_signal(
-                            ticker=ticker, 
+                            ticker=resolved_ticker,
                             signal_type="AI_PRO_SCAN", 
                             news=news, 
                             reasoning=reason,
@@ -198,7 +263,7 @@ Keep reasoning under 2 sentences.
                 # Send to Telegram
                 bias_emoji = "✅" if bias == "BUY" else "🔴"
                 message = f"🤖 *Oracle Pro Signal*\n"
-                message += f"Ticker: `{ticker}`\n\n"
+                message += f"Ticker: `{resolved_ticker}`\n\n"
                 message += f"*Bias:* {bias_emoji} {bias}\n"
                 message += f"*Entry:* {entry_price if entry_price is not None else 'N/A'}\n"
                 message += f"*Target:* {target_price if target_price is not None else 'N/A'}\n"
@@ -212,8 +277,8 @@ Keep reasoning under 2 sentences.
                     reply_markup={
                         "inline_keyboard": [
                             [
-                                {"text": "✅ Beli/Track", "callback_data": f"buy_{ticker}"},
-                                {"text": "❌ Abaikan", "callback_data": f"ignore_{ticker}"},
+                                {"text": "✅ Beli/Track", "callback_data": f"buy_{resolved_ticker}"},
+                                {"text": "❌ Abaikan", "callback_data": f"ignore_{resolved_ticker}"},
                             ]
                         ]
                     },
