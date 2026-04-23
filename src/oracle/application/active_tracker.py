@@ -116,29 +116,18 @@ async def run_tracking_daemon():
                     f"*Target Price:* {target_price:.2f}\n"
                     f"*Entry Price:* {entry_price:.2f if entry_price else 'N/A'}\n"
                     f"*PnL:* {pnl_percent:+.2f}%\n\n"
-                    f"Pertimbangkan untuk take profit."
+                    f"✅ Posisi otomatis ditutup (Auto-Sell)."
                 )
-                await _send_telegram_alert(
-                    telegram_bot_token,
-                    telegram_chat_id,
-                    message,
-                    reply_markup={
-                        "inline_keyboard": [
-                            [
-                                {"text": "💰 Jual/Take Profit", "callback_data": f"sell_{ticker}"},
-                                {"text": "👀 Tahan Dulu", "callback_data": f"keep_{ticker}"},
-                            ]
-                        ]
-                    },
-                )
+                await _send_telegram_alert(telegram_bot_token, telegram_chat_id, message)
+                
                 if telegram_public_channel_id:
-                    public_message = f"✅ *TAKE PROFIT HIT*\n\nSaham: {ticker}\nPnL: {pnl_percent:.2f}%\nStatus: Target Tercapai!"
+                    public_message = f"✅ *TAKE PROFIT HIT*\n\nSaham: {ticker}\nPnL: {pnl_percent:.2f}%\nStatus: Target Tercapai & Posisi Ditutup!"
                     await _send_telegram_alert(telegram_bot_token, telegram_public_channel_id, public_message)
 
                 try:
-                    save_tracking_alert(tracking_id, "TARGET_REACHED", message)
-                except Exception:
-                    pass
+                    close_tracking(ticker)
+                except Exception as e:
+                    print(f"Failed to close tracking for {ticker}: {e}")
                 continue
 
             # Check stop loss hit
@@ -149,29 +138,18 @@ async def run_tracking_daemon():
                     f"*Stop Loss:* {stop_loss:.2f}\n"
                     f"*Entry Price:* {entry_price:.2f if entry_price else 'N/A'}\n"
                     f"*PnL:* {pnl_percent:+.2f}%\n\n"
-                    f"Disarankan cut loss segera."
+                    f"❌ Posisi otomatis ditutup (Auto-Cutloss)."
                 )
-                await _send_telegram_alert(
-                    telegram_bot_token,
-                    telegram_chat_id,
-                    message,
-                    reply_markup={
-                        "inline_keyboard": [
-                            [
-                                {"text": "❌ Cut Loss", "callback_data": f"sell_{ticker}"},
-                                {"text": "👀 Tahan Dulu", "callback_data": f"keep_{ticker}"},
-                            ]
-                        ]
-                    },
-                )
+                await _send_telegram_alert(telegram_bot_token, telegram_chat_id, message)
+                
                 if telegram_public_channel_id:
-                    public_message = f"🚨 *STOP LOSS HIT*\n\nSaham: {ticker}\nPnL: {pnl_percent:.2f}%\nStatus: Menunggu Cut Loss"
+                    public_message = f"🚨 *STOP LOSS HIT*\n\nSaham: {ticker}\nPnL: {pnl_percent:.2f}%\nStatus: Auto-Cutloss Tereksekusi"
                     await _send_telegram_alert(telegram_bot_token, telegram_public_channel_id, public_message)
 
                 try:
-                    save_tracking_alert(tracking_id, "STOP_LOSS_HIT", message)
-                except Exception:
-                    pass
+                    close_tracking(ticker)
+                except Exception as e:
+                    print(f"Failed to close tracking for {ticker}: {e}")
                 continue
 
         # --- Fix 5: News-Based Sell Signal (existing + enhanced) ---
