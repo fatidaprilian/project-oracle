@@ -763,23 +763,31 @@ def update_last_checked(tracking_id: str) -> None:
         conn.commit()
 
 
-def close_tracking(ticker: str) -> None:
+def close_tracking(ticker: str) -> float | None:
     dsn = get_dsn()
     if not dsn:
-        return
+        return None
+    pnl = None
     with psycopg.connect(dsn) as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 UPDATE active_tracking
                 SET is_active = FALSE
                 WHERE ticker = %s AND is_active = TRUE
+                RETURNING pnl_percent
             """, (ticker,))
+            row = cur.fetchone()
+            if row and row[0] is not None:
+                pnl = float(row[0])
+            
             # Add to ignore list so we don't buy it again immediately
             cur.execute("""
                 INSERT INTO ignore_list (ticker, expires_at)
                 VALUES (%s, NOW() + INTERVAL '3 days')
+                ON CONFLICT (ticker) DO UPDATE SET expires_at = EXCLUDED.expires_at
             """, (ticker,))
         conn.commit()
+    return pnl
 
 
 def save_tracking_alert(tracking_id: str, alert_type: str, message: str) -> None:

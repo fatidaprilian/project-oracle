@@ -508,9 +508,15 @@ async def dashboard_action(payload: DashboardActionPayload):
             message = f"*[🔴 Muted {payload.ticker} for 3 days]* (Triggered from Web)"
 
         elif payload.action == "sell":
+            pnl = None
             if postgres_enabled:
-                close_tracking(payload.ticker)
-            message = f"*[🔻 Closed position {payload.ticker}]* (Triggered from Web)"
+                pnl = close_tracking(payload.ticker)
+            
+            if pnl is not None:
+                status = "🏆 WIN" if pnl > 0 else ("🛑 LOSE" if pnl < 0 else "⚪ BREAKEVEN")
+                message = f"*[ {status}: {pnl:+.2f}% ] Closed position {payload.ticker}* (Triggered from Web)"
+            else:
+                message = f"*[🔻 Closed position {payload.ticker}]* (Triggered from Web)"
 
         else:
             raise HTTPException(status_code=400, detail="Invalid action")
