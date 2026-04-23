@@ -176,37 +176,45 @@ function App() {
           </div>
         </header>
 
-        {watchlist.length > 0 && (
-          <div className="mb-8 p-4 bg-neutral-900 border border-neutral-800 rounded-xl">
-            <h2 className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Active Watchlist Radar (Manual)</h2>
-            <div className="flex flex-wrap gap-2">
-              {watchlist.map(t => (
-                <div key={t} className="flex items-center gap-2 bg-neutral-950 border border-neutral-700 px-3 py-1.5 rounded-md text-sm">
-                  <span className="font-mono">{t}</span>
-                  <button onClick={() => removeWatchlist(t)} className="text-neutral-500 hover:text-rose-400">&times;</button>
-                </div>
-              ))}
+        {(() => {
+          const activeTickers = new Set(portfolio.map(p => p.ticker));
+          const visibleWatchlist = watchlist.filter(t => !activeTickers.has(t));
+          return visibleWatchlist.length > 0 && (
+            <div className="mb-8 p-4 bg-neutral-900 border border-neutral-800 rounded-xl">
+              <h2 className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Active Watchlist Radar (Manual)</h2>
+              <div className="flex flex-wrap gap-2">
+                {visibleWatchlist.map(t => (
+                  <div key={t} className="flex items-center gap-2 bg-neutral-950 border border-neutral-700 px-3 py-1.5 rounded-md text-sm">
+                    <span className="font-mono">{t}</span>
+                    <button onClick={() => removeWatchlist(t)} className="text-neutral-500 hover:text-rose-400">&times;</button>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
-        {anomalies.length > 0 && (
-          <div className="mb-8 p-4 bg-indigo-950/20 border border-indigo-900/50 rounded-xl">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-xs text-indigo-400 uppercase tracking-wider font-bold flex items-center gap-2">
-                <span className="animate-pulse">⚡</span> Auto-Scanner Anomalies (Today)
-              </h2>
-              <span className="text-[10px] text-neutral-500">Resets daily</span>
+        {(() => {
+          const activeTickers = new Set(portfolio.map(p => p.ticker));
+          const visibleAnomalies = anomalies.filter(t => !activeTickers.has(t));
+          return visibleAnomalies.length > 0 && (
+            <div className="mb-8 p-4 bg-indigo-950/20 border border-indigo-900/50 rounded-xl">
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-xs text-indigo-400 uppercase tracking-wider font-bold flex items-center gap-2">
+                  <span className="animate-pulse">⚡</span> Auto-Scanner Anomalies (Today)
+                </h2>
+                <span className="text-[10px] text-neutral-500">Resets daily</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {visibleAnomalies.map(t => (
+                  <div key={t} className="flex items-center gap-2 bg-indigo-950/50 border border-indigo-800/50 px-3 py-1.5 rounded-md text-sm text-indigo-200">
+                    <span className="font-mono">{t}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {anomalies.map(t => (
-                <div key={t} className="flex items-center gap-2 bg-indigo-950/50 border border-indigo-800/50 px-3 py-1.5 rounded-md text-sm text-indigo-200">
-                  <span className="font-mono">{t}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Tab Navigation */}
         <div className="flex gap-1 mb-8 bg-neutral-900 p-1 rounded-xl border border-neutral-800">
