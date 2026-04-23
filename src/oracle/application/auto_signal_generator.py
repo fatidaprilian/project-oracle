@@ -309,6 +309,12 @@ async def generate_auto_signals():
 
     client = genai.Client(api_key=api_key)
 
+    try:
+        from oracle.application.market_screener import run_market_screener
+        run_market_screener()
+    except Exception as e:
+        print(f"Failed to run market screener: {e}")
+
     # 1. Fetch Dynamic Watchlist
     try:
         watchlist = get_watchlist()

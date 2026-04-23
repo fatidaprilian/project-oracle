@@ -162,6 +162,33 @@ async def _telegram_post(bot_token: str, method: str, payload: dict) -> dict:
         raise RuntimeError(f"Telegram API {method} failed: {body}")
     return body
 
+async def _send_public_buy_signal(bot_token: str, ticker: str, entry: float, tp: float, sl: float):
+    channel_id = os.getenv("TELEGRAM_PUBLIC_CHANNEL_ID")
+    if not channel_id or not bot_token:
+        return
+        
+    # Formatting ticker for TradingView URL (remove .JK for IDX stocks)
+    tv_ticker = ticker.replace(".JK", "")
+    
+    text = (
+        f"🚀 *NEW SIGNAL: {ticker}*\n\n"
+        f"🎯 Entry Range: {entry:.2f} (Estimated)\n"
+        f"💰 Target Profit: {tp:.2f}\n"
+        f"🛡️ Stop Loss: {sl:.2f}\n\n"
+        f"🔗 [Lihat Chart di TradingView](https://www.tradingview.com/chart/?symbol=IDX:{tv_ticker})"
+    )
+    
+    try:
+        await _telegram_post(bot_token, "sendMessage", {
+            "chat_id": channel_id,
+            "text": text,
+            "parse_mode": "Markdown",
+            "disable_web_page_preview": True
+        })
+        print(f"Broadcasted {ticker} to public channel.")
+    except Exception as e:
+        print(f"Failed to send to public channel: {e}")
+
 class HealthResponse(BaseModel):
     status: str
     version: str
@@ -332,6 +359,10 @@ async def telegram_webhook(request: Request):
                     target_price=target_price,
                     stop_loss=stop_loss_price,
                 )
+                
+                if entry_price is not None and target_price is not None and stop_loss_price is not None:
+                    await _send_public_buy_signal(telegram_bot_token, ticker, entry_price, target_price, stop_loss_price)
+                    
             status_text = f"Tracking aktif untuk {ticker}."
 
         elif action == "ignore":
@@ -476,6 +507,9 @@ async def dashboard_action(payload: DashboardActionPayload):
                     "text": message,
                     "parse_mode": "Markdown"
                 })
+                
+            if payload.action == "buy" and entry is not None and target is not None and sl is not None:
+                await _send_public_buy_signal(telegram_bot_token, payload.ticker, entry, target, sl)
 
         return {"status": "success", "action": payload.action, "ticker": payload.ticker}
     except Exception as e:

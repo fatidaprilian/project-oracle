@@ -69,6 +69,7 @@ async def run_tracking_daemon():
     api_key = os.getenv("ORACLE_AI_ANALYST_API_KEY")
     telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    telegram_public_channel_id = os.getenv("TELEGRAM_PUBLIC_CHANNEL_ID")
 
     if not api_key or not telegram_bot_token or not telegram_chat_id:
         print("Missing credentials for tracking daemon")
@@ -130,6 +131,10 @@ async def run_tracking_daemon():
                         ]
                     },
                 )
+                if telegram_public_channel_id:
+                    public_message = f"✅ *TAKE PROFIT HIT*\n\nSaham: {ticker}\nPnL: {pnl_percent:.2f}%\nStatus: Target Tercapai!"
+                    await _send_telegram_alert(telegram_bot_token, telegram_public_channel_id, public_message)
+
                 try:
                     save_tracking_alert(tracking_id, "TARGET_REACHED", message)
                 except Exception:
@@ -159,6 +164,10 @@ async def run_tracking_daemon():
                         ]
                     },
                 )
+                if telegram_public_channel_id:
+                    public_message = f"🚨 *STOP LOSS HIT*\n\nSaham: {ticker}\nPnL: {pnl_percent:.2f}%\nStatus: Menunggu Cut Loss"
+                    await _send_telegram_alert(telegram_bot_token, telegram_public_channel_id, public_message)
+
                 try:
                     save_tracking_alert(tracking_id, "STOP_LOSS_HIT", message)
                 except Exception:
