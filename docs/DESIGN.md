@@ -1,56 +1,74 @@
-# Frontend Design Architecture: Oracle Signals Dashboard
+# Frontend Design Architecture: Oracle Ruang Kendali Bursa
 
 ## 1. Design Intent and Product Personality
-The Oracle Signals Dashboard is a real-time, terminal-inspired interface designed for rapid decision-making in stock trading. It abandons the bloated, multi-page SaaS structure in favor of a focused, high-density single-page application (SPA). The personality is authoritative, precise, and distinctly "Bloomberg-lite," prioritizing signal clarity over decorative aesthetics.
+The redesigned Oracle dashboard is an Indonesian-language market operations surface for one operator who needs to decide fast, not a generic analytics SaaS. The product should feel like a trading desk board: disciplined, direct, and slightly theatrical when a real signal appears.
 
 ## 2. Audience and Use-Context Signals
-- **Audience:** Sole trader (the user), operating with high context.
-- **Context:** Quick glances to validate AI-synthesized stock signals. Decisions (BUY/IGNORE) must be made in seconds.
-- **Environment:** Often viewed alongside other charts or via Telegram. The UI must feel like a mission-control center.
+- Primary user: one high-context operator monitoring Indonesian equities.
+- Core tasks: review screener anomalies, validate pending signals, monitor active positions, and inspect resolved outcomes.
+- Usage pattern: desktop-first during market routines, but still fully usable on mobile for quick checks and manual actions.
 
 ## 3. Visual Direction and Distinctive Moves
-- **Dark Mode Default:** Extreme dark mode (`neutral-950`) to reduce eye strain during continuous monitoring.
-- **Neon Accents:** Gradients (`emerald-400` to `cyan-500`) used strictly for the Oracle branding to create a distinct, authored tension against the stark background.
-- **High-Contrast Signal Badges:** Immediate visual classification using `emerald-500` (BUY) and `rose-500` (IGNORE) with low-opacity backgrounds for readability.
+- Default surface: deep graphite background with copper, emerald, and ice-blue semantic accents.
+- Signature move: a "market tape" framing system with horizontal separators, compact chips, and a strong command-board header instead of a generic hero.
+- Product tone: Indonesian copy everywhere on user-facing surfaces, with market language that clarifies watchlist versus execution.
 
 ## 4. Color Science and Semantic Roles
-- **Background/Surface:** `neutral-950` (App background), `neutral-900` (Card surfaces), `neutral-800` (Borders/Dividers).
-- **Text:** `neutral-100` (Primary), `neutral-400` (Secondary/Muted), `neutral-500` (Tertiary labels).
-- **Semantics:**
-  - *Positive/Action:* `emerald-500` (Buy actions, active tracking).
-  - *Negative/Muted:* `rose-500` (Ignore actions, muted tracking).
+- Base: charcoal, graphite, and smoke neutrals for low-glare operation.
+- Positive/action: emerald for confirmed upside and healthy positions.
+- Risk/critical: ember red for stop-loss, emergency alerts, and negative outcomes.
+- Analysis/accent: copper and ice-blue for scanner context, timestamps, and structural market metadata.
 
 ## 5. Typographic Engineering and Hierarchy
-- **Font:** Inter (or sans-serif default) prioritizing numbers and dense text.
-- **Headers:** Heavy tracking, bold weights (`text-4xl font-extrabold tracking-tight`).
-- **Metadata:** Uppercase, wide tracking, tiny sizes for labels (`text-xs uppercase tracking-wider`).
-- **Body:** Relaxed line height (`leading-relaxed`) for AI reasoning blocks to improve scanning.
+- Display family: serif-led headline stack to make the dashboard feel authored instead of template-like.
+- Interface family: dense sans stack for tables, chips, and numeric data.
+- Hierarchy rule: uppercase micro-labels for metadata, medium-weight body text for analysis, and oversized numerics for market stats.
 
 ## 6. Spacing, Layout Rhythm, and Density Strategy
-- **Base Grid:** 4px/8px Tailwind system.
-- **Cards:** 24px padding (`p-6`), 16px gaps (`gap-4`), strict border radius (`rounded-2xl`) to contain complex information.
-- **Density:** High density. Elements are grouped tightly by semantic relationship (e.g., Ticker + Bias Badge together).
+- Base grid: 8px.
+- Rhythm: dense horizontal sections with tight internal grouping and larger vertical breaks between operational zones.
+- Density target: high-density desktop layout, recomposed into stacked narrative panels on tablet and mobile.
 
-## 7. Responsive Strategy and Cross-Viewport Adaptation Matrix
-- **Mobile (`<768px`):** 1-column layout, full-width cards, stacked action buttons.
-- **Tablet (`768px - 1024px`):** 2-column masonry or grid.
-- **Desktop (`>1024px`):** 3-column grid (`grid-cols-3`) maximizing information density across wide screens.
+## 7. Token Architecture and Alias Strategy
+- Primitive tokens store raw color, spacing, radius, and motion values.
+- Semantic tokens map those primitives into intent such as background, panel, accent, positive, danger, muted, and focus.
+- Component tokens consume semantic aliases for shells, chips, cards, and buttons so future copy or theme changes do not require component rewrites.
 
-## 8. Interaction, Motion, and Feedback Rules
-- **Hover States:** Subtle border color transitions (`hover:border-neutral-700`) and slight background lightening on buttons.
-- **Loading:** Skeleton pulses (`animate-pulse`) for the initial signal fetch.
-- **Optimistic UI:** Clicking an action immediately updates the card state to "Tracking Active" or "Muted" without waiting for the network, providing instant perceived performance.
+## 8. Responsive Strategy and Cross-Viewport Adaptation Matrix
+- Mobile: stack sections into a single vertical command flow; actions become full-width; tables collapse into cards.
+- Tablet: maintain two-column density where possible, but move portfolio and history below signal review.
+- Desktop: use an editorial command-board grid where radar and controls support the main signal review surface.
 
-## 9. Component Language and Shared Patterns
-Currently implemented as a monolithic architecture in `App.tsx` due to the hyper-focused scope of the pivot. If scaling is required:
-- **`SignalCard`**: Contains the technical signal, reasoning, and action buttons.
-- **`Badge`**: Reusable component for BUY/IGNORE visual identifiers.
+## 9. Interaction, Motion, and Feedback Rules
+- Motion should be purposeful: soft reveal on load, border glow on actionable cards, and ticker tape drift for ambient status only.
+- Reduced-motion mode must disable ambient movement while preserving state feedback.
+- Refresh, scan, and action states should confirm immediately with clear Indonesian feedback.
 
-## 10. Accessibility Non-Negotiables
-- Minimum contrast ratios maintained (e.g., `emerald-400` on `emerald-500/10` over `neutral-900`).
-- Clear focus outlines (Tailwind defaults) preserved for keyboard navigation.
+## 10. Component Language, Morphology, and Shared Patterns
+- Shared section shell with title, context line, and optional side action.
+- Signal cards combine ticker identity, source, expiry, duration window, price plan, embedded chart, reasoning, and action row.
+- Portfolio cards and tables must expose entry, current price, target, stop-loss, PnL, tracking age, review cadence, and estimated duration.
+- History surfaces must preserve outcome context and source attribution without hiding reasoning.
 
-## 11. Anti-Patterns to Avoid
-- *No generic SaaS white-themes.*
-- *No multi-page routing* for core actions (keep the user on the dashboard).
-- *No hidden information behind tooltips* (AI reasoning must be fully visible).
+## 11. Context Hygiene and Approved Reference Boundaries
+- Valid style context comes only from the current Oracle repository, the Indonesian equity workflow, and the current brief.
+- Old generic dashboard memory and unrelated SaaS patterns are invalid context.
+- Visual continuity is with Oracle product behavior, not with the previous monolithic UI skin.
+
+## 12. Accessibility Non-Negotiables
+- WCAG 2.2 AA is the blocking floor.
+- Focus states must be visible on all buttons, pills, and card actions.
+- Tables that collapse on small screens must preserve label-to-value clarity.
+- Status, risk, and scanner source cannot rely on color alone; they need text labels and icon support.
+
+## 13. Anti-Patterns to Avoid
+- No mixed-language user-facing copy.
+- No generic KPI cards floating over a startup gradient.
+- No hidden critical reasoning behind tooltips or expandable-only affordances.
+- No implication that the daily screener list is a one-day profit target.
+
+## 14. Implementation Notes for Future UI Tasks
+- Preserve every current data surface: stats, anomalies, manual watchlist, pending signals, active portfolio, history, reasoning, source tags, timestamps, expiry, and price levels.
+- Treat "daily radar" and "execution signal" as separate content types with separate copy rules.
+- Estimated target duration is expressed in trading days, never in exact hours.
+- Tracking reviews may happen hourly for risk detection, but target timing should remain day-based in the UI.

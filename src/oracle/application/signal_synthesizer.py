@@ -22,7 +22,7 @@ def fetch_news_for_ticker(ticker: str, max_headlines: int = 5) -> str:
 
 class OracleDecision(BaseModel):
     bias: str = Field(description="Must be 'BUY' or 'IGNORE'")
-    reason: str = Field(description="Max 2 sentences justifying the bias based on the signal and news")
+    reason: str = Field(description="Maksimal 2 kalimat alasan dalam bahasa Indonesia yang menjelaskan bias berdasarkan sinyal dan berita")
 
 def synthesize_signal(ticker: str, signal_type: str, price: float, news: str) -> dict:
     """
@@ -33,7 +33,7 @@ def synthesize_signal(ticker: str, signal_type: str, price: float, news: str) ->
     if not api_key:
         return {
             "bias": "IGNORE",
-            "reason": "Oracle AI Analyst API Key is missing. Falling back to safe mode."
+            "reason": "Kunci API Oracle AI Analyst belum tersedia. Sistem masuk ke mode aman."
         }
         
     client = genai.Client(api_key=api_key)
@@ -51,7 +51,7 @@ Recent Headlines:
 
 If the news is strongly negative or contradicts a bullish technical signal, output 'IGNORE'.
 If the news is positive or neutral and supports the technical signal, output 'BUY'.
-Provide a concise reason (maximum 2 sentences).
+Berikan alasan singkat dalam bahasa Indonesia profesional (maksimal 2 kalimat).
 """
     
     try:
@@ -71,5 +71,5 @@ Provide a concise reason (maximum 2 sentences).
         print(f"Gemini API error: {e}")
         return {
             "bias": "IGNORE",
-            "reason": f"AI synthesis failed: {str(e)}"
+            "reason": f"Sintesis AI gagal dilakukan: {str(e)}"
         }

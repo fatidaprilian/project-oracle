@@ -3,6 +3,7 @@ import asyncio
 from datetime import datetime, timezone, timedelta
 import os
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from oracle.application.message_formats import format_daily_broadcast_message
 
 def fetch_anomalous_stocks() -> list[str]:
     """
@@ -95,24 +96,8 @@ async def daily_telegram_broadcast():
             print("[Daily Broadcast] Missing Telegram credentials.")
             return
 
-        # Format date for Indonesia (WIB UTC+7)
         now_wib = datetime.now(timezone.utc) + timedelta(hours=7)
-        days_id = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
-        months_id = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-        
-        day_str = days_id[now_wib.weekday()]
-        month_str = months_id[now_wib.month - 1]
-        date_str = f"{day_str}, {now_wib.day} {month_str} {now_wib.year}"
-
-        ticker_list = "\n".join([f"• {t.replace('.JK', '')}" for t in anomalies])
-        
-        message = (
-            f"🔍 *POTENSI SAHAM BESOK*\n"
-            f"_{date_str}_\n\n"
-            f"Berdasarkan hasil _Oracle Volume Screener_ sore ini, berikut adalah saham-saham anomali yang masuk radar pantauan AI untuk besok:\n\n"
-            f"{ticker_list}\n\n"
-            f"_(Sinyal Buy/Sell resmi akan dikirim otomatis jika AI menemukan momentum yang tepat)_"
-        )
+        message = format_daily_broadcast_message(anomalies, now_wib)
 
         url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
         async with httpx.AsyncClient() as client:

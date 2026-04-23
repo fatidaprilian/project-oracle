@@ -59,6 +59,7 @@ Tugas:
   - **Status**: BUY/SELL/IGNORE.
   - **Reasoning**: Justifikasi dari AI.
   - **Price Levels**: Entry, Target, Stop Loss.
+  - **Estimated Duration**: Estimasi durasi menuju target dalam hitungan hari bursa.
   - **Data Timestamp**: Kapan data harga diambil (intraday vs last close).
   - **Expiry Info**: Berapa lama signal valid (default 24 jam).
   - **Action Buttons**: Inline keyboard `[Beli]` dan `[Abaikan]`.
@@ -83,6 +84,7 @@ Tugas:
   - Jika harga <= stop loss → Alert "Stop Loss Hit"
 - **News Monitoring**: Cek berita terkini via Yahoo RSS.
   - Jika ada berita sangat buruk → Alert "Emergency Sell"
+- **Monitoring Principle**: Monitoring berkala dipakai untuk mendeteksi breach harga dan berita berat yang merusak tesis, bukan untuk menebak jam target tercapai.
 - **Live PnL**: Update current_price dan pnl_percent di database setiap cycle.
 - **Sell Signal**: HANYA dikirim untuk saham yang sudah dibeli (ada di Active Portfolio).
 

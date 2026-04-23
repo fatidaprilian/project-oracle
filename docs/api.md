@@ -111,6 +111,15 @@ Returns server health status.
 }
 ```
 
+### Dashboard Signal Surfaces
+
+Dashboard API untuk Oracle saham sekarang mengekspos konteks tambahan berikut:
+
+- `estimated_duration_min_days`
+- `estimated_duration_max_days`
+
+Field tersebut muncul pada payload sinyal dan portfolio ketika tersedia, dan harus dibaca sebagai estimasi menuju target dalam **hari bursa**, bukan janji target tercapai pada sesi berikutnya.
+
 ### Weekly Workflow
 
 ```http

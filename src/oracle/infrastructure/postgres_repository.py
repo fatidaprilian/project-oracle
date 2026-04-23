@@ -29,6 +29,8 @@ def init_db() -> None:
                     entry_price NUMERIC,
                     target_price NUMERIC,
                     stop_loss NUMERIC,
+                    estimated_duration_min_days INTEGER,
+                    estimated_duration_max_days INTEGER,
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     expires_at TIMESTAMPTZ,
                     resolved_at TIMESTAMPTZ,
@@ -42,6 +44,8 @@ def init_db() -> None:
                 ("entry_price", "NUMERIC"),
                 ("target_price", "NUMERIC"),
                 ("stop_loss", "NUMERIC"),
+                ("estimated_duration_min_days", "INTEGER"),
+                ("estimated_duration_max_days", "INTEGER"),
                 ("expires_at", "TIMESTAMPTZ"),
                 ("resolved_at", "TIMESTAMPTZ"),
                 ("resolved_action", "TEXT"),
@@ -85,6 +89,8 @@ def init_db() -> None:
                     entry_price NUMERIC,
                     target_price NUMERIC,
                     stop_loss NUMERIC,
+                    estimated_duration_min_days INTEGER,
+                    estimated_duration_max_days INTEGER,
                     current_price NUMERIC,
                     pnl_percent NUMERIC DEFAULT 0,
                     signal_id UUID
@@ -96,6 +102,8 @@ def init_db() -> None:
                 ("entry_price", "NUMERIC"),
                 ("target_price", "NUMERIC"),
                 ("stop_loss", "NUMERIC"),
+                ("estimated_duration_min_days", "INTEGER"),
+                ("estimated_duration_max_days", "INTEGER"),
                 ("current_price", "NUMERIC"),
                 ("pnl_percent", "NUMERIC DEFAULT 0"),
                 ("signal_id", "UUID"),
@@ -157,6 +165,8 @@ def save_signal(
     entry: float = None,
     tp: float = None,
     sl: float = None,
+    estimated_duration_min_days: int = None,
+    estimated_duration_max_days: int = None,
     data_timestamp: str = None,
 ) -> Optional[str]:
     """Save a signal and return its UUID. Sets expires_at automatically."""
@@ -171,13 +181,16 @@ def save_signal(
                     """
                     INSERT INTO signal_history
                         (ticker, technical_signal, news_context, ai_reasoning, bias,
-                         entry_price, target_price, stop_loss, data_timestamp,
+                         entry_price, target_price, stop_loss,
+                         estimated_duration_min_days, estimated_duration_max_days,
+                         data_timestamp,
                          expires_at, resolved_at, resolved_action)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                             NOW() + make_interval(hours => %s), NOW(), 'IGNORE')
                     RETURNING id
                     """,
                     (ticker, signal_type, news, reasoning, bias, entry, tp, sl,
+                     estimated_duration_min_days, estimated_duration_max_days,
                      data_timestamp, expiry_hours),
                 )
             else:
@@ -185,13 +198,16 @@ def save_signal(
                     """
                     INSERT INTO signal_history
                         (ticker, technical_signal, news_context, ai_reasoning, bias,
-                         entry_price, target_price, stop_loss, data_timestamp,
+                         entry_price, target_price, stop_loss,
+                         estimated_duration_min_days, estimated_duration_max_days,
+                         data_timestamp,
                          expires_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                             NOW() + make_interval(hours => %s))
                     RETURNING id
                     """,
                     (ticker, signal_type, news, reasoning, bias, entry, tp, sl,
+                     estimated_duration_min_days, estimated_duration_max_days,
                      data_timestamp, expiry_hours),
                 )
             row = cur.fetchone()
@@ -234,7 +250,7 @@ def resolve_signal_by_ticker(ticker: str, action: str) -> Optional[str]:
 
 
 def get_signal_prices(signal_ticker: str) -> dict | None:
-    """Get entry/target/stop_loss from the latest resolved BUY signal for a ticker."""
+    """Get price plan and duration window from the latest resolved BUY signal for a ticker."""
     dsn = get_dsn()
     if not dsn:
         return None
@@ -243,7 +259,12 @@ def get_signal_prices(signal_ticker: str) -> dict | None:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT entry_price, target_price, stop_loss
+                SELECT
+                    entry_price,
+                    target_price,
+                    stop_loss,
+                    estimated_duration_min_days,
+                    estimated_duration_max_days
                 FROM signal_history
                 WHERE UPPER(ticker) = %s
                   AND resolved_action = 'BUY'
@@ -258,6 +279,8 @@ def get_signal_prices(signal_ticker: str) -> dict | None:
             "entry_price": float(row[0]) if row[0] is not None else None,
             "target_price": float(row[1]) if row[1] is not None else None,
             "stop_loss": float(row[2]) if row[2] is not None else None,
+            "estimated_duration_min_days": int(row[3]) if row[3] is not None else None,
+            "estimated_duration_max_days": int(row[4]) if row[4] is not None else None,
         }
     return None
 
@@ -459,6 +482,8 @@ def track_symbol(
     entry_price: float = None,
     target_price: float = None,
     stop_loss: float = None,
+    estimated_duration_min_days: int = None,
+    estimated_duration_max_days: int = None,
     signal_id: str = None,
 ) -> None:
     dsn = get_dsn()
@@ -469,10 +494,26 @@ def track_symbol(
             cur.execute(
                 """
                 INSERT INTO active_tracking
-                    (ticker, entry_price, target_price, stop_loss, signal_id)
-                VALUES (%s, %s, %s, %s, %s)
+                    (
+                        ticker,
+                        entry_price,
+                        target_price,
+                        stop_loss,
+                        estimated_duration_min_days,
+                        estimated_duration_max_days,
+                        signal_id
+                    )
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
-                (ticker, entry_price, target_price, stop_loss, signal_id),
+                (
+                    ticker,
+                    entry_price,
+                    target_price,
+                    stop_loss,
+                    estimated_duration_min_days,
+                    estimated_duration_max_days,
+                    signal_id,
+                ),
             )
         conn.commit()
 
@@ -568,6 +609,8 @@ def get_dashboard_signals(
                     sh.entry_price,
                     sh.target_price,
                     sh.stop_loss,
+                    sh.estimated_duration_min_days,
+                    sh.estimated_duration_max_days,
                     CASE
                         WHEN sh.resolved_action = 'EXPIRED' THEN 'EXPIRED'
                         WHEN sh.resolved_action = 'BUY' THEN 'TRACKING'
@@ -608,10 +651,12 @@ def get_dashboard_signals(
                     "entry_price": float(row[7]) if row[7] is not None else None,
                     "target_price": float(row[8]) if row[8] is not None else None,
                     "stop_loss": float(row[9]) if row[9] is not None else None,
-                    "status": row[10],
-                    "resolved_at": row[11].isoformat() if row[11] else None,
-                    "expires_at": row[12].isoformat() if row[12] else None,
-                    "data_timestamp": row[13],
+                    "estimated_duration_min_days": int(row[10]) if row[10] is not None else None,
+                    "estimated_duration_max_days": int(row[11]) if row[11] is not None else None,
+                    "status": row[12],
+                    "resolved_at": row[13].isoformat() if row[13] else None,
+                    "expires_at": row[14].isoformat() if row[14] else None,
+                    "data_timestamp": row[15],
                 })
             return signals
 
@@ -628,6 +673,7 @@ def get_portfolio() -> list[dict]:
                 SELECT
                     id, ticker, tracked_since, last_checked_at,
                     entry_price, target_price, stop_loss,
+                    estimated_duration_min_days, estimated_duration_max_days,
                     current_price, pnl_percent
                 FROM active_tracking
                 WHERE is_active = TRUE
@@ -645,8 +691,10 @@ def get_portfolio() -> list[dict]:
                     "entry_price": float(r[4]) if r[4] is not None else None,
                     "target_price": float(r[5]) if r[5] is not None else None,
                     "stop_loss": float(r[6]) if r[6] is not None else None,
-                    "current_price": float(r[7]) if r[7] is not None else None,
-                    "pnl_percent": float(r[8]) if r[8] is not None else None,
+                    "estimated_duration_min_days": int(r[7]) if r[7] is not None else None,
+                    "estimated_duration_max_days": int(r[8]) if r[8] is not None else None,
+                    "current_price": float(r[9]) if r[9] is not None else None,
+                    "pnl_percent": float(r[10]) if r[10] is not None else None,
                 })
             return positions
 
@@ -662,6 +710,7 @@ def get_signal_history(limit: int = 50) -> list[dict]:
                 """
                 SELECT
                     id, ticker, bias, ai_reasoning, entry_price, target_price, stop_loss,
+                    estimated_duration_min_days, estimated_duration_max_days,
                     created_at, resolved_at, resolved_action, technical_signal
                 FROM signal_history
                 WHERE resolved_at IS NOT NULL
@@ -681,10 +730,12 @@ def get_signal_history(limit: int = 50) -> list[dict]:
                     "entry_price": float(r[4]) if r[4] is not None else None,
                     "target_price": float(r[5]) if r[5] is not None else None,
                     "stop_loss": float(r[6]) if r[6] is not None else None,
-                    "created_at": r[7].isoformat() if r[7] else None,
-                    "resolved_at": r[8].isoformat() if r[8] else None,
-                    "resolved_action": r[9],
-                    "technical_signal": r[10]
+                    "estimated_duration_min_days": int(r[7]) if r[7] is not None else None,
+                    "estimated_duration_max_days": int(r[8]) if r[8] is not None else None,
+                    "created_at": r[9].isoformat() if r[9] else None,
+                    "resolved_at": r[10].isoformat() if r[10] else None,
+                    "resolved_action": r[11],
+                    "technical_signal": r[12]
                 })
             return history
 
@@ -712,7 +763,9 @@ def get_active_trackings() -> list[dict]:
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT id, ticker, tracked_since, last_checked_at,
-                       entry_price, target_price, stop_loss, current_price
+                       entry_price, target_price, stop_loss,
+                       estimated_duration_min_days, estimated_duration_max_days,
+                       current_price
                 FROM active_tracking
                 WHERE is_active = TRUE
             """)
@@ -726,7 +779,9 @@ def get_active_trackings() -> list[dict]:
                     "entry_price": float(r[4]) if r[4] is not None else None,
                     "target_price": float(r[5]) if r[5] is not None else None,
                     "stop_loss": float(r[6]) if r[6] is not None else None,
-                    "current_price": float(r[7]) if r[7] is not None else None,
+                    "estimated_duration_min_days": int(r[7]) if r[7] is not None else None,
+                    "estimated_duration_max_days": int(r[8]) if r[8] is not None else None,
+                    "current_price": float(r[9]) if r[9] is not None else None,
                 }
                 for r in rows
             ]

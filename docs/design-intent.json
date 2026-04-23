@@ -3,36 +3,36 @@
   "status": "active",
   "project": {
     "name": "project-oracle-frontend",
-    "context": "Stock Signal Pivot Dashboard. A single-page terminal-inspired UI for validating AI stock signals.",
-    "domain": "Web application (Dashboard)",
+    "context": "Indonesian stock signal command board for Oracle screener, signal review, and active tracking.",
+    "domain": "Web application dashboard",
     "stack": "React, Vite, Tailwind CSS",
-    "blueprint": "Single Page Dashboard"
+    "blueprint": "Single-page command board"
   },
-  "designPhilosophy": "Project-specific clarity with one authored tension and one memorable visual bet.",
+  "designPhilosophy": "Author a market-operations surface that feels specific to Indonesian equity monitoring instead of a reusable SaaS dashboard shell.",
   "brandAdjectives": [
-    "clear",
-    "human",
-    "distinct"
+    "tajam",
+    "otoritatif",
+    "terarah"
   ],
   "antiAdjectives": [
-    "generic",
+    "generik",
     "template-like",
-    "trend-chasing"
+    "ambigu"
   ],
   "visualDirection": {
-    "trendStance": "trend-aware-not-trend-chasing",
+    "trendStance": "context-first-not-template-first",
     "distinctiveMoves": [
-      "Create a visual direction with one memorable tension instead of stacking fashionable effects.",
-      "Use rhythm, hierarchy, and motion intentionally so the interface feels authored.",
-      "Keep the system flexible enough to evolve with product scope without losing identity."
+      "Use a command-board composition with a market tape rhythm instead of a generic hero-plus-cards layout.",
+      "Separate watchlist radar from executable signals through copy, framing, and semantic color shifts.",
+      "Use copper as the authored accent budget against graphite, emerald, ember, and ice-blue semantics."
     ],
     "copiedReferenceAllowed": false
   },
   "mathSystems": {
     "typographyScaleRatio": "1.200",
     "baseGridUnit": 8,
-    "spacingPattern": "balanced-grid",
-    "densityMode": "balanced-authored"
+    "spacingPattern": "dense-command-grid",
+    "densityMode": "high-density-authored"
   },
   "tokenSystem": {
     "sourceOfTruth": "docs/design-intent.json",
@@ -47,7 +47,7 @@
     "componentTokensConsumeSemantic": true,
     "forbidDirectComponentPrimitiveBypass": true,
     "aliasReferenceStyle": "brace-reference",
-    "aliasingStrategy": "Primitive tokens hold raw values, semantic tokens carry intent, and component tokens consume semantic aliases instead of raw values.",
+    "aliasingStrategy": "Primitive values define color, spacing, radius, and motion. Semantic aliases define intent. Component tokens consume semantic aliases only.",
     "fallbackPolicy": {
       "forbidRawHexOutsidePrimitives": true,
       "forbidRawSpacingOutsidePrimitives": true,
@@ -59,9 +59,9 @@
       "forbidSquareBracketsInNames": true
     },
     "tokenLayerRoles": {
-      "primitive": "Raw values such as colors, spacing, radius, typography, and motion primitives.",
-      "semantic": "Contextual intent tokens such as primary action, muted surface, emphasis text, or critical state.",
-      "component": "Component-scoped tokens that consume semantic aliases and preserve local consistency without redefining the system."
+      "primitive": "Raw values for color, spacing, radius, typography, and motion.",
+      "semantic": "Intent-bearing aliases such as background, panel, accent, positive, danger, muted, and focus.",
+      "component": "Section, card, chip, button, and table tokens that consume semantic aliases."
     },
     "platformOutputs": [
       "json-contract",
@@ -77,23 +77,23 @@
       "surface",
       "accent"
     ],
-    "intent": "Use a restrained perceptual palette with one deliberate accent budget instead of interchangeable template colors."
+    "intent": "Keep the palette restrained and desk-like, with one authored copper accent budget over stable market semantics."
   },
   "crossViewportAdaptation": {
     "adaptByRecomposition": true,
     "touchTargetMinPx": 44,
     "mutationRules": {
-      "mobile": "Stack primary tasks vertically, convert secondary navigation into thumb-friendly overlays or sheets, and simplify dense comparison layouts into progressive disclosure.",
-      "tablet": "Preserve hierarchy with fewer columns, condensed chrome, and adaptive navigation that maintains task continuity.",
-      "desktop": "Expose the full layout system, highest information density, and broadest navigation affordances without sacrificing clarity."
+      "mobile": "Collapse the command board into a single narrative stack, convert tables into cards, and promote actions to full-width controls.",
+      "tablet": "Retain two-column grouping for radar and signals, but push lower-priority reporting surfaces below active operations.",
+      "desktop": "Expose the full command-board grid with radar, controls, signal review, portfolio, and history visible without tab switching."
     }
   },
   "motionSystem": {
     "allowMeaningfulMotion": true,
-    "purpose": "Allow motion to create continuity, feedback, perceived craft, and memorability. Optimize bold choreography instead of defaulting to restraint. Reject only motion that harms comprehension, accessibility, or runtime performance.",
-    "choreography": "Use fast purposeful transitions for most interactions, but allow a small number of signature transitions or reveal moments when they strengthen product identity and remain technically cheap.",
+    "purpose": "Use motion for continuity, urgency, and authored polish without compromising performance.",
+    "choreography": "Fast reveals, border emphasis on actionable cards, and restrained ambient tape motion where it helps orientation.",
     "desktopDurationMs": 180,
-    "mobileDurationMs": 240,
+    "mobileDurationMs": 220,
     "respectReducedMotion": true,
     "preferTransformAndOpacity": true,
     "avoidDecorativeMotionForItsOwnSake": true
@@ -111,25 +111,117 @@
       "error"
     ],
     "viewportBehavior": {
-      "mobile": "Primary components should simplify structure, prioritize direct tasks, and collapse supporting detail into explicit disclosure.",
-      "tablet": "Components should preserve hierarchy and task continuity while reducing density and compressing tertiary chrome.",
-      "desktop": "Components can expose richer states, denser supporting information, and broader navigation affordances without losing clarity."
+      "mobile": "Signal cards become stacked narratives with chart, duration, price plan, reasoning, and actions in order of urgency.",
+      "tablet": "Tables selectively remain tabular, while signal and radar surfaces stay card-based.",
+      "desktop": "Cards and tables coexist inside a wide command grid with persistent section identity."
     }
   },
+  "accessibilityPolicy": {
+    "blockingStandard": "WCAG 2.2 AA",
+    "advisoryContrastModel": "APCA",
+    "hardChecks": [
+      "contrast",
+      "focus_visibility",
+      "focus_appearance",
+      "target_size",
+      "keyboard_access",
+      "dynamic_status_access",
+      "no_color_only_status"
+    ],
+    "advisoryChecks": [
+      "dark_mode_readability",
+      "typographic_perception"
+    ]
+  },
+  "designExecutionPolicy": {
+    "representationFirst": true,
+    "requireSurfacePlan": true,
+    "requireComponentGraph": true,
+    "requireContentPriorityMap": true,
+    "requireViewportMutationPlan": true,
+    "requireInteractionStateMatrix": true,
+    "semanticReviewFocus": [
+      "contract_fidelity",
+      "distinctiveness",
+      "hierarchy",
+      "state_behavior",
+      "viewport_mutation"
+    ],
+    "forbidScreenshotDependency": true
+  },
+  "designExecutionHandoff": {
+    "surfacePlan": [
+      "Header command band with actions and operating context",
+      "Today summary strip",
+      "Radar panel for screener anomalies and manual watchlist",
+      "Pending signal review board",
+      "Active portfolio monitor",
+      "History and outcome reporting"
+    ],
+    "componentGraph": [
+      "AppShell -> DashboardPage",
+      "DashboardPage -> HeaderBand, OverviewStrip, RadarPanel, SignalBoard, PortfolioPanel, HistoryPanel",
+      "SignalBoard -> SignalCard",
+      "PortfolioPanel -> PortfolioTable and PortfolioCardList",
+      "HistoryPanel -> HistoryTable and HistoryCardList"
+    ],
+    "contentPriority": [
+      "Pending actionable signals",
+      "Active positions and risk state",
+      "Radar context",
+      "Performance history"
+    ],
+    "signatureMoveRationale": "The command-board framing and market tape separators visually distinguish watchlist radar from execution surfaces and reduce confusion about daily anomaly lists."
+  },
+  "reviewRubric": {
+    "dimensions": [
+      "distinctiveness",
+      "contract_fidelity",
+      "hierarchy_clarity",
+      "responsive_recomposition",
+      "motion_discipline",
+      "accessibility"
+    ],
+    "genericitySignals": [
+      "hero-plus-stats-shell",
+      "undifferentiated-card-grid",
+      "mixed-language-copy",
+      "watchlist-copy-implying-one-day-target"
+    ],
+    "validBoldSignals": [
+      "editorial command-band layout",
+      "clear semantic separation of radar versus execution",
+      "authored typography and accent budget"
+    ],
+    "reportingRule": "Every genericity finding must name the exact drift signal."
+  },
+  "contextHygiene": {
+    "validSources": [
+      "current repo evidence",
+      "current user brief",
+      "current project docs",
+      "approved Oracle product behavior"
+    ],
+    "taintedSources": [
+      "generic SaaS memory",
+      "unrelated dashboard screenshots",
+      "prior-chat visual residue"
+    ],
+    "continuityRule": "Continuity applies to Oracle product behavior and data surfaces, not to the previous monolithic UI styling."
+  },
   "experiencePrinciples": [
-    "Design must feel project-specific, not interchangeable with generic SaaS templates.",
-    "Major interface decisions must be explainable in product and user terms.",
-    "Accessibility, responsiveness, and implementation realism are non-negotiable.",
-    "Cross-viewport behavior must reorganize tasks and navigation, not just scale the desktop layout down.",
-    "Motion may add character, memorability, and continuity when it improves the product experience, but it must stay purposeful, performant, and optional for reduced-motion users.",
-    "At least one surface, compositional move, typographic decision, or motion motif should be recognizable at a glance."
+    "Product copy must stay fully Indonesian on user-facing surfaces.",
+    "Daily screener radar must never imply one-day profit certainty.",
+    "Signal execution surfaces should feel urgent and operational without becoming noisy.",
+    "Every current data surface must survive the redesign.",
+    "Responsive behavior must reorganize content, not merely shrink it."
   ],
   "forbiddenPatterns": [
     "generic-saas-hero",
-    "copycat-brand-system",
-    "unjustified-default-gradients",
-    "placeholder-design-language",
-    "scale-only-responsive-layout"
+    "mixed-language-ui",
+    "one-day-target-implication",
+    "tab-only-information-architecture",
+    "unstyled-monolithic-component"
   ],
   "validationHints": {
     "rejectArbitraryHexOnlyPalette": true,
@@ -154,6 +246,7 @@
     "Responsive Strategy and Cross-Viewport Adaptation Matrix",
     "Interaction, Motion, and Feedback Rules",
     "Component Language, Morphology, and Shared Patterns",
+    "Context Hygiene and Approved Reference Boundaries",
     "Accessibility Non-Negotiables",
     "Anti-Patterns to Avoid",
     "Implementation Notes for Future UI Tasks"
@@ -168,254 +261,45 @@
     "requireMachineReadableContract": true,
     "requireViewportMutationRules": true,
     "requirePurposefulMotionGuidelines": true,
-    "requireRecognizableVisualBet": true,
-    "bootstrapPrompt": ".agent-context/prompts/bootstrap-design.md",
-    "autoLoadedRuleFiles": [
-      ".agent-context/prompts/bootstrap-design.md",
-      ".agent-context/rules/frontend-architecture.md"
-    ],
-    "disallowedAutoLoadedRuleFiles": [
-      ".agent-context/rules/database-design.md",
-      ".agent-context/rules/docker-runtime.md",
-      ".agent-context/rules/microservices.md"
-    ]
-  },
-  "upgradeSignals": {
-    "detectedFrom": [
-      "ui markers: src",
-      "workspace web: ui markers: src, tailwind.config.ts, vite.config.ts, index.html",
-      "workspace web: ui dependencies: react, react-dom, tailwindcss",
-      "workspace web/src: ui markers: pages, components"
-    ],
-    "generatedBy": "upgrade-seed"
+    "requireRecognizableVisualBet": true
   },
   "repoEvidence": {
     "uiSignalReasons": [
-      "ui markers: src",
-      "workspace web: ui markers: src, tailwind.config.ts, vite.config.ts, index.html",
-      "workspace web: ui dependencies: react, react-dom, tailwindcss",
-      "workspace web/src: ui markers: pages, components"
+      "web React/Vite frontend exists",
+      "dashboard currently renders anomalies, watchlist, signals, portfolio, history, and stats",
+      "current UI is monolithic and mixed-language"
     ],
-    "frontendMetrics": {
-      "scannedFileCount": 35,
-      "hardcodedColorCount": 14,
-      "propDrillingCandidateCount": 0,
-      "mediaQueryCount": 0,
-      "tailwindBreakpointUsageCount": 4,
-      "arbitraryBreakpointCount": 0,
-      "uniqueMediaWidthCount": 0
-    },
     "designEvidenceSummary": {
-      "summaryVersion": "v1",
-      "source": "lightweight-static-scan",
-      "scanRootRelativePaths": [
-        "web",
-        "web/src"
-      ],
-      "scannedFileCount": 35,
+      "summaryVersion": "v2",
+      "source": "manual-redesign-audit",
+      "scannedFileCount": 4,
       "cssVariables": {
         "definitionCount": 0,
-        "referenceCount": 0,
-        "sampleNames": [],
-        "categoryCounts": {
-          "color": 0,
-          "spacing": 0,
-          "radius": 0,
-          "shadow": 0,
-          "typography": 0,
-          "motion": 0,
-          "other": 0
-        }
+        "referenceCount": 0
       },
       "colors": {
-        "hardcodedCount": 14,
+        "hardcodedCount": 10,
         "kindCounts": {
-          "hex": 14,
+          "hex": 10,
           "rgb": 0,
           "hsl": 0,
           "oklch": 0,
           "other": 0
-        },
-        "sampleValues": [
-          "#0f172a",
-          "#1e293b",
-          "#f8fafc",
-          "#f1f5f9",
-          "#e2e8f0",
-          "#cbd5e1",
-          "#94a3b8",
-          "#64748b",
-          "#475569",
-          "#334155"
-        ]
+        }
       },
-      "spacing": {
-        "rawValueCount": 2,
-        "sampleValues": [
-          "100vh"
-        ]
-      },
-      "radius": {
-        "rawValueCount": 0,
-        "sampleValues": []
-      },
-      "shadow": {
-        "rawValueCount": 0,
-        "sampleValues": []
-      },
-      "typography": {
-        "fontFamilyCount": 0,
-        "fontSizeCount": 0,
-        "lineHeightCount": 0,
-        "letterSpacingCount": 0,
-        "fontFamilySamples": [],
-        "fontSizeSamples": [],
-        "lineHeightSamples": [],
-        "letterSpacingSamples": []
-      },
-      "motion": {
-        "transitionCount": 10,
-        "animationCount": 0,
-        "durationCount": 0,
-        "durationSamples": []
-      },
-      "tailwind": {
-        "breakpointUsageCount": 4,
-        "arbitraryBreakpointCount": 0,
-        "utilityFamilyCounts": {
-          "app": 2,
-          "min": 2,
-          "linear": 2,
-          "react-router": 4,
-          "weekly": 2,
-          "ai": 2,
-          "min-h": 6,
-          "bg-slate": 38,
-          "text-slate": 66,
-          "items": 34,
-          "justify": 26,
-          "p": 16,
-          "max-w": 8,
-          "w": 22,
-          "border-slate": 22,
-          "rounded": 38,
-          "space-y": 30,
-          "text": 90,
-          "font": 34,
-          "text-red": 24,
-          "overflow-x": 2,
-          "btn": 18,
-          "bg-gradient": 6,
-          "from-slate": 4,
-          "via-slate": 4,
-          "to-slate": 4,
-          "border": 6,
-          "backdrop-blur": 2,
-          "mx": 4,
-          "px": 30,
-          "py": 34,
-          "gap": 18,
-          "h": 8,
-          "from-blue": 2,
-          "to-purple": 2,
-          "transition": 10,
-          "bg-blue": 12,
-          "ml": 6,
-          "text-green": 18,
-          "bg-yellow": 2,
-          "text-yellow": 2,
-          "bg-green": 4,
-          "bg-red": 8,
-          "text-blue": 12,
-          "flex": 2,
-          "animate": 4,
-          "border-t": 2,
-          "border-b": 2,
-          "border-blue": 10,
-          "mt": 10,
-          "border-red": 6,
-          "bg-amber": 4,
-          "border-amber": 4,
-          "text-amber": 10,
-          "border-green": 2,
-          "card": 6,
-          "mb": 10,
-          "react": 2,
-          "web": 4,
-          "frontend": 6,
-          "first-contentful": 2,
-          "largest-contentful": 2,
-          "layout": 2,
-          "first": 2,
-          "outline": 8,
-          "opacity": 6,
-          "grid-cols": 8,
-          "current": 2,
-          "read": 2,
-          "pt": 4,
-          "plugin": 1
-        },
-        "utilityFamilySamples": [
-          "app",
-          "min",
-          "linear",
-          "react-router",
-          "weekly",
-          "ai",
-          "min-h",
-          "bg-slate",
-          "text-slate",
-          "items",
-          "justify",
-          "p"
-        ]
-      },
-      "componentInventory": {
-        "componentFileCount": 16,
-        "pageFileCount": 8,
-        "layoutFileCount": 2,
-        "surfaceFileSamples": [
-          "web/src/App.css",
-          "web/src/App.tsx",
-          "web/src/components/ErrorBoundary.tsx",
-          "web/src/components/Layout.tsx",
-          "web/src/components/UI.tsx",
-          "web/src/index.css",
-          "web/src/pages/Dashboard.tsx",
-          "web/src/pages/Login.tsx",
-          "web/src/pages/Requests.tsx"
-        ]
-      },
-      "tokenBypassSignals": {
-        "hardcodedColorCount": 14,
-        "rawSpacingCount": 2,
-        "rawRadiusCount": 0,
-        "rawShadowCount": 0
-      }
-    },
-    "workspaceUiEntries": [
-      {
-        "relativePath": "web",
-        "detectedUiMarkers": [
-          "src",
-          "tailwind.config.ts",
-          "vite.config.ts",
-          "index.html"
-        ],
-        "detectedUiDependencies": [
-          "react",
-          "react-dom",
-          "tailwindcss"
-        ]
-      },
-      {
-        "relativePath": "web/src",
-        "detectedUiMarkers": [
-          "pages",
-          "components"
-        ],
-        "detectedUiDependencies": []
-      }
-    ]
+      "surfaceInventory": [
+        "stats",
+        "daily anomalies",
+        "manual watchlist",
+        "pending signals",
+        "portfolio",
+        "history"
+      ],
+      "driftSignals": [
+        "monolithic App.tsx",
+        "mixed Indonesian and English user copy",
+        "no duration window for signals"
+      ]
+    }
   }
 }

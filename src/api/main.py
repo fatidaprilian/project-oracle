@@ -86,6 +86,14 @@ def _normalize_ticker(ticker: str) -> str:
     return ticker.strip().upper()
 
 
+def _format_bias_label(bias: str) -> str:
+    if bias == "BUY":
+        return "BELI"
+    if bias == "SELL":
+        return "JUAL"
+    return "ABAIKAN"
+
+
 def _utc_today() -> date:
     return datetime.now(timezone.utc).date()
 
@@ -168,29 +176,67 @@ async def _telegram_post(bot_token: str, method: str, payload: dict) -> dict:
         raise RuntimeError(f"Telegram API {method} failed: {body}")
     return body
 
-async def _send_public_buy_signal(bot_token: str, ticker: str, entry: float, tp: float, sl: float):
+
+def _format_duration_window_label(
+    estimated_duration_min_days: int | None,
+    estimated_duration_max_days: int | None,
+) -> str | None:
+    if estimated_duration_min_days is None or estimated_duration_max_days is None:
+        return None
+    if estimated_duration_min_days == estimated_duration_max_days:
+        return f"{estimated_duration_min_days} hari bursa"
+    return (
+        f"{estimated_duration_min_days}-{estimated_duration_max_days} hari bursa"
+    )
+
+
+async def _send_public_buy_signal(
+    bot_token: str,
+    ticker: str,
+    entry: float,
+    tp: float,
+    sl: float,
+    estimated_duration_min_days: int | None = None,
+    estimated_duration_max_days: int | None = None,
+):
     channel_id = os.getenv("TELEGRAM_PUBLIC_CHANNEL_ID")
     if not channel_id or not bot_token:
         return
-        
-    # Formatting ticker for TradingView URL (remove .JK for IDX stocks)
+
     tv_ticker = ticker.replace(".JK", "")
-    
+    duration_label = _format_duration_window_label(
+        estimated_duration_min_days=estimated_duration_min_days,
+        estimated_duration_max_days=estimated_duration_max_days,
+    )
+
     text = (
-        f"🚀 *NEW SIGNAL: {ticker}*\n\n"
-        f"🎯 Entry Range: {entry:.2f} (Estimated)\n"
-        f"💰 Target Profit: {tp:.2f}\n"
-        f"🛡️ Stop Loss: {sl:.2f}\n\n"
+        f"🚀 *SIGNAL BARU: {ticker}*\n\n"
+        f"🎯 Area Beli: {entry:.2f}\n"
+        f"💰 Target: {tp:.2f}\n"
+        f"🛡️ Stop Loss: {sl:.2f}\n"
+    )
+
+    if duration_label is not None:
+        text += f"⏱️ Perkiraan Durasi: {duration_label}\n"
+
+    text += (
+        "\n"
+        "_Durasi di atas adalah estimasi menuju target dalam hari bursa, "
+        "bukan janji target tercapai besok._\n\n"
         f"🔗 [Lihat Chart di TradingView](https://www.tradingview.com/chart/?symbol=IDX:{tv_ticker})"
     )
-    
+
     try:
-        await _telegram_post(bot_token, "sendMessage", {
-            "chat_id": channel_id,
-            "text": text,
-            "parse_mode": "Markdown",
-            "disable_web_page_preview": True
-        })
+        await _telegram_post(
+            bot_token,
+            "sendMessage",
+            {
+                "chat_id": channel_id,
+                "text": text,
+                "parse_mode": "Markdown",
+                "disable_web_page_preview": True,
+            },
+        )
         print(f"Broadcasted {ticker} to public channel.")
     except Exception as e:
         print(f"Failed to send to public channel: {e}")
@@ -215,12 +261,12 @@ async def tradingview_webhook(payload: WebhookPayload):
     ticker = _normalize_ticker(payload.ticker)
 
     if not telegram_bot_token or not telegram_chat_id:
-        return {"status": "ignored", "reason": "telegram credentials not configured"}
+        return {"status": "ignored", "reason": "kredensial telegram belum dikonfigurasi"}
 
     if _has_reached_daily_analysis_limit(ticker):
         return {
             "status": "ignored",
-            "reason": "daily analysis already completed for this ticker",
+            "reason": "analisis harian untuk ticker ini sudah dilakukan",
             "ticker": ticker,
         }
 
@@ -238,12 +284,13 @@ async def tradingview_webhook(payload: WebhookPayload):
     _mark_analyzed_today(ticker)
 
     bias_emoji = "✅" if decision["bias"] == "BUY" else "❌"
+    bias_label = _format_bias_label(decision["bias"])
 
-    message = f"🚨 *Oracle Signal*\n"
-    message += f"Ticker: `{ticker}`\n"
-    message += f"Technical: {payload.signal_type} @ {payload.price}\n\n"
-    message += f"*AI Bias:* {bias_emoji} {decision['bias']}\n"
-    message += f"*Reasoning:* {decision['reason']}"
+    message = f"🚨 *Sinyal Oracle*\n"
+    message += f"Saham: `{ticker}`\n"
+    message += f"Sinyal teknikal: {payload.signal_type} @ {payload.price}\n\n"
+    message += f"*Bias AI:* {bias_emoji} {bias_label}\n"
+    message += f"*Alasan:* {decision['reason']}"
 
     url = f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage"
 
@@ -265,7 +312,7 @@ async def tradingview_webhook(payload: WebhookPayload):
             response.raise_for_status()
         except Exception as e:
             print(f"Failed to send telegram message: {e}")
-            raise HTTPException(status_code=500, detail="Failed to send telegram notification")
+            raise HTTPException(status_code=500, detail="gagal mengirim notifikasi telegram")
 
     return {"status": "success", "decision": decision}
 
@@ -274,7 +321,7 @@ async def telegram_webhook(request: Request):
     payload = await request.json()
 
     if "callback_query" not in payload:
-        return {"status": "ignored", "reason": "Not a callback query"}
+        return {"status": "ignored", "reason": "bukan callback query"}
 
     callback_query = payload["callback_query"]
     callback_data = str(callback_query.get("data", ""))
@@ -285,11 +332,11 @@ async def telegram_webhook(request: Request):
 
     telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not telegram_bot_token:
-        return {"status": "error", "reason": "telegram credentials missing"}
+        return {"status": "error", "reason": "kredensial telegram belum tersedia"}
 
     action, ticker = _parse_callback_data(callback_data)
     if not action or not ticker:
-        return {"status": "ignored", "reason": "invalid callback data"}
+        return {"status": "ignored", "reason": "callback data tidak valid"}
 
     # Acknowledge callback as early as possible to stop loading spinner in Telegram UI.
     if callback_id:
@@ -354,6 +401,12 @@ async def telegram_webhook(request: Request):
                 entry_price = prices.get("entry_price") if prices else None
                 target_price = prices.get("target_price") if prices else None
                 stop_loss_price = prices.get("stop_loss") if prices else None
+                estimated_duration_min_days = (
+                    prices.get("estimated_duration_min_days") if prices else None
+                )
+                estimated_duration_max_days = (
+                    prices.get("estimated_duration_max_days") if prices else None
+                )
 
                 # First resolve, then get the signal_id
                 if not prices:
@@ -364,10 +417,20 @@ async def telegram_webhook(request: Request):
                     entry_price=entry_price,
                     target_price=target_price,
                     stop_loss=stop_loss_price,
+                    estimated_duration_min_days=estimated_duration_min_days,
+                    estimated_duration_max_days=estimated_duration_max_days,
                 )
                 
                 if entry_price is not None and target_price is not None and stop_loss_price is not None:
-                    await _send_public_buy_signal(telegram_bot_token, ticker, entry_price, target_price, stop_loss_price)
+                    await _send_public_buy_signal(
+                        telegram_bot_token,
+                        ticker,
+                        entry_price,
+                        target_price,
+                        stop_loss_price,
+                        estimated_duration_min_days=estimated_duration_min_days,
+                        estimated_duration_max_days=estimated_duration_max_days,
+                    )
                     
             status_text = f"Tracking aktif untuk {ticker}."
 
@@ -485,6 +548,11 @@ async def dashboard_action(payload: DashboardActionPayload):
             get_signal_prices,
         )
         postgres_enabled = os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true"
+        entry = None
+        target = None
+        sl = None
+        estimated_duration_min_days = None
+        estimated_duration_max_days = None
 
         if payload.action == "buy":
             if postgres_enabled:
@@ -493,19 +561,27 @@ async def dashboard_action(payload: DashboardActionPayload):
                 entry = prices.get("entry_price") if prices else None
                 target = prices.get("target_price") if prices else None
                 sl = prices.get("stop_loss") if prices else None
+                estimated_duration_min_days = (
+                    prices.get("estimated_duration_min_days") if prices else None
+                )
+                estimated_duration_max_days = (
+                    prices.get("estimated_duration_max_days") if prices else None
+                )
                 track_symbol(
                     payload.ticker,
                     entry_price=entry,
                     target_price=target,
                     stop_loss=sl,
+                    estimated_duration_min_days=estimated_duration_min_days,
+                    estimated_duration_max_days=estimated_duration_max_days,
                 )
-            message = f"*[🟢 Tracking Active for {payload.ticker}]* (Triggered from Web)"
+            message = f"*[🟢 Tracking aktif untuk {payload.ticker}]* (dipicu dari dashboard)"
 
         elif payload.action == "ignore":
             if postgres_enabled:
                 resolve_signal_by_ticker(payload.ticker, "IGNORE")
                 ignore_symbol(payload.ticker)
-            message = f"*[🔴 Muted {payload.ticker} for 3 days]* (Triggered from Web)"
+            message = f"*[🔴 {payload.ticker} dimute selama 3 hari]* (dipicu dari dashboard)"
 
         elif payload.action == "sell":
             pnl = None
@@ -513,13 +589,23 @@ async def dashboard_action(payload: DashboardActionPayload):
                 pnl = close_tracking(payload.ticker)
             
             if pnl is not None:
-                status = "🏆 WIN" if pnl > 0 else ("🛑 LOSE" if pnl < 0 else "⚪ BREAKEVEN")
-                message = f"*[ {status}: {pnl:+.2f}% ] Closed position {payload.ticker}* (Triggered from Web)"
+                status = (
+                    "🏆 UNTUNG"
+                    if pnl > 0
+                    else ("🛑 RUGI" if pnl < 0 else "⚪ IMPAS")
+                )
+                message = (
+                    f"*[{status}: {pnl:+.2f}%] Posisi {payload.ticker} ditutup* "
+                    "(dipicu dari dashboard)"
+                )
             else:
-                message = f"*[🔻 Closed position {payload.ticker}]* (Triggered from Web)"
+                message = (
+                    f"*[🔻 Posisi {payload.ticker} ditutup]* "
+                    "(dipicu dari dashboard)"
+                )
 
         else:
-            raise HTTPException(status_code=400, detail="Invalid action")
+            raise HTTPException(status_code=400, detail="aksi tidak valid")
 
         telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
         telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
@@ -533,7 +619,15 @@ async def dashboard_action(payload: DashboardActionPayload):
                 })
                 
             if payload.action == "buy" and entry is not None and target is not None and sl is not None:
-                await _send_public_buy_signal(telegram_bot_token, payload.ticker, entry, target, sl)
+                await _send_public_buy_signal(
+                    telegram_bot_token,
+                    payload.ticker,
+                    entry,
+                    target,
+                    sl,
+                    estimated_duration_min_days=estimated_duration_min_days,
+                    estimated_duration_max_days=estimated_duration_max_days,
+                )
 
         return {"status": "success", "action": payload.action, "ticker": payload.ticker}
     except Exception as e:
@@ -559,7 +653,7 @@ async def add_watchlist_api(payload: WatchlistPayload):
     try:
         from oracle.infrastructure.postgres_repository import add_to_watchlist
         if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
-            raise HTTPException(status_code=400, detail="Postgres is not enabled")
+            raise HTTPException(status_code=400, detail="Postgres tidak aktif")
         add_to_watchlist(payload.ticker.upper())
         return {"status": "success", "ticker": payload.ticker.upper()}
     except Exception as e:
@@ -571,7 +665,7 @@ async def remove_watchlist_api(ticker: str):
     try:
         from oracle.infrastructure.postgres_repository import remove_from_watchlist
         if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
-            raise HTTPException(status_code=400, detail="Postgres is not enabled")
+            raise HTTPException(status_code=400, detail="Postgres tidak aktif")
         remove_from_watchlist(ticker.upper())
         return {"status": "success", "ticker": ticker.upper()}
     except Exception as e:
@@ -593,10 +687,12 @@ async def get_stats_endpoint():
 async def trigger_scan_api():
     try:
         from oracle.application.auto_signal_generator import generate_auto_signals
-        # We run it in a background task so the API doesn't timeout
         import asyncio
         asyncio.create_task(generate_auto_signals())
-        return {"status": "success", "message": "Scan triggered in background. Check Telegram/Dashboard in a few minutes."}
+        return {
+            "status": "success",
+            "message": "Scan dijalankan di background. Cek Telegram atau dashboard dalam beberapa menit.",
+        }
     except Exception as e:
         print(f"Error triggering scan: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -607,7 +703,10 @@ async def trigger_monitor_api():
         from oracle.application.active_tracker import run_active_tracker_check
         import asyncio
         asyncio.create_task(run_active_tracker_check())
-        return {"status": "success", "message": "Monitoring check triggered in background."}
+        return {
+            "status": "success",
+            "message": "Pengecekan monitoring dijalankan di background.",
+        }
     except Exception as e:
         print(f"Error triggering monitor: {e}")
         raise HTTPException(status_code=500, detail=str(e))

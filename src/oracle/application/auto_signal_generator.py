@@ -14,6 +14,10 @@ from oracle.modules.confluence_engine import evaluate_confluence
 from oracle.modules.pullback_strategy import evaluate_stock_pullback
 from oracle.modules.sniper_entry import build_entry_plan
 from oracle.modules.sentiment_gate import StaticSentimentProvider, evaluate_sentiment
+from oracle.application.signal_timing import (
+    format_bias_label,
+    normalize_estimated_duration_window,
+)
 from oracle.infrastructure.postgres_repository import (
     get_watchlist,
     has_pending_signal_for_any,
@@ -38,6 +42,14 @@ class AutoSignalDecision(BaseModel):
     entry_price: float = Field(description="Suggested entry price", default=0.0)
     target_price: float = Field(description="Suggested take profit price", default=0.0)
     stop_loss: float = Field(description="Suggested stop loss price", default=0.0)
+    estimated_duration_min_days: int = Field(
+        description="Minimum estimated holding period in trading days",
+        default=0,
+    )
+    estimated_duration_max_days: int = Field(
+        description="Maximum estimated holding period in trading days",
+        default=0,
+    )
 
 
 def _utc_now() -> datetime:
@@ -143,9 +155,15 @@ def _load_market_data(yf_module: object, ticker: str) -> tuple[str | None, Marke
             latest_volume = volumes[-1] if volumes else 0.0
 
             if bar_date == today:
-                data_label = f"End of Day (EOD) {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
+                data_label = (
+                    f"Akhir sesi {bar_date.strftime('%d %b %Y')} @ "
+                    f"{current_price:.2f}"
+                )
             else:
-                data_label = f"Closing {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
+                data_label = (
+                    f"Penutupan {bar_date.strftime('%d %b %Y')} @ "
+                    f"{current_price:.2f}"
+                )
 
             snapshot = MarketSnapshot(
                 symbol=candidate,
@@ -435,10 +453,14 @@ INSTRUCTIONS:
 2. However, if fundamental news is severely negative (bankruptcy, fraud, SEC probe), override to IGNORE regardless of quant signals.
 3. If quant says REJECTED, carefully evaluate the context. If the stock is in a massive breakout/momentum phase (e.g. limit-up/ARA in Indonesian market) or has extremely bullish news/volume anomalies, you MAY override the quant rejection and issue a BUY.
 4. If you override and issue a BUY, you MUST estimate realistic entry_price, stop_loss, and target_price based on the price data provided. Do not set them to 0.
-5. If quant says REJECTED and there is no strong bullish catalyst or momentum, output IGNORE.
+5. If bias is BUY or SELL, you MUST also estimate a realistic holding window in trading days using estimated_duration_min_days and estimated_duration_max_days.
+6. The duration estimate is for target timing in trading days, not exact clock hours. Never promise that the target will be hit tomorrow.
+7. Keep the duration estimate inside a practical swing-trading window of 2 to 15 trading days.
+8. If quant says REJECTED and there is no strong bullish catalyst or momentum, output IGNORE.
+9. Write the reason in professional Bahasa Indonesia.
 
 Determine if this is a BUY, SELL, or IGNORE.
-If BUY or SELL, you MUST provide explicit entry_price, target_price (Take Profit), and stop_loss.
+If BUY or SELL, you MUST provide explicit entry_price, target_price (Take Profit), stop_loss, estimated_duration_min_days, and estimated_duration_max_days.
 Keep reasoning under 3 sentences. Reference the quantitative signals in your reasoning.
 """
         try:
@@ -456,7 +478,17 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
             entry_price = _safe_float(decision.get("entry_price"))
             target_price = _safe_float(decision.get("target_price"))
             stop_loss = _safe_float(decision.get("stop_loss"))
-            reason = str(decision.get("reason", "No reasoning provided."))
+            reason = str(decision.get("reason", "Alasan tidak tersedia."))
+            confluence_score = quant_results["confluence"].confluence_score
+            estimated_duration_min_days, estimated_duration_max_days = (
+                _normalize_estimated_duration_window(
+                    raw_min_days=decision.get("estimated_duration_min_days"),
+                    raw_max_days=decision.get("estimated_duration_max_days"),
+                    bias=bias,
+                    confluence_score=confluence_score,
+                    has_quant_entry_plan=entry_plan.should_place_order,
+                )
+            )
 
             # If quant entry plan is valid and AI agrees on BUY, prefer quant price levels
             if bias == "BUY" and entry_plan.should_place_order:
@@ -500,6 +532,8 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
                         entry=entry_price,
                         tp=target_price,
                         sl=stop_loss,
+                        estimated_duration_min_days=estimated_duration_min_days,
+                        estimated_duration_max_days=estimated_duration_max_days,
                         data_timestamp=data_label,
                     )
                 except Exception as e:
@@ -521,27 +555,50 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
                 ignore_callback = f"ignore_{resolved_ticker}"
 
                 bias_emoji = "✅" if bias == "BUY" else "🔴"
+                bias_label = _format_bias_label(bias)
 
                 # Build quant badge for the message
-                confluence_score = quant_results["confluence"].confluence_score
                 quant_badge = ""
                 if entry_plan.should_place_order:
-                    quant_badge = f"🎯 _Quant Confirmed ({pullback.strategy_name}, Confluence {confluence_score:.0f}/100)_\n"
+                    quant_badge = (
+                        f"🎯 _Quant terkonfirmasi ({pullback.strategy_name}, "
+                        f"Confluence {confluence_score:.0f}/100)_\n"
+                    )
                 elif confluence_score >= 60:
-                    quant_badge = f"📊 _Confluence {confluence_score:.0f}/100 ({structure.market_regime.value})_\n"
+                    quant_badge = (
+                        f"📊 _Confluence {confluence_score:.0f}/100 "
+                        f"({structure.market_regime.value})_\n"
+                    )
                 else:
-                    quant_badge = f"📊 _Quant: {structure.market_regime.value}, Confluence {confluence_score:.0f}/100_\n"
+                    quant_badge = (
+                        f"📊 _Rezim: {structure.market_regime.value}, "
+                        f"Confluence {confluence_score:.0f}/100_\n"
+                    )
 
-                message = f"🤖 *Oracle Pro Signal*\n"
-                message += f"Ticker: `{resolved_ticker}`\n\n"
-                message += f"*Bias:* {bias_emoji} {bias}\n"
-                message += f"*Entry:* {entry_price if entry_price is not None else 'N/A'}\n"
-                message += f"*Target:* {target_price if target_price is not None else 'N/A'}\n"
-                message += f"*Stop Loss:* {stop_loss if stop_loss is not None else 'N/A'}\n\n"
-                message += f"*Reasoning:* {reason}\n\n"
+                message = f"🤖 *Sinyal Oracle Pro*\n"
+                message += f"Saham: `{resolved_ticker}`\n\n"
+                message += f"*Bias:* {bias_emoji} {bias_label}\n"
+                message += (
+                    f"*Area Beli:* {entry_price if entry_price is not None else 'Belum tersedia'}\n"
+                )
+                message += (
+                    f"*Target:* {target_price if target_price is not None else 'Belum tersedia'}\n"
+                )
+                message += (
+                    f"*Stop Loss:* {stop_loss if stop_loss is not None else 'Belum tersedia'}\n\n"
+                )
+                if (
+                    estimated_duration_min_days is not None
+                    and estimated_duration_max_days is not None
+                ):
+                    message += (
+                        f"*Perkiraan Durasi:* {estimated_duration_min_days}-"
+                        f"{estimated_duration_max_days} hari bursa\n\n"
+                    )
+                message += f"*Alasan:* {reason}\n\n"
                 message += quant_badge
-                message += f"📊 _{data_label or 'N/A'}_\n"
-                message += f"⏳ _Expires in {expiry_hours}h_"
+                message += f"📊 _{data_label or 'Data belum tersedia'}_\n"
+                message += f"⏳ _Berlaku {expiry_hours} jam_"
 
                 await _send_telegram_message(
                     telegram_bot_token,
@@ -550,7 +607,7 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
                     reply_markup={
                         "inline_keyboard": [
                             [
-                                {"text": "✅ Beli/Track", "callback_data": buy_callback},
+                                {"text": "✅ Beli/Lacak", "callback_data": buy_callback},
                                 {"text": "❌ Abaikan", "callback_data": ignore_callback},
                             ]
                         ]
@@ -580,10 +637,10 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
             1,
         )
         heartbeat_message = (
-            "🤖 *Oracle Auto Signal Heartbeat*\n"
-            f"Tidak ada BUY/SELL selama ~{last_actionable_hours} jam.\n"
-            f"Watchlist dipindai: {len(watchlist)} ticker.\n"
-            "Sistem tetap aktif dan akan kirim sinyal saat setup valid muncul."
+            "🤖 *Heartbeat Oracle Auto Signal*\n"
+            f"Tidak ada sinyal BELI/JUAL selama ~{last_actionable_hours} jam.\n"
+            f"Daftar pantauan yang dipindai: {len(watchlist)} ticker.\n"
+            "Sistem tetap aktif dan akan mengirim sinyal saat setup valid muncul."
         )
         sent = await _send_telegram_message(
             telegram_bot_token,

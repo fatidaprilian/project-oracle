@@ -18,7 +18,13 @@ from pydantic import BaseModel, Field
 
 class TrackerDecision(BaseModel):
     action: str = Field(description="Must be 'HOLD' or 'ALERT'")
-    reason: str = Field(description="Short reason why, max 2 sentences")
+    reason: str = Field(description="Alasan singkat dalam bahasa Indonesia, maksimal 2 kalimat")
+
+
+def _format_price(value: float | None) -> str:
+    if value is None:
+        return "Belum tersedia"
+    return f"{value:.2f}"
 
 
 def _load_current_price(yf_module: object, ticker: str) -> float | None:
@@ -114,15 +120,15 @@ async def run_tracking_daemon():
             # Check target reached
             if target_price and current_price >= target_price:
                 base_message = (
-                    f"🎯 *TARGET REACHED: {ticker}*\n\n"
-                    f"*Current Price:* {current_price:.2f}\n"
-                    f"*Target Price:* {target_price:.2f}\n"
-                    f"*Entry Price:* {entry_price:.2f if entry_price else 'N/A'}\n"
+                    f"🎯 *TARGET TERCAPAI: {ticker}*\n\n"
+                    f"*Harga Saat Ini:* {current_price:.2f}\n"
+                    f"*Target:* {target_price:.2f}\n"
+                    f"*Area Beli:* {_format_price(entry_price)}\n"
                     f"*PnL:* {pnl_percent:+.2f}%\n"
                     f"*Waktu:* {time_str}"
                 )
                 
-                private_message = base_message + "\n\n✅ Posisi otomatis ditutup (Auto-Sell)."
+                private_message = base_message + "\n\n✅ Posisi otomatis ditutup."
                 await _send_telegram_alert(telegram_bot_token, telegram_chat_id, private_message)
                 
                 if telegram_public_channel_id:
@@ -137,15 +143,15 @@ async def run_tracking_daemon():
             # Check stop loss hit
             if stop_loss and current_price <= stop_loss:
                 base_message = (
-                    f"🛑 *STOP LOSS HIT: {ticker}*\n\n"
-                    f"*Current Price:* {current_price:.2f}\n"
+                    f"🛑 *STOP LOSS TERSENTUH: {ticker}*\n\n"
+                    f"*Harga Saat Ini:* {current_price:.2f}\n"
                     f"*Stop Loss:* {stop_loss:.2f}\n"
-                    f"*Entry Price:* {entry_price:.2f if entry_price else 'N/A'}\n"
+                    f"*Area Beli:* {_format_price(entry_price)}\n"
                     f"*PnL:* {pnl_percent:+.2f}%\n"
                     f"*Waktu:* {time_str}"
                 )
                 
-                private_message = base_message + "\n\n❌ Posisi otomatis ditutup (Auto-Cutloss)."
+                private_message = base_message + "\n\n❌ Posisi otomatis ditutup."
                 await _send_telegram_alert(telegram_bot_token, telegram_chat_id, private_message)
                 
                 if telegram_public_channel_id:
@@ -181,6 +187,7 @@ Recent Headlines:
 
 If there is SEVERELY BAD news (bankruptcy, SEC probe, massive miss, CEO fired, etc) that warrants an immediate panic sell, output 'ALERT'.
 Otherwise, if news is normal, mildly bad, or positive, output 'HOLD'.
+Return the reason in concise professional Bahasa Indonesia.
 """
         try:
             response = client.models.generate_content(
@@ -196,10 +203,10 @@ Otherwise, if news is normal, mildly bad, or positive, output 'HOLD'.
 
             # Alert if necessary
             if result["action"] == "ALERT":
-                message = f"⚠️ *EMERGENCY ALERT: {ticker}*\n\n"
-                message += f"*Bad News Detected:*\n{result['reason']}\n\n"
+                message = f"⚠️ *PERINGATAN DARURAT: {ticker}*\n\n"
+                message += f"*Berita negatif terdeteksi:*\n{result['reason']}\n\n"
                 if current_price is not None:
-                    message += f"*Current Price:* {current_price:.2f}\n"
+                    message += f"*Harga Saat Ini:* {current_price:.2f}\n"
                     if entry_price:
                         pnl = ((current_price - entry_price) / entry_price) * 100
                         message += f"*PnL:* {pnl:+.2f}%\n"
