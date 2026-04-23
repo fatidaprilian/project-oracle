@@ -688,25 +688,26 @@ async def trigger_scan_api():
     try:
         from oracle.application.auto_signal_generator import generate_auto_signals
         import asyncio
+        import traceback
         asyncio.create_task(generate_auto_signals())
-        return {
-            "status": "success",
-            "message": "Scan dijalankan di background. Cek Telegram atau dashboard dalam beberapa menit.",
-        }
+        return {"status": "success", "message": "Scan triggered in background."}
     except Exception as e:
-        print(f"Error triggering scan: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        err_msg = f"Error triggering scan: {e}\n{traceback.format_exc()}"
+        print(err_msg)
+        raise HTTPException(status_code=500, detail=err_msg)
 
 @app.post("/api/v1/admin/monitor-now")
 async def trigger_monitor_api():
     try:
+        import traceback
         from oracle.application.active_tracker import run_tracking_daemon
         import asyncio
         asyncio.create_task(run_tracking_daemon())
         return {"status": "success", "message": "Monitoring check triggered in background."}
     except Exception as e:
-        print(f"Error triggering monitor: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        err_msg = f"Error triggering monitor: {e}\n{traceback.format_exc()}"
+        print(err_msg)
+        raise HTTPException(status_code=500, detail=err_msg)
 
 if __name__ == "__main__":
     import uvicorn
