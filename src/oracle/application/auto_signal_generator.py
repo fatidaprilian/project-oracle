@@ -143,9 +143,9 @@ def _load_market_data(yf_module: object, ticker: str) -> tuple[str | None, Marke
             latest_volume = volumes[-1] if volumes else 0.0
 
             if bar_date == today:
-                data_label = f"Intraday {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
+                data_label = f"End of Day (EOD) {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
             else:
-                data_label = f"Last Close {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
+                data_label = f"Closing {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
 
             snapshot = MarketSnapshot(
                 symbol=candidate,
@@ -328,7 +328,19 @@ async def generate_auto_signals():
 
     # Combine manual DB watchlist with Screener Anomalies
     # Use dict.fromkeys to remove duplicates while preserving order
-    watchlist = list(dict.fromkeys(db_watchlist + screener_anomalies))
+    raw_watchlist = list(dict.fromkeys(db_watchlist + screener_anomalies))
+
+    now = _utc_now()
+    current_hour = now.hour
+
+    watchlist = []
+    for t in raw_watchlist:
+        is_indo = t.endswith('.JK')
+        if current_hour == 9 and not is_indo:
+            continue  # At 16:15 WIB (09:15 UTC), only scan Indonesian stocks
+        if current_hour == 21 and is_indo:
+            continue  # At 04:15 WIB (21:15 UTC), only scan US/Global stocks
+        watchlist.append(t)
 
     actionable_signals = 0
 
@@ -589,12 +601,13 @@ def start_auto_signal_daemon():
 
     interval_hours = max(int(os.getenv("ORACLE_AUTO_SIGNAL_HOURS", "2")), 1)
     scheduler = AsyncIOScheduler()
+    # Run at 09:15 UTC (16:15 WIB for Indo market) and 21:15 UTC (04:15 WIB for US/Global market)
     scheduler.add_job(
         generate_auto_signals,
-        "interval",
-        hours=interval_hours,
+        "cron",
+        hour="9,21",
+        minute=15,
         id="auto_signal_scan",
-        next_run_time=_utc_now(),
         max_instances=1,
         coalesce=True,
         misfire_grace_time=300,
@@ -603,5 +616,5 @@ def start_auto_signal_daemon():
     _AUTO_SIGNAL_SCHEDULER = scheduler
     print(
         "Auto Signal Daemon (Pro + Quant) started. "
-        f"Scanning every {interval_hours} hours (first scan runs immediately)."
+        "Scanning daily at 16:15 WIB (Indo Close) and 04:15 WIB (US Close)."
     )
