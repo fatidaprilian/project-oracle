@@ -135,9 +135,9 @@ def _load_market_data(yf_module: object, ticker: str) -> tuple[str | None, Marke
                 bar_date = last_bar_date
 
             if bar_date == today:
-                data_label = f"Intraday {bar_date.strftime('%d %b %Y')}"
+                data_label = f"Intraday {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
             else:
-                data_label = f"Last Close {bar_date.strftime('%d %b %Y')}"
+                data_label = f"Last Close {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
 
             closes = hist["Close"].tolist()
             highs = hist["High"].tolist()
@@ -410,9 +410,9 @@ FUNDAMENTAL NEWS:
 INSTRUCTIONS:
 1. Consider the quantitative analysis heavily. If the quant entry plan is VALID with a high confluence score, that is a strong BUY signal.
 2. However, if fundamental news is severely negative (bankruptcy, fraud, SEC probe), override to IGNORE regardless of quant signals.
-3. If quant says REJECTED and news is neutral, lean towards IGNORE.
-4. If quant entry plan provides entry/SL/TP values, prefer those over your own estimates — they are mathematically grounded.
-5. If the market regime is CHOP and confluence is low, prefer IGNORE.
+3. If quant says REJECTED, carefully evaluate the context. If the stock is in a massive breakout/momentum phase (e.g. limit-up/ARA in Indonesian market) or has extremely bullish news/volume anomalies, you MAY override the quant rejection and issue a BUY.
+4. If you override and issue a BUY, you MUST estimate realistic entry_price, stop_loss, and target_price based on the price data provided. Do not set them to 0.
+5. If quant says REJECTED and there is no strong bullish catalyst or momentum, output IGNORE.
 
 Determine if this is a BUY, SELL, or IGNORE.
 If BUY or SELL, you MUST provide explicit entry_price, target_price (Take Profit), and stop_loss.

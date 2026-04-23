@@ -159,19 +159,34 @@ def save_signal(
     expiry_hours = _default_signal_expiry_hours()
     with psycopg.connect(dsn) as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO signal_history
-                    (ticker, technical_signal, news_context, ai_reasoning, bias,
-                     entry_price, target_price, stop_loss, data_timestamp,
-                     expires_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        NOW() + make_interval(hours => %s))
-                RETURNING id
-                """,
-                (ticker, signal_type, news, reasoning, bias, entry, tp, sl,
-                 data_timestamp, expiry_hours),
-            )
+            if bias.upper() == "IGNORE":
+                cur.execute(
+                    """
+                    INSERT INTO signal_history
+                        (ticker, technical_signal, news_context, ai_reasoning, bias,
+                         entry_price, target_price, stop_loss, data_timestamp,
+                         expires_at, resolved_at, resolved_action)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            NOW() + make_interval(hours => %s), NOW(), 'IGNORE')
+                    RETURNING id
+                    """,
+                    (ticker, signal_type, news, reasoning, bias, entry, tp, sl,
+                     data_timestamp, expiry_hours),
+                )
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO signal_history
+                        (ticker, technical_signal, news_context, ai_reasoning, bias,
+                         entry_price, target_price, stop_loss, data_timestamp,
+                         expires_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            NOW() + make_interval(hours => %s))
+                    RETURNING id
+                    """,
+                    (ticker, signal_type, news, reasoning, bias, entry, tp, sl,
+                     data_timestamp, expiry_hours),
+                )
             row = cur.fetchone()
             signal_id = str(row[0]) if row else None
         conn.commit()
