@@ -9,12 +9,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from oracle.application.signal_synthesizer import fetch_news_for_ticker, synthesize_signal
-from oracle.infrastructure.postgres_repository import init_db, save_signal, track_symbol, ignore_symbol
+from oracle.infrastructure.postgres_repository import (
+    init_db,
+    save_signal,
+    track_symbol,
+    ignore_symbol,
+    resolve_signal_by_ticker,
+    get_signal_prices,
+    is_signal_expired_for_ticker,
+    close_tracking,
+)
 
 app = FastAPI(
     title="Project Oracle API (Stock Pivot)",
     description="Telegram-driven Stock Signal Engine",
-    version="0.2.0",
+    version="0.3.0",
 )
 
 TELEGRAM_WEBHOOK_PATH = "/api/v1/webhook/telegram"
@@ -36,13 +45,13 @@ def on_startup():
             init_db()
         except Exception as e:
             print(f"Failed to init DB: {e}")
-            
+
     try:
         from oracle.application.active_tracker import start_daemon
         start_daemon()
     except Exception as e:
         print(f"Failed to start tracking daemon: {e}")
-        
+
     try:
         from oracle.application.auto_signal_generator import start_auto_signal_daemon
         start_auto_signal_daemon()
@@ -159,7 +168,7 @@ class HealthResponse(BaseModel):
 
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-    return HealthResponse(status="healthy", version="0.2.0")
+    return HealthResponse(status="healthy", version="0.3.0")
 
 class WebhookPayload(BaseModel):
     ticker: str
@@ -185,7 +194,7 @@ async def tradingview_webhook(payload: WebhookPayload):
     # Fetch fundamental news and get AI reasoning
     news = fetch_news_for_ticker(ticker)
     decision = synthesize_signal(ticker, payload.signal_type, payload.price, news)
-    
+
     # Save to database
     try:
         if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
@@ -230,7 +239,7 @@ async def tradingview_webhook(payload: WebhookPayload):
 @app.post("/api/v1/webhook/telegram")
 async def telegram_webhook(request: Request):
     payload = await request.json()
-    
+
     if "callback_query" not in payload:
         return {"status": "ignored", "reason": "Not a callback query"}
 
@@ -240,7 +249,7 @@ async def telegram_webhook(request: Request):
     chat_id = message.get("chat", {}).get("id")
     message_id = message.get("message_id")
     callback_id = callback_query.get("id")
-    
+
     telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not telegram_bot_token:
         return {"status": "error", "reason": "telegram credentials missing"}
@@ -264,18 +273,81 @@ async def telegram_webhook(request: Request):
         except Exception as e:
             print(f"Failed to acknowledge callback: {e}")
 
+    postgres_enabled = os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true"
+
+    # Fix 2: Check if signal is expired before processing buy/ignore
+    if action in ("buy", "ignore") and postgres_enabled:
+        try:
+            if is_signal_expired_for_ticker(ticker):
+                status_text = f"⏳ Signal untuk {ticker} sudah kadaluarsa."
+                if chat_id is not None:
+                    try:
+                        await _telegram_post(
+                            telegram_bot_token,
+                            "sendMessage",
+                            {"chat_id": chat_id, "text": status_text},
+                        )
+                    except Exception:
+                        pass
+                # Clear inline keyboard
+                if chat_id is not None and message_id is not None:
+                    try:
+                        await _telegram_post(
+                            telegram_bot_token,
+                            "editMessageReplyMarkup",
+                            {
+                                "chat_id": chat_id,
+                                "message_id": message_id,
+                                "reply_markup": {"inline_keyboard": []},
+                            },
+                        )
+                    except Exception:
+                        pass
+                return {"status": "expired", "action": action, "ticker": ticker}
+        except Exception as e:
+            print(f"Failed expiry check for {ticker}: {e}")
+
     status_text = "Aksi tidak dikenali."
     try:
         if action == "buy":
-            if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
-                track_symbol(ticker)
+            if postgres_enabled:
+                # Get signal prices for the tracking entry
+                prices = get_signal_prices(ticker)
+                if not prices:
+                    # Resolve and get prices from current signal
+                    resolve_signal_by_ticker(ticker, "BUY")
+                    prices = get_signal_prices(ticker)
+
+                entry_price = prices.get("entry_price") if prices else None
+                target_price = prices.get("target_price") if prices else None
+                stop_loss_price = prices.get("stop_loss") if prices else None
+
+                # First resolve, then get the signal_id
+                if not prices:
+                    resolve_signal_by_ticker(ticker, "BUY")
+
+                track_symbol(
+                    ticker,
+                    entry_price=entry_price,
+                    target_price=target_price,
+                    stop_loss=stop_loss_price,
+                )
             status_text = f"Tracking aktif untuk {ticker}."
+
         elif action == "ignore":
-            if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
+            if postgres_enabled:
+                resolve_signal_by_ticker(ticker, "IGNORE")
                 ignore_symbol(ticker)
             status_text = f"{ticker} dimute selama 3 hari."
+
+        elif action == "sell":
+            if postgres_enabled:
+                close_tracking(ticker)
+            status_text = f"Posisi {ticker} ditutup. Cooldown 3 hari aktif."
+
         elif action == "keep":
             status_text = f"Tetap tahan {ticker}. Monitoring lanjut berjalan."
+
     except Exception as e:
         print(f"DB Error on Callback: {e}")
         status_text = f"Aksi untuk {ticker} gagal disimpan."
@@ -310,7 +382,7 @@ async def telegram_webhook(request: Request):
     return {"status": "success", "action": action, "ticker": ticker}
 
 @app.get("/api/v1/dashboard/signals")
-async def get_dashboard_signals():
+async def get_dashboard_signals_endpoint():
     try:
         from oracle.infrastructure.postgres_repository import get_dashboard_signals as load_dashboard_signals
         if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
@@ -322,6 +394,33 @@ async def get_dashboard_signals():
         print(f"Error fetching signals: {e}")
         return {"signals": []}
 
+
+# Fix 6: Portfolio endpoint
+@app.get("/api/v1/dashboard/portfolio")
+async def get_portfolio_endpoint():
+    try:
+        from oracle.infrastructure.postgres_repository import get_portfolio
+        if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
+            return {"portfolio": []}
+        return {"portfolio": get_portfolio()}
+    except Exception as e:
+        print(f"Error fetching portfolio: {e}")
+        return {"portfolio": []}
+
+
+# Fix 6: Signal history endpoint
+@app.get("/api/v1/dashboard/history")
+async def get_history_endpoint():
+    try:
+        from oracle.infrastructure.postgres_repository import get_signal_history
+        if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
+            return {"history": []}
+        return {"history": get_signal_history(limit=50)}
+    except Exception as e:
+        print(f"Error fetching history: {e}")
+        return {"history": []}
+
+
 class DashboardActionPayload(BaseModel):
     ticker: str
     action: str
@@ -329,16 +428,44 @@ class DashboardActionPayload(BaseModel):
 @app.post("/api/v1/dashboard/action")
 async def dashboard_action(payload: DashboardActionPayload):
     try:
-        from oracle.infrastructure.postgres_repository import track_symbol, ignore_symbol
+        from oracle.infrastructure.postgres_repository import (
+            track_symbol,
+            ignore_symbol,
+            close_tracking,
+            resolve_signal_by_ticker,
+            get_signal_prices,
+        )
+        postgres_enabled = os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true"
+
         if payload.action == "buy":
-            track_symbol(payload.ticker)
+            if postgres_enabled:
+                resolve_signal_by_ticker(payload.ticker, "BUY")
+                prices = get_signal_prices(payload.ticker)
+                entry = prices.get("entry_price") if prices else None
+                target = prices.get("target_price") if prices else None
+                sl = prices.get("stop_loss") if prices else None
+                track_symbol(
+                    payload.ticker,
+                    entry_price=entry,
+                    target_price=target,
+                    stop_loss=sl,
+                )
             message = f"*[🟢 Tracking Active for {payload.ticker}]* (Triggered from Web)"
+
         elif payload.action == "ignore":
-            ignore_symbol(payload.ticker)
+            if postgres_enabled:
+                resolve_signal_by_ticker(payload.ticker, "IGNORE")
+                ignore_symbol(payload.ticker)
             message = f"*[🔴 Muted {payload.ticker} for 3 days]* (Triggered from Web)"
+
+        elif payload.action == "sell":
+            if postgres_enabled:
+                close_tracking(payload.ticker)
+            message = f"*[🔻 Closed position {payload.ticker}]* (Triggered from Web)"
+
         else:
             raise HTTPException(status_code=400, detail="Invalid action")
-            
+
         telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
         telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
         if telegram_bot_token and telegram_chat_id:
@@ -349,7 +476,7 @@ async def dashboard_action(payload: DashboardActionPayload):
                     "text": message,
                     "parse_mode": "Markdown"
                 })
-        
+
         return {"status": "success", "action": payload.action, "ticker": payload.ticker}
     except Exception as e:
         print(f"Error on dashboard action: {e}")
