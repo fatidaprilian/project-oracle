@@ -309,21 +309,26 @@ async def generate_auto_signals():
 
     client = genai.Client(api_key=api_key)
 
+    screener_anomalies = []
     try:
         from oracle.application.market_screener import run_market_screener
-        run_market_screener()
+        screener_anomalies = run_market_screener()
     except Exception as e:
         print(f"Failed to run market screener: {e}")
 
     # 1. Fetch Dynamic Watchlist
     try:
-        watchlist = get_watchlist()
+        db_watchlist = get_watchlist()
     except Exception as e:
         print(f"Failed to fetch watchlist from DB: {e}")
-        watchlist = DEFAULT_WATCHLIST
+        db_watchlist = []
 
-    if not watchlist:
-        watchlist = DEFAULT_WATCHLIST
+    if not db_watchlist:
+        db_watchlist = DEFAULT_WATCHLIST
+
+    # Combine manual DB watchlist with Screener Anomalies
+    # Use dict.fromkeys to remove duplicates while preserving order
+    watchlist = list(dict.fromkeys(db_watchlist + screener_anomalies))
 
     actionable_signals = 0
 

@@ -64,22 +64,11 @@ def fetch_anomalous_stocks() -> list[str]:
         print(f"[Market Screener] Error fetching screener data: {e}")
         return []
 
-def run_market_screener():
+def run_market_screener() -> list[str]:
     print("[Market Screener] Scanning IDX for volume anomalies...")
     anomalies = fetch_anomalous_stocks()
     
     if not anomalies:
-        return
+        return []
         
-    try:
-        from oracle.infrastructure.postgres_repository import add_to_watchlist
-        added_count = 0
-        for ticker in anomalies:
-            # We add them to the watchlist. The auto_signal_generator will pick them up
-            # on its next run and do the deep analysis.
-            add_to_watchlist(ticker)
-            added_count += 1
-            
-        print(f"[Market Screener] Successfully added {added_count} new anomalies to watchlist.")
-    except Exception as e:
-        print(f"[Market Screener] Failed to add to DB watchlist: {e}")
+    return anomalies
