@@ -16,6 +16,8 @@ app = FastAPI(
     version="0.2.0",
 )
 
+TELEGRAM_WEBHOOK_PATH = "/api/v1/webhook/telegram"
+
 allowed_origins = os.getenv("ORACLE_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -44,6 +46,71 @@ def on_startup():
         start_auto_signal_daemon()
     except Exception as e:
         print(f"Failed to start auto signal daemon: {e}")
+
+    try:
+        ensure_telegram_webhook()
+    except Exception as e:
+        print(f"Failed to ensure telegram webhook: {e}")
+
+
+def _telegram_api_url(bot_token: str, method: str) -> str:
+    return f"https://api.telegram.org/bot{bot_token}/{method}"
+
+
+def _parse_callback_data(callback_data: str) -> tuple[str, str]:
+    callback_data = callback_data.strip()
+    if "_" not in callback_data:
+        return "", ""
+    action, ticker = callback_data.split("_", 1)
+    return action.strip().lower(), ticker.strip().upper()
+
+
+def ensure_telegram_webhook() -> None:
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    webhook_base = os.getenv("ORACLE_TELEGRAM_WEBHOOK_URL", "").strip()
+    if not bot_token:
+        print("Telegram webhook setup skipped: missing TELEGRAM_BOT_TOKEN")
+        return
+    if not webhook_base:
+        print("Telegram webhook setup skipped: missing ORACLE_TELEGRAM_WEBHOOK_URL")
+        return
+    if not webhook_base.startswith("https://"):
+        print("Telegram webhook setup skipped: ORACLE_TELEGRAM_WEBHOOK_URL must use https")
+        return
+
+    webhook_url = (
+        webhook_base.rstrip("/")
+        if webhook_base.endswith(TELEGRAM_WEBHOOK_PATH)
+        else f"{webhook_base.rstrip('/')}{TELEGRAM_WEBHOOK_PATH}"
+    )
+
+    payload = {
+        "url": webhook_url,
+        "allowed_updates": ["callback_query"],
+        "drop_pending_updates": False,
+    }
+
+    with httpx.Client(timeout=20.0) as client:
+        response = client.post(_telegram_api_url(bot_token, "setWebhook"), json=payload)
+        response.raise_for_status()
+        body = response.json()
+
+    if not body.get("ok", False):
+        print(f"Telegram setWebhook failed: {body}")
+        return
+
+    print(f"Telegram webhook active: {webhook_url}")
+
+
+async def _telegram_post(bot_token: str, method: str, payload: dict) -> dict:
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.post(_telegram_api_url(bot_token, method), json=payload)
+        response.raise_for_status()
+        body = response.json()
+
+    if not body.get("ok", False):
+        raise RuntimeError(f"Telegram API {method} failed: {body}")
+    return body
 
 class HealthResponse(BaseModel):
     status: str
@@ -117,7 +184,7 @@ async def telegram_webhook(request: Request):
         return {"status": "ignored", "reason": "Not a callback query"}
 
     callback_query = payload["callback_query"]
-    callback_data = callback_query.get("data", "")
+    callback_data = str(callback_query.get("data", ""))
     message = callback_query.get("message", {})
     chat_id = message.get("chat", {}).get("id")
     message_id = message.get("message_id")
@@ -127,40 +194,69 @@ async def telegram_webhook(request: Request):
     if not telegram_bot_token:
         return {"status": "error", "reason": "telegram credentials missing"}
 
-    new_text = message.get("text", "") + "\n\n"
-    
+    action, ticker = _parse_callback_data(callback_data)
+    if not action or not ticker:
+        return {"status": "ignored", "reason": "invalid callback data"}
+
+    # Acknowledge callback as early as possible to stop loading spinner in Telegram UI.
+    if callback_id:
+        try:
+            await _telegram_post(
+                telegram_bot_token,
+                "answerCallbackQuery",
+                {
+                    "callback_query_id": callback_id,
+                    "text": "Diproses...",
+                    "show_alert": False,
+                },
+            )
+        except Exception as e:
+            print(f"Failed to acknowledge callback: {e}")
+
+    status_text = "Aksi tidak dikenali."
     try:
-        if callback_data.startswith("buy_"):
-            ticker = callback_data.split("_")[1]
+        if action == "buy":
             if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
                 track_symbol(ticker)
-            new_text += f"*[🟢 Tracking Active for {ticker}]*"
-        elif callback_data.startswith("ignore_"):
-            ticker = callback_data.split("_")[1]
+            status_text = f"Tracking aktif untuk {ticker}."
+        elif action == "ignore":
             if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
                 ignore_symbol(ticker)
-            new_text += f"*[🔴 Muted {ticker} for 3 days]*"
+            status_text = f"{ticker} dimute selama 3 hari."
+        elif action == "keep":
+            status_text = f"Tetap tahan {ticker}. Monitoring lanjut berjalan."
     except Exception as e:
         print(f"DB Error on Callback: {e}")
+        status_text = f"Aksi untuk {ticker} gagal disimpan."
 
-    # Edit the message to remove buttons and show state
-    edit_url = f"https://api.telegram.org/bot{telegram_bot_token}/editMessageText"
-    answer_url = f"https://api.telegram.org/bot{telegram_bot_token}/answerCallbackQuery"
-    
-    async with httpx.AsyncClient() as client:
-        # Edit Message
-        await client.post(edit_url, json={
-            "chat_id": chat_id,
-            "message_id": message_id,
-            "text": new_text,
-            "parse_mode": "Markdown"
-        })
-        # Acknowledge callback to remove loading state on button
-        await client.post(answer_url, json={
-            "callback_query_id": callback_id
-        })
+    if chat_id is not None and message_id is not None:
+        try:
+            await _telegram_post(
+                telegram_bot_token,
+                "editMessageReplyMarkup",
+                {
+                    "chat_id": chat_id,
+                    "message_id": message_id,
+                    "reply_markup": {"inline_keyboard": []},
+                },
+            )
+        except Exception as e:
+            print(f"Failed to clear inline keyboard: {e}")
 
-    return {"status": "success"}
+    if chat_id is not None:
+        try:
+            await _telegram_post(
+                telegram_bot_token,
+                "sendMessage",
+                {
+                    "chat_id": chat_id,
+                    "text": f"✅ {status_text}",
+                },
+            )
+        except Exception as e:
+            print(f"Failed to send callback confirmation message: {e}")
+
+    return {"status": "success", "action": action, "ticker": ticker}
 
 @app.get("/api/v1/dashboard/signals")
 async def get_dashboard_signals():

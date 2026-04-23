@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from oracle.domain.models import ConfluenceSignal, EntryPlan, MarketSnapshot, SentimentSignal, ZoneSignal
+from oracle.domain.models import ConfluenceSignal, EntryPlan, MarketSnapshot, PullbackSignal, SentimentSignal, ZoneSignal
 
 
 def build_entry_plan(
@@ -8,6 +8,7 @@ def build_entry_plan(
     zone: ZoneSignal,
     confluence: ConfluenceSignal,
     sentiment: SentimentSignal,
+    pullback: PullbackSignal | None = None,
 ) -> EntryPlan:
     reason_codes: list[str] = []
 
@@ -17,6 +18,11 @@ def build_entry_plan(
 
     if not confluence.is_valid:
         reason_codes.append("LOW_CONFLUENCE")
+        return EntryPlan(False, 0.0, 0.0, 0.0, 0.0, reason_codes)
+
+    if pullback is not None and not pullback.is_valid:
+        reason_codes.append("PULLBACK_CONFLUENCE_FAIL")
+        reason_codes.extend(pullback.reason_codes)
         return EntryPlan(False, 0.0, 0.0, 0.0, 0.0, reason_codes)
 
     # Simulate sweep-reclaim: current price should be back inside zone after touching zone edge.
@@ -32,6 +38,9 @@ def build_entry_plan(
     take_profit_secondary = entry_price + risk_distance * 1.618
 
     reason_codes.append("ENTRY_LIMIT_READY")
+    if pullback is not None and pullback.strategy_name != "NONE":
+        reason_codes.append(f"STRATEGY_{pullback.strategy_name}")
+
     return EntryPlan(
         should_place_order=True,
         entry_price=entry_price,

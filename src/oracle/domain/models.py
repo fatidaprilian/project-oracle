@@ -25,6 +25,7 @@ class MarketSnapshot:
     lows: List[float]
     current_price: float
     volume: float
+    volumes: List[float] | None = None
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,17 @@ class SentimentSignal:
     sentiment_bias: str
     event_risk_level: str
     shield_status: bool
+
+
+@dataclass(frozen=True)
+class PullbackSignal:
+    is_valid: bool
+    strategy_name: str
+    confidence_score: float
+    ema_200: float
+    ma_99: float
+    volume_ratio: float
+    reason_codes: List[str] = field(default_factory=list)
 
 
 @dataclass

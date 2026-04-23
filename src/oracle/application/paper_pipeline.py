@@ -5,6 +5,7 @@ from oracle.application.risk_controls import RiskGuard
 from oracle.infrastructure.journal import InMemoryJournal
 from oracle.modules.confluence_engine import evaluate_confluence
 from oracle.modules.exit_engine import evaluate_exit
+from oracle.modules.pullback_strategy import evaluate_stock_pullback
 from oracle.modules.sentiment_gate import SentimentProvider, evaluate_sentiment
 from oracle.modules.sniper_entry import build_entry_plan
 from oracle.modules.structure_engine import evaluate_structure
@@ -37,10 +38,13 @@ def run_paper_cycle(
     confluence = evaluate_confluence(snapshot, zone)
     journal.record("confluence_evaluated", confluence)
 
+    pullback = evaluate_stock_pullback(snapshot)
+    journal.record("pullback_evaluated", pullback)
+
     sentiment = evaluate_sentiment(snapshot.symbol, sentiment_provider)
     journal.record("sentiment_evaluated", sentiment)
 
-    entry_plan = build_entry_plan(snapshot, zone, confluence, sentiment)
+    entry_plan = build_entry_plan(snapshot, zone, confluence, sentiment, pullback)
     journal.record("entry_planned", entry_plan)
 
     if not entry_plan.should_place_order:
