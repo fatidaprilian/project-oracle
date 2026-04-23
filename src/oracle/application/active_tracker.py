@@ -241,11 +241,13 @@ Otherwise, if news is normal, mildly bad, or positive, output 'HOLD'.
 def start_daemon():
     scheduler = AsyncIOScheduler()
     interval_minutes = int(os.getenv("ORACLE_SCHEDULER_INTERVAL_MINUTES", "60"))
+    from datetime import datetime, timezone
     scheduler.add_job(
         run_tracking_daemon,
         'interval',
         minutes=interval_minutes,
         id="active_tracking_daemon",
+        next_run_time=datetime.now(timezone.utc),
         max_instances=1,
         coalesce=True,
         misfire_grace_time=120,
