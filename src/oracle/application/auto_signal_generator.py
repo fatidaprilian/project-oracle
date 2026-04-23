@@ -134,11 +134,6 @@ def _load_market_data(yf_module: object, ticker: str) -> tuple[str | None, Marke
             else:
                 bar_date = last_bar_date
 
-            if bar_date == today:
-                data_label = f"Intraday {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
-            else:
-                data_label = f"Last Close {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
-
             closes = hist["Close"].tolist()
             highs = hist["High"].tolist()
             lows = hist["Low"].tolist()
@@ -146,6 +141,11 @@ def _load_market_data(yf_module: object, ticker: str) -> tuple[str | None, Marke
 
             current_price = closes[-1]
             latest_volume = volumes[-1] if volumes else 0.0
+
+            if bar_date == today:
+                data_label = f"Intraday {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
+            else:
+                data_label = f"Last Close {bar_date.strftime('%d %b %Y')} @ {current_price:.2f}"
 
             snapshot = MarketSnapshot(
                 symbol=candidate,
