@@ -601,6 +601,17 @@ async def trigger_scan_api():
         print(f"Error triggering scan: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/v1/admin/monitor-now")
+async def trigger_monitor_api():
+    try:
+        from oracle.application.active_tracker import run_active_tracker_check
+        import asyncio
+        asyncio.create_task(run_active_tracker_check())
+        return {"status": "success", "message": "Monitoring check triggered in background."}
+    except Exception as e:
+        print(f"Error triggering monitor: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
