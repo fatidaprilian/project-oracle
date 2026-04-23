@@ -1,5 +1,6 @@
 import os
 import httpx
+from datetime import date, datetime, timezone
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -17,6 +18,7 @@ app = FastAPI(
 )
 
 TELEGRAM_WEBHOOK_PATH = "/api/v1/webhook/telegram"
+_LAST_ANALYSIS_DAY_BY_TICKER: dict[str, date] = {}
 
 allowed_origins = os.getenv("ORACLE_ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
@@ -63,6 +65,45 @@ def _parse_callback_data(callback_data: str) -> tuple[str, str]:
         return "", ""
     action, ticker = callback_data.split("_", 1)
     return action.strip().lower(), ticker.strip().upper()
+
+
+def _normalize_ticker(ticker: str) -> str:
+    return ticker.strip().upper()
+
+
+def _utc_today() -> date:
+    return datetime.now(timezone.utc).date()
+
+
+def _was_analyzed_today_in_memory(ticker: str) -> bool:
+    normalized_ticker = _normalize_ticker(ticker)
+    if not normalized_ticker:
+        return False
+    return _LAST_ANALYSIS_DAY_BY_TICKER.get(normalized_ticker) == _utc_today()
+
+
+def _mark_analyzed_today(ticker: str) -> None:
+    normalized_ticker = _normalize_ticker(ticker)
+    if not normalized_ticker:
+        return
+    _LAST_ANALYSIS_DAY_BY_TICKER[normalized_ticker] = _utc_today()
+
+
+def _has_reached_daily_analysis_limit(ticker: str) -> bool:
+    normalized_ticker = _normalize_ticker(ticker)
+    if not normalized_ticker:
+        return False
+
+    postgres_enabled = os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true"
+    if postgres_enabled:
+        try:
+            from oracle.infrastructure.postgres_repository import has_signal_today
+            if has_signal_today(normalized_ticker):
+                return True
+        except Exception as e:
+            print(f"Failed DB daily analysis check for {normalized_ticker}: {e}")
+
+    return _was_analyzed_today_in_memory(normalized_ticker)
 
 
 def ensure_telegram_webhook() -> None:
@@ -129,25 +170,35 @@ class WebhookPayload(BaseModel):
 async def tradingview_webhook(payload: WebhookPayload):
     telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    ticker = _normalize_ticker(payload.ticker)
 
     if not telegram_bot_token or not telegram_chat_id:
         return {"status": "ignored", "reason": "telegram credentials not configured"}
 
+    if _has_reached_daily_analysis_limit(ticker):
+        return {
+            "status": "ignored",
+            "reason": "daily analysis already completed for this ticker",
+            "ticker": ticker,
+        }
+
     # Fetch fundamental news and get AI reasoning
-    news = fetch_news_for_ticker(payload.ticker)
-    decision = synthesize_signal(payload.ticker, payload.signal_type, payload.price, news)
+    news = fetch_news_for_ticker(ticker)
+    decision = synthesize_signal(ticker, payload.signal_type, payload.price, news)
     
     # Save to database
     try:
         if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
-            save_signal(payload.ticker, payload.signal_type, news, decision['reason'], decision['bias'])
+            save_signal(ticker, payload.signal_type, news, decision['reason'], decision['bias'])
     except Exception as e:
         print(f"Failed to save signal to DB: {e}")
+
+    _mark_analyzed_today(ticker)
 
     bias_emoji = "✅" if decision["bias"] == "BUY" else "❌"
 
     message = f"🚨 *Oracle Signal*\n"
-    message += f"Ticker: `{payload.ticker}`\n"
+    message += f"Ticker: `{ticker}`\n"
     message += f"Technical: {payload.signal_type} @ {payload.price}\n\n"
     message += f"*AI Bias:* {bias_emoji} {decision['bias']}\n"
     message += f"*Reasoning:* {decision['reason']}"
@@ -163,8 +214,8 @@ async def tradingview_webhook(payload: WebhookPayload):
                 "reply_markup": {
                     "inline_keyboard": [
                         [
-                            {"text": "✅ Beli", "callback_data": f"buy_{payload.ticker}"},
-                            {"text": "❌ Abaikan", "callback_data": f"ignore_{payload.ticker}"}
+                            {"text": "✅ Beli", "callback_data": f"buy_{ticker}"},
+                            {"text": "❌ Abaikan", "callback_data": f"ignore_{ticker}"}
                         ]
                     ]
                 }
@@ -261,15 +312,11 @@ async def telegram_webhook(request: Request):
 @app.get("/api/v1/dashboard/signals")
 async def get_dashboard_signals():
     try:
-        from oracle.infrastructure.postgres_repository import get_recent_signals, get_tracking_status
+        from oracle.infrastructure.postgres_repository import get_dashboard_signals as load_dashboard_signals
         if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
             return {"signals": []}
-            
-        signals = get_recent_signals(50)
-        # enrich with status
-        for s in signals:
-            s["status"] = get_tracking_status(s["ticker"])
-            
+
+        signals = load_dashboard_signals(limit=50, unresolved_expiry_hours=24)
         return {"signals": signals}
     except Exception as e:
         print(f"Error fetching signals: {e}")

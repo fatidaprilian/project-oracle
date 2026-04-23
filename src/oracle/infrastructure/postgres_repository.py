@@ -73,6 +73,12 @@ def init_db() -> None:
                     sent_at TIMESTAMPTZ DEFAULT NOW()
                 )
             """)
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_signal_history_ticker_created_at
+                ON signal_history (ticker, created_at DESC)
+                """
+            )
         conn.commit()
 
 def save_signal(ticker: str, signal_type: str, news: str, reasoning: str, bias: str, entry: float = None, tp: float = None, sl: float = None) -> None:
@@ -164,6 +170,107 @@ def get_recent_signals(limit: int = 20) -> list[dict]:
                     "entry_price": float(row[7]) if row[7] is not None else None,
                     "target_price": float(row[8]) if row[8] is not None else None,
                     "stop_loss": float(row[9]) if row[9] is not None else None
+                })
+            return signals
+
+
+def has_signal_today_for_any(tickers: list[str]) -> bool:
+    dsn = get_dsn()
+    if not dsn:
+        return False
+
+    normalized_tickers = [ticker.strip().upper() for ticker in tickers if ticker and ticker.strip()]
+    if not normalized_tickers:
+        return False
+
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1
+                FROM signal_history
+                WHERE UPPER(ticker) = ANY(%s)
+                  AND created_at >= date_trunc('day', NOW())
+                LIMIT 1
+                """,
+                (normalized_tickers,),
+            )
+            return cur.fetchone() is not None
+
+
+def has_signal_today(ticker: str) -> bool:
+    return has_signal_today_for_any([ticker])
+
+
+def get_dashboard_signals(
+    limit: int = 50,
+    unresolved_expiry_hours: int = 24,
+) -> list[dict]:
+    dsn = get_dsn()
+    if not dsn:
+        return []
+
+    expiry_hours = max(int(unresolved_expiry_hours), 1)
+
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                WITH active_tickers AS (
+                    SELECT DISTINCT ticker
+                    FROM active_tracking
+                    WHERE is_active = TRUE
+                ),
+                ignored_tickers AS (
+                    SELECT DISTINCT ticker
+                    FROM ignore_list
+                    WHERE expires_at > NOW()
+                )
+                SELECT
+                    sh.id,
+                    sh.ticker,
+                    sh.technical_signal,
+                    sh.news_context,
+                    sh.ai_reasoning,
+                    sh.bias,
+                    sh.created_at,
+                    sh.entry_price,
+                    sh.target_price,
+                    sh.stop_loss,
+                    CASE
+                        WHEN at.ticker IS NOT NULL THEN 'TRACKING'
+                        WHEN it.ticker IS NOT NULL THEN 'IGNORED'
+                        ELSE 'NONE'
+                    END AS status
+                FROM signal_history sh
+                LEFT JOIN active_tickers at ON at.ticker = sh.ticker
+                LEFT JOIN ignored_tickers it ON it.ticker = sh.ticker
+                WHERE (
+                    sh.created_at >= NOW() - make_interval(hours => %s)
+                    OR at.ticker IS NOT NULL
+                    OR it.ticker IS NOT NULL
+                )
+                ORDER BY sh.created_at DESC
+                LIMIT %s
+                """,
+                (expiry_hours, limit),
+            )
+            rows = cur.fetchall()
+
+            signals = []
+            for row in rows:
+                signals.append({
+                    "id": str(row[0]),
+                    "ticker": row[1],
+                    "technical_signal": row[2],
+                    "news_context": row[3],
+                    "ai_reasoning": row[4],
+                    "bias": row[5],
+                    "created_at": row[6].isoformat() if row[6] else None,
+                    "entry_price": float(row[7]) if row[7] is not None else None,
+                    "target_price": float(row[8]) if row[8] is not None else None,
+                    "stop_loss": float(row[9]) if row[9] is not None else None,
+                    "status": row[10],
                 })
             return signals
 

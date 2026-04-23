@@ -3,10 +3,14 @@ import asyncio
 import httpx
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from oracle.application.signal_synthesizer import fetch_news_for_ticker
-from oracle.infrastructure.postgres_repository import save_signal, get_watchlist
+from oracle.infrastructure.postgres_repository import (
+    get_watchlist,
+    has_signal_today_for_any,
+    save_signal,
+)
 from google import genai
 from pydantic import BaseModel, Field
 
@@ -16,6 +20,7 @@ _AUTO_SIGNAL_SCHEDULER: AsyncIOScheduler | None = None
 _LAST_ACTIONABLE_SIGNAL_AT: datetime | None = None
 _LAST_HEARTBEAT_SENT_AT: datetime | None = None
 _INVALID_TICKER_UNTIL: dict[str, datetime] = {}
+_LAST_ANALYSIS_DAY_BY_TICKER: dict[str, date] = {}
 
 class AutoSignalDecision(BaseModel):
     bias: str = Field(description="Must be BUY, SELL, or IGNORE")
@@ -76,6 +81,21 @@ def _mark_invalid_cooldown(ticker: str, now: datetime) -> None:
         os.getenv("ORACLE_AUTO_SIGNAL_INVALID_TICKER_COOLDOWN_HOURS", "24")
     )
     _INVALID_TICKER_UNTIL[ticker] = now + timedelta(hours=max(cooldown_hours, 1.0))
+
+
+def _is_already_analyzed_today(tickers: list[str], current_day: date) -> bool:
+    for ticker in tickers:
+        normalized_ticker = _normalize_ticker(ticker)
+        if _LAST_ANALYSIS_DAY_BY_TICKER.get(normalized_ticker) == current_day:
+            return True
+    return False
+
+
+def _mark_analyzed_today(tickers: list[str], current_day: date) -> None:
+    for ticker in tickers:
+        normalized_ticker = _normalize_ticker(ticker)
+        if normalized_ticker:
+            _LAST_ANALYSIS_DAY_BY_TICKER[normalized_ticker] = current_day
 
 
 def _load_technical_data(yf_module: object, ticker: str) -> tuple[str | None, str | None]:
@@ -158,6 +178,8 @@ async def generate_auto_signals():
         print("Missing credentials for Auto Signal Generator")
         return
 
+    postgres_enabled = os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true"
+
     if _LAST_ACTIONABLE_SIGNAL_AT is None:
         _LAST_ACTIONABLE_SIGNAL_AT = _utc_now()
 
@@ -187,6 +209,21 @@ async def generate_auto_signals():
     for raw_ticker in watchlist:
         ticker = _normalize_ticker(raw_ticker)
         now = _utc_now()
+        ticker_candidates = _build_ticker_candidates(ticker)
+        current_day = now.date()
+
+        if postgres_enabled:
+            try:
+                if has_signal_today_for_any(ticker_candidates):
+                    print(f"Skipping {ticker}: already analyzed today")
+                    _mark_analyzed_today(ticker_candidates, current_day)
+                    continue
+            except Exception as e:
+                print(f"Failed daily analysis check for {ticker}: {e}")
+
+        if _is_already_analyzed_today(ticker_candidates, current_day):
+            print(f"Skipping {ticker}: already analyzed today (in-memory)")
+            continue
 
         if _is_on_invalid_cooldown(ticker, now):
             print(f"Skipping {ticker}: on invalid-symbol cooldown")
@@ -238,27 +275,31 @@ Keep reasoning under 2 sentences.
             target_price = _safe_float(decision.get("target_price"))
             stop_loss = _safe_float(decision.get("stop_loss"))
             reason = str(decision.get("reason", "No reasoning provided."))
+
+            if postgres_enabled:
+                try:
+                    save_signal(
+                        ticker=resolved_ticker,
+                        signal_type="AI_PRO_SCAN",
+                        news=news,
+                        reasoning=reason,
+                        bias=bias,
+                        entry=entry_price,
+                        tp=target_price,
+                        sl=stop_loss,
+                    )
+                except Exception as e:
+                    print(f"Failed to save auto signal to DB: {e}")
+
+            _mark_analyzed_today(
+                [resolved_ticker, *ticker_candidates],
+                current_day,
+            )
             
             # 5. Push if strong bias
             if bias in ["BUY", "SELL"]:
                 actionable_signals += 1
                 _LAST_ACTIONABLE_SIGNAL_AT = _utc_now()
-
-                # Save to DB
-                if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() == "true":
-                    try:
-                        save_signal(
-                            ticker=resolved_ticker,
-                            signal_type="AI_PRO_SCAN", 
-                            news=news, 
-                            reasoning=reason,
-                            bias=bias,
-                            entry=entry_price,
-                            tp=target_price,
-                            sl=stop_loss,
-                        )
-                    except Exception as e:
-                        print(f"Failed to save auto signal to DB: {e}")
 
                 # Send to Telegram
                 bias_emoji = "✅" if bias == "BUY" else "🔴"
