@@ -819,6 +819,19 @@ def update_last_checked(tracking_id: str) -> None:
         conn.commit()
 
 
+def save_tracking_alert(tracking_id: str, alert_type: str, message: str) -> None:
+    dsn = get_dsn()
+    if not dsn:
+        return
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO tracking_alerts (tracking_id, alert_type, message) VALUES (%s, %s, %s)",
+                (tracking_id, alert_type, message),
+            )
+        conn.commit()
+
+
 def close_tracking(ticker: str) -> float | None:
     dsn = get_dsn()
     if not dsn:
