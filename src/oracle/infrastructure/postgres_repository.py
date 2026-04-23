@@ -662,7 +662,7 @@ def get_signal_history(limit: int = 50) -> list[dict]:
                 """
                 SELECT
                     id, ticker, bias, ai_reasoning, entry_price, target_price, stop_loss,
-                    created_at, resolved_at, resolved_action
+                    created_at, resolved_at, resolved_action, technical_signal
                 FROM signal_history
                 WHERE resolved_at IS NOT NULL
                 ORDER BY resolved_at DESC
@@ -684,6 +684,7 @@ def get_signal_history(limit: int = 50) -> list[dict]:
                     "created_at": r[7].isoformat() if r[7] else None,
                     "resolved_at": r[8].isoformat() if r[8] else None,
                     "resolved_action": r[9],
+                    "technical_signal": r[10]
                 })
             return history
 

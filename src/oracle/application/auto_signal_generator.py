@@ -481,7 +481,8 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
             # Build signal_type descriptor
             pullback = quant_results["pullback"]
             structure = quant_results["structure"]
-            signal_type_parts = ["AI_PRO_SCAN"]
+            source_tag = "WATCHLIST" if raw_ticker in db_watchlist else "SCANNER"
+            signal_type_parts = [f"SOURCE_{source_tag}", "AI_PRO_SCAN"]
             if pullback.strategy_name != "NONE":
                 signal_type_parts.append(pullback.strategy_name)
             signal_type_parts.append(structure.market_regime.value.upper())

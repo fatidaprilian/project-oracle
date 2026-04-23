@@ -41,9 +41,9 @@ interface HistoryItem {
   entry_price?: number | null;
   target_price?: number | null;
   stop_loss?: number | null;
-  created_at: string;
   resolved_at?: string | null;
   resolved_action?: string | null;
+  technical_signal?: string;
 }
 
 interface Stats {
@@ -339,7 +339,23 @@ function App() {
                               📊 {signal.data_timestamp}
                             </span>
                           )}
-                          {signal.technical_signal && signal.technical_signal.split('+').slice(1).map((tag, i) => {
+                          {signal.technical_signal && signal.technical_signal.split('+').map((tag, i) => {
+                            if (tag === 'AI_PRO_SCAN') return null;
+                            
+                            if (tag.startsWith('SOURCE_')) {
+                              const sourceName = tag.replace('SOURCE_', '');
+                              const isScanner = sourceName === 'SCANNER';
+                              return (
+                                <span key={i} className={`px-2 py-1 text-[10px] font-bold rounded-md uppercase border ${
+                                  isScanner 
+                                    ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' 
+                                    : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                                }`}>
+                                  {isScanner ? '⚡ SCANNER' : '👁️ WATCHLIST'}
+                                </span>
+                              );
+                            }
+
                             const isStrategy = tag.includes('PULLBACK');
                             const isRegime = ['UPTREND', 'DOWNTREND', 'CHOP'].includes(tag);
                             const color = isStrategy
@@ -348,10 +364,11 @@ function App() {
                               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                               : isRegime && tag === 'DOWNTREND'
                               ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                              : 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20';
+                              : 'bg-neutral-800 text-neutral-400 border-neutral-700';
+
                             return (
-                              <span key={i} className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md border ${color}`}>
-                                {tag.replace(/_/g, ' ')}
+                              <span key={i} className={`px-2 py-1 text-[10px] font-bold rounded-md uppercase border ${color}`}>
+                                {tag}
                               </span>
                             );
                           })}
@@ -516,6 +533,7 @@ function App() {
                       <thead>
                         <tr className="border-b border-neutral-800 text-neutral-500 text-xs uppercase tracking-wider">
                           <th className="text-left p-4">Ticker</th>
+                          <th className="text-center p-4">Source</th>
                           <th className="text-left p-4">Bias</th>
                           <th className="text-left p-4">Reasoning</th>
                           <th className="text-right p-4">Entry</th>
@@ -534,6 +552,15 @@ function App() {
                           return (
                             <tr key={item.id} className="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors">
                               <td className="p-4 font-bold font-mono">{item.ticker}</td>
+                              <td className="p-4 text-center">
+                                {item.technical_signal?.includes('SOURCE_SCANNER') ? (
+                                  <span className="text-[10px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-1 rounded-md uppercase font-bold">⚡ SCANNER</span>
+                                ) : item.technical_signal?.includes('SOURCE_WATCHLIST') ? (
+                                  <span className="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-1 rounded-md uppercase font-bold">👁️ WATCHLIST</span>
+                                ) : (
+                                  <span className="text-neutral-600">—</span>
+                                )}
+                              </td>
                               <td className="p-4">
                                 <span className={`px-2 py-1 text-xs font-bold rounded-md uppercase ${
                                   item.bias === 'BUY' ? 'bg-emerald-500/10 text-emerald-400' :
