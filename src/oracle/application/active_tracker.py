@@ -108,6 +108,9 @@ async def run_tracking_daemon():
             except Exception as e:
                 print(f"Failed to update price for {ticker}: {e}")
 
+            now_wib = __import__("datetime").datetime.now(__import__("datetime").timezone.utc) + __import__("datetime").timedelta(hours=7)
+            time_str = now_wib.strftime("%d %b %Y, %H:%M WIB")
+
             # Check target reached
             if target_price and current_price >= target_price:
                 message = (
@@ -115,13 +118,14 @@ async def run_tracking_daemon():
                     f"*Current Price:* {current_price:.2f}\n"
                     f"*Target Price:* {target_price:.2f}\n"
                     f"*Entry Price:* {entry_price:.2f if entry_price else 'N/A'}\n"
-                    f"*PnL:* {pnl_percent:+.2f}%\n\n"
+                    f"*PnL:* {pnl_percent:+.2f}%\n"
+                    f"*Waktu:* {time_str}\n\n"
                     f"✅ Posisi otomatis ditutup (Auto-Sell)."
                 )
                 await _send_telegram_alert(telegram_bot_token, telegram_chat_id, message)
                 
                 if telegram_public_channel_id:
-                    public_message = f"✅ *TAKE PROFIT HIT*\n\nSaham: {ticker}\nPnL: {pnl_percent:.2f}%\nStatus: Target Tercapai & Posisi Ditutup!"
+                    public_message = f"✅ *TARGET REACHED: {ticker}* | PnL: {pnl_percent:+.2f}%\n\n🕒 {time_str}"
                     await _send_telegram_alert(telegram_bot_token, telegram_public_channel_id, public_message)
 
                 try:
@@ -137,13 +141,14 @@ async def run_tracking_daemon():
                     f"*Current Price:* {current_price:.2f}\n"
                     f"*Stop Loss:* {stop_loss:.2f}\n"
                     f"*Entry Price:* {entry_price:.2f if entry_price else 'N/A'}\n"
-                    f"*PnL:* {pnl_percent:+.2f}%\n\n"
+                    f"*PnL:* {pnl_percent:+.2f}%\n"
+                    f"*Waktu:* {time_str}\n\n"
                     f"❌ Posisi otomatis ditutup (Auto-Cutloss)."
                 )
                 await _send_telegram_alert(telegram_bot_token, telegram_chat_id, message)
                 
                 if telegram_public_channel_id:
-                    public_message = f"🚨 *STOP LOSS HIT*\n\nSaham: {ticker}\nPnL: {pnl_percent:.2f}%\nStatus: Auto-Cutloss Tereksekusi"
+                    public_message = f"🚨 *STOP LOSS HIT: {ticker}* | PnL: {pnl_percent:+.2f}%\n\n🕒 {time_str}"
                     await _send_telegram_alert(telegram_bot_token, telegram_public_channel_id, public_message)
 
                 try:
