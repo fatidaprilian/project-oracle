@@ -59,6 +59,12 @@ def on_startup():
         print(f"Failed to start auto signal daemon: {e}")
 
     try:
+        from oracle.application.market_screener import start_daily_broadcast_daemon
+        start_daily_broadcast_daemon()
+    except Exception as e:
+        print(f"Failed to start daily broadcast daemon: {e}")
+
+    try:
         ensure_telegram_webhook()
     except Exception as e:
         print(f"Failed to ensure telegram webhook: {e}")
@@ -437,6 +443,18 @@ async def get_portfolio_endpoint():
     except Exception as e:
         print(f"Error fetching portfolio: {e}")
         return {"portfolio": []}
+
+
+@app.get("/api/v1/dashboard/anomalies")
+async def get_anomalies_endpoint():
+    try:
+        from oracle.infrastructure.postgres_repository import get_daily_anomalies
+        if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
+            return {"anomalies": []}
+        return {"anomalies": get_daily_anomalies()}
+    except Exception as e:
+        print(f"Error fetching anomalies: {e}")
+        return {"anomalies": []}
 
 
 # Fix 6: Signal history endpoint

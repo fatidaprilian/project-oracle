@@ -61,6 +61,13 @@ def init_db() -> None:
                     added_at TIMESTAMPTZ DEFAULT NOW()
                 )
             """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS daily_anomalies (
+                    ticker TEXT PRIMARY KEY,
+                    date_added DATE DEFAULT CURRENT_DATE
+                )
+            """)
             # Insert default watchlist if empty
             cur.execute("SELECT COUNT(*) FROM watchlist")
             if cur.fetchone()[0] == 0:
@@ -419,6 +426,32 @@ def remove_from_watchlist(ticker: str) -> None:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM watchlist WHERE ticker = %s", (ticker,))
         conn.commit()
+
+
+def save_daily_anomalies(tickers: list[str]) -> None:
+    dsn = get_dsn()
+    if not dsn:
+        return
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            # Delete anomalies that are not from today
+            cur.execute("DELETE FROM daily_anomalies WHERE date_added < CURRENT_DATE")
+            for ticker in tickers:
+                cur.execute(
+                    "INSERT INTO daily_anomalies (ticker, date_added) VALUES (%s, CURRENT_DATE) ON CONFLICT (ticker) DO UPDATE SET date_added = CURRENT_DATE",
+                    (ticker,)
+                )
+        conn.commit()
+
+
+def get_daily_anomalies() -> list[str]:
+    dsn = get_dsn()
+    if not dsn:
+        return []
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT ticker FROM daily_anomalies WHERE date_added = CURRENT_DATE")
+            return [r[0] for r in cur.fetchall()]
 
 
 def track_symbol(

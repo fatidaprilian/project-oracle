@@ -72,6 +72,7 @@ function App() {
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [anomalies, setAnomalies] = useState<string[]>([]);
   const [newTicker, setNewTicker] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>('signals');
@@ -79,16 +80,18 @@ function App() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [sigRes, watchRes, portRes, histRes] = await Promise.all([
+      const [sigRes, watchRes, portRes, histRes, anomRes] = await Promise.all([
         axios.get(`${API_BASE}/api/v1/dashboard/signals`),
         axios.get(`${API_BASE}/api/v1/dashboard/watchlist`),
         axios.get(`${API_BASE}/api/v1/dashboard/portfolio`),
         axios.get(`${API_BASE}/api/v1/dashboard/history`),
+        axios.get(`${API_BASE}/api/v1/dashboard/anomalies`),
       ]);
       setSignals(sigRes.data.signals || []);
       setWatchlist(watchRes.data.watchlist || []);
       setPortfolio(portRes.data.portfolio || []);
       setHistory(histRes.data.history || []);
+      setAnomalies(anomRes.data.anomalies || []);
     } catch (err) {
       console.error("Failed to fetch data", err);
     } finally {
@@ -175,12 +178,30 @@ function App() {
 
         {watchlist.length > 0 && (
           <div className="mb-8 p-4 bg-neutral-900 border border-neutral-800 rounded-xl">
-            <h2 className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Active Watchlist Radar</h2>
+            <h2 className="text-xs text-neutral-500 uppercase tracking-wider mb-3">Active Watchlist Radar (Manual)</h2>
             <div className="flex flex-wrap gap-2">
               {watchlist.map(t => (
                 <div key={t} className="flex items-center gap-2 bg-neutral-950 border border-neutral-700 px-3 py-1.5 rounded-md text-sm">
                   <span className="font-mono">{t}</span>
                   <button onClick={() => removeWatchlist(t)} className="text-neutral-500 hover:text-rose-400">&times;</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {anomalies.length > 0 && (
+          <div className="mb-8 p-4 bg-indigo-950/20 border border-indigo-900/50 rounded-xl">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-xs text-indigo-400 uppercase tracking-wider font-bold flex items-center gap-2">
+                <span className="animate-pulse">⚡</span> Auto-Scanner Anomalies (Today)
+              </h2>
+              <span className="text-[10px] text-neutral-500">Resets daily</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {anomalies.map(t => (
+                <div key={t} className="flex items-center gap-2 bg-indigo-950/50 border border-indigo-800/50 px-3 py-1.5 rounded-md text-sm text-indigo-200">
+                  <span className="font-mono">{t}</span>
                 </div>
               ))}
             </div>
