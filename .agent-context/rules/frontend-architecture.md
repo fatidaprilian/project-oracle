@@ -17,6 +17,32 @@ Mandatory behavior when triggered:
 - reject template-only repetitive outputs and force a distinct layout direction
 - treat prior website memory or old-project visual carryover as invalid evidence unless the user explicitly requests continuity with that exact system
 - do not flatten ambitious visual or motion ideas by default; keep them when they are optimized, intentional, and accessible
+- let current repo evidence, the active brief, current project docs, and explicitly approved reference systems outrank remembered style residue every time
+
+## Context Hygiene and Reference Boundaries (Mandatory)
+
+- Valid visual-context sources are limited to the current repo evidence, the current user brief, current project docs, and explicitly approved reference systems.
+- Design continuity is opt-in. If the user does not request continuity with a prior visual system, synthesize from the current project context instead.
+- Old project screenshots, remembered website styles, and cross-chat visual residue are tainted context unless the user explicitly authorizes them.
+- When repo evidence and memory residue conflict, repo evidence wins.
+- If a reference system is approved, adapt its reasoning and constraints. Do not copy its surface 1:1.
+
+## Accessibility Split (Mandatory)
+
+- Treat WCAG 2.2 AA as the hard compliance floor for release-blocking accessibility issues.
+- Treat APCA as an advisory readability model for perceptual tuning, especially for typography, dark mode, and nuanced contrast review.
+- Advisory APCA findings must never waive a WCAG hard failure.
+- Hard accessibility checks must cover more than contrast alone. They must include focus visibility, focus appearance, target size, keyboard access, use-of-color-only failures, accessible authentication, and status or dynamic state access.
+- Keep accessibility compatible with expressive design. Fix the violation without flattening the interface into generic low-risk layouts unless that is the only safe option.
+
+## Structured Design Execution Boundaries (Mandatory)
+
+- UI review must stay representation-first. The contract should define a surface plan, component graph, content-priority map, viewport mutation plan, interaction-state matrix, and task-flow narrative before implementation drifts into styling guesswork.
+- Semantic review should judge contract fidelity, distinctiveness, hierarchy, component-state behavior, and cross-viewport mutation directly from the contract plus changed UI code.
+- Do not make screenshot capture, browser automation, or pixel diff artifacts a baseline dependency for design quality in this repo.
+- Required coverage must still include mobile, tablet, and desktop behavior unless the product scope explicitly excludes one of those surfaces.
+- Escalate to semantic review only when deterministic evidence shows meaningful drift, missing required viewport coverage, or another contract-critical visual failure.
+- Do not use semantic review to invent aesthetic problems when deterministic evidence says the surface is stable.
 
 ## UI Consistency Guardrails (Mandatory)
 

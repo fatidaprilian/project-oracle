@@ -119,7 +119,7 @@ def init_db() -> None:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS ignore_list (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                    ticker TEXT NOT NULL,
+                    ticker TEXT UNIQUE NOT NULL,
                     expires_at TIMESTAMPTZ,
                     created_at TIMESTAMPTZ DEFAULT NOW()
                 )
@@ -153,6 +153,24 @@ def init_db() -> None:
                 WHERE is_active = TRUE
                 """
             )
+
+            # Migration for ignore_list: add unique constraint if missing
+            try:
+                # Check if constraint exists
+                cur.execute("""
+                    SELECT 1 FROM pg_constraint 
+                    WHERE conname = 'ignore_list_ticker_unique'
+                """)
+                if not cur.fetchone():
+                    # Clean up duplicates: keep the one with the latest expires_at
+                    cur.execute("""
+                        DELETE FROM ignore_list a 
+                        USING ignore_list b 
+                        WHERE a.ticker = b.ticker AND a.id < b.id
+                    """)
+                    cur.execute("ALTER TABLE ignore_list ADD CONSTRAINT ignore_list_ticker_unique UNIQUE (ticker)")
+            except Exception as e:
+                print(f"Migration error for ignore_list: {e}")
         conn.commit()
 
 
@@ -528,6 +546,7 @@ def ignore_symbol(ticker: str) -> None:
                 """
                 INSERT INTO ignore_list (ticker, expires_at)
                 VALUES (%s, NOW() + INTERVAL '3 days')
+                ON CONFLICT (ticker) DO UPDATE SET expires_at = EXCLUDED.expires_at
                 """,
                 (ticker,),
             )
