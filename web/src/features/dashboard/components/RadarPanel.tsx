@@ -31,7 +31,7 @@ export function RadarPanel({
       }}
     >
       <div className="space-y-6">
-        <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
+        <div className="rounded-lg border border-white/8 bg-black/20 p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="oracle-kicker">Anomali volume hari ini</p>
@@ -57,7 +57,7 @@ export function RadarPanel({
           </div>
         </div>
 
-        <div className="rounded-3xl border border-white/8 bg-black/20 p-4">
+        <div className="rounded-lg border border-white/8 bg-black/20 p-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="oracle-kicker">Watchlist manual</p>
@@ -112,7 +112,7 @@ export function RadarPanel({
           </div>
         </div>
 
-        <div className="rounded-3xl border border-white/8 bg-black/20 p-4 text-sm leading-7 text-white/66">
+        <div className="rounded-lg border border-white/8 bg-black/20 p-4 text-sm leading-7 text-white/66">
           <p className="oracle-kicker">Catatan operasional</p>
           <p className="mt-2">
             Prediksi durasi target akan ditampilkan dalam hari bursa pada sinyal resmi.

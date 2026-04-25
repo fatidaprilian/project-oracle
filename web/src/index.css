@@ -4,18 +4,17 @@
 
 @layer base {
   :root {
-    --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-display: "Georgia", "Iowan Old Style", "Palatino Linotype", serif;
     --font-body: "IBM Plex Sans", "Trebuchet MS", "Segoe UI", sans-serif;
-    --color-canvas: oklch(0.17 0.018 252);
-    --color-canvas-glow: oklch(0.27 0.06 50 / 0.22);
-    --color-panel: oklch(0.23 0.02 252 / 0.9);
-    --color-panel-strong: oklch(0.26 0.025 252 / 0.96);
-    --color-border: oklch(0.38 0.02 252 / 0.35);
-    --color-border-strong: oklch(0.58 0.09 60 / 0.48);
+    --color-canvas: oklch(0.14 0.017 235);
+    --color-panel: oklch(0.21 0.018 235 / 0.94);
+    --color-panel-strong: oklch(0.25 0.02 230 / 0.96);
+    --color-border: oklch(0.46 0.018 235 / 0.38);
+    --color-border-strong: oklch(0.67 0.13 148 / 0.5);
     --color-text: oklch(0.96 0.01 250);
     --color-text-muted: oklch(0.72 0.015 250);
-    --color-copper-strong: oklch(0.74 0.12 62);
-    --color-copper-soft: oklch(0.62 0.08 62 / 0.18);
+    --color-copper-strong: oklch(0.78 0.12 72);
+    --color-copper-soft: oklch(0.62 0.08 72 / 0.16);
     --color-positive-strong: oklch(0.79 0.16 152);
     --color-positive-soft: oklch(0.74 0.1 152 / 0.18);
     --color-danger-strong: oklch(0.68 0.19 22);
@@ -31,9 +30,10 @@
   body {
     min-height: 100vh;
     background:
-      radial-gradient(circle at top right, var(--color-canvas-glow), transparent 34%),
-      radial-gradient(circle at bottom left, oklch(0.3 0.08 210 / 0.18), transparent 28%),
-      linear-gradient(180deg, oklch(0.17 0.018 252), oklch(0.14 0.016 252));
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+      linear-gradient(180deg, oklch(0.15 0.018 235), oklch(0.11 0.016 235));
+    background-size: 88px 88px, 88px 88px, auto;
     color: var(--color-text);
     font-family: var(--font-body);
   }
@@ -43,11 +43,10 @@
     position: fixed;
     inset: 0;
     pointer-events: none;
-    background-image:
-      linear-gradient(to right, transparent 0, transparent calc(100% - 1px), rgba(255, 255, 255, 0.04) 100%),
-      linear-gradient(to bottom, transparent 0, transparent calc(100% - 1px), rgba(255, 255, 255, 0.03) 100%);
-    background-size: 120px 120px;
-    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 85%);
+    background:
+      linear-gradient(90deg, rgba(80, 196, 146, 0.16), transparent 22%, transparent 78%, rgba(201, 160, 99, 0.12)),
+      repeating-linear-gradient(180deg, transparent 0, transparent 28px, rgba(255, 255, 255, 0.025) 29px);
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.64), transparent 88%);
   }
 
   ::selection {
@@ -75,10 +74,10 @@
   }
 
   .oracle-command-band {
-    @apply flex flex-col gap-6 rounded-[32px] border px-5 py-6 md:px-8 md:py-8 xl:flex-row xl:items-end xl:justify-between;
+    @apply flex flex-col gap-6 rounded-lg border px-5 py-6 md:px-8 md:py-8 xl:flex-row xl:items-end xl:justify-between;
     background:
-      linear-gradient(135deg, rgba(201, 160, 99, 0.12), transparent 32%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+      linear-gradient(90deg, rgba(80, 196, 146, 0.16), transparent 36%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
     border-color: var(--color-border-strong);
     box-shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
     backdrop-filter: blur(18px);
@@ -90,7 +89,7 @@
   }
 
   .oracle-panel {
-    @apply rounded-[30px] border p-5 md:p-6;
+    @apply rounded-lg border p-5 md:p-6;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
       var(--color-panel);
@@ -116,7 +115,7 @@
   }
 
   .oracle-status-banner {
-    @apply rounded-[24px] border px-4 py-3 text-sm font-medium;
+    @apply rounded-lg border px-4 py-3 text-sm font-medium;
     backdrop-filter: blur(12px);
   }
 
@@ -133,7 +132,7 @@
   }
 
   .oracle-stat-card {
-    @apply rounded-[28px] border p-4 md:p-5;
+    @apply rounded-lg border p-4 md:p-5;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
       var(--color-panel-strong);
@@ -141,46 +140,55 @@
     backdrop-filter: blur(14px);
   }
 
+  .oracle-risk-console {
+    @apply flex flex-col gap-4 rounded-lg border p-4 md:flex-row md:items-end md:justify-between md:p-5;
+    background:
+      linear-gradient(90deg, rgba(80, 196, 146, 0.13), rgba(201, 160, 99, 0.08)),
+      rgba(0, 0, 0, 0.24);
+    border-color: rgba(80, 196, 146, 0.26);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
   .oracle-chip {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
+    @apply inline-flex items-center rounded-md px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
   }
 
   .oracle-chip-neutral {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
+    @apply inline-flex items-center rounded-md px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
     background: rgba(255, 255, 255, 0.08);
     color: rgba(255, 255, 255, 0.72);
   }
 
   .oracle-chip-positive {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
+    @apply inline-flex items-center rounded-md px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
     background: var(--color-positive-soft);
     color: var(--color-positive-strong);
   }
 
   .oracle-chip-danger {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
+    @apply inline-flex items-center rounded-md px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
     background: var(--color-danger-soft);
     color: var(--color-danger-strong);
   }
 
   .oracle-chip-warning {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
+    @apply inline-flex items-center rounded-md px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
     background: var(--color-copper-soft);
     color: var(--color-copper-strong);
   }
 
   .oracle-chip-copper {
-    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
+    @apply inline-flex items-center rounded-md px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em];
     background: var(--color-copper-soft);
     color: var(--color-copper-strong);
   }
 
   .oracle-button {
-    @apply inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold transition duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .oracle-button-primary {
-    @apply inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold transition duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
     background: linear-gradient(135deg, rgba(80, 196, 146, 0.9), rgba(48, 149, 196, 0.88));
     color: white;
     box-shadow: 0 12px 30px rgba(24, 96, 78, 0.28);
@@ -192,7 +200,7 @@
   }
 
   .oracle-button-secondary {
-    @apply inline-flex items-center justify-center rounded-full border px-5 py-3 text-sm font-semibold transition duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded-lg border px-5 py-3 text-sm font-semibold transition duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
     border-color: rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.04);
     color: white;
@@ -203,7 +211,7 @@
   }
 
   .oracle-button-danger {
-    @apply inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded-lg px-5 py-3 text-sm font-semibold transition duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60;
     background: rgba(210, 94, 80, 0.16);
     border: 1px solid rgba(210, 94, 80, 0.26);
     color: var(--color-danger-strong);
@@ -214,7 +222,7 @@
   }
 
   .oracle-input {
-    @apply w-full rounded-full border px-4 py-3 text-sm text-white outline-none transition;
+    @apply w-full rounded-lg border px-4 py-3 text-sm text-white outline-none transition;
     border-color: rgba(255, 255, 255, 0.12);
     background: rgba(0, 0, 0, 0.28);
   }
@@ -229,25 +237,25 @@
   }
 
   .oracle-ticker-pill {
-    @apply inline-flex items-center rounded-full px-3 py-2 text-sm font-semibold;
+    @apply inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold;
   }
 
   .oracle-ticker-pill-copper {
-    @apply inline-flex items-center rounded-full px-3 py-2 text-sm font-semibold;
+    @apply inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold;
     background: rgba(201, 160, 99, 0.12);
     border: 1px solid rgba(201, 160, 99, 0.18);
     color: white;
   }
 
   .oracle-watchlist-item {
-    @apply inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm;
+    @apply inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm;
     border-color: rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.03);
     color: rgba(255, 255, 255, 0.82);
   }
 
   .oracle-signal-card {
-    @apply rounded-[28px] border p-5 transition duration-200;
+    @apply rounded-lg border p-5 transition duration-200;
     border-color: rgba(255, 255, 255, 0.08);
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
@@ -261,13 +269,13 @@
   }
 
   .oracle-metric-card {
-    @apply rounded-[24px] border p-4;
+    @apply rounded-lg border p-4;
     border-color: rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.035);
   }
 
   .oracle-mini-metric {
-    @apply rounded-[20px] border p-3 text-sm;
+    @apply rounded-lg border p-3 text-sm;
     border-color: rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.03);
   }
@@ -314,20 +322,20 @@
   }
 
   .oracle-mobile-card {
-    @apply rounded-[26px] border p-5;
+    @apply rounded-lg border p-5;
     border-color: rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.04);
   }
 
   .oracle-empty-state {
-    @apply rounded-[26px] border px-5 py-12 text-center text-sm leading-7;
+    @apply rounded-lg border px-5 py-12 text-center text-sm leading-7;
     border-color: rgba(255, 255, 255, 0.08);
     background: rgba(0, 0, 0, 0.18);
     color: rgba(255, 255, 255, 0.58);
   }
 
   .oracle-loading-block {
-    @apply animate-pulse rounded-[28px] border;
+    @apply animate-pulse rounded-lg border;
     border-color: rgba(255, 255, 255, 0.06);
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
   }

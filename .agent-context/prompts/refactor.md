@@ -1,52 +1,32 @@
 # Prompt: Refactor Code
 
-> Copy-paste this prompt when code needs restructuring to follow the rules.
+Use this when code needs cleanup, splitting, or safer structure without changing user-visible behavior.
 
----
+```text
+Refactor the target code while preserving existing behavior.
 
-## The Prompt
-
-```
-Refactor the following code (or module) to comply with our engineering standards.
-
-Before making changes:
-1. Read .agent-context/rules/architecture.md — ensure proper layer separation.
-2. Read .agent-context/rules/naming-conv.md — fix all naming violations.
-3. Read .agent-context/rules/error-handling.md — fix error handling patterns.
-4. Resolve active language guidance from dynamic stack signals (TypeScript in this repository).
-5. Enforce backend universal principles: no clever hacks, no premature abstraction, readability over brevity.
+Before editing:
+1. Read AGENTS.md and the smallest relevant rules from .agent-context/rules/.
+2. Inspect the real repo conventions before introducing a new structure.
+3. If required project docs are missing, stop and bootstrap or update docs first.
+4. If the change touches UI, load .agent-context/prompts/bootstrap-design.md and .agent-context/rules/frontend-architecture.md before editing.
+5. If the change touches a dependency, framework, Docker, runtime, or ecosystem claim, verify current official docs before choosing.
 6. Enforce Universal SOP hard gate: stop implementation if `docs/architecture-decision-record.md` is missing, and for UI scope stop if `docs/DESIGN.md` or `docs/design-intent.json` is missing.
+7. Enforce backend universal principles: no clever hacks, no premature abstraction, readability over brevity.
+8. For backend/API scope, enforce layered boundaries, zero-trust input validation, safe centralized error responses, bounded list reads, transaction safety for multi-write mutations, idempotency for sensitive mutations, and behavior-focused API tests.
+9. Backend/API governance is global and stack-agnostic. Do not create stack-specific adapters or framework-specific rule branches; apply the global rules through the framework already present in the target project.
 
-For every change you make, provide a Reasoning Chain:
-- What was wrong (rule reference)
-- Why it was wrong (explain the risk/problem)
-- What you changed (show the improvement)
-
-Refactor guidance:
+Refactor rules:
+- Improve clarity, boundaries, naming, validation, error handling, tests, and docs.
 - Prioritize maintainability over compressed one-liners.
-- Prefer explicit readable control flow when short forms hide intent.
-- Do not introduce shared abstractions before patterns are repeated and stable.
+- Do not choose a stack, framework, library, or topology from offline assumptions.
+- Keep module boundaries explicit and project-specific.
+- Split large files when the split makes the flow easier to understand.
+- Do not introduce abstractions before the repeated pattern is real.
+- Update tests and docs whenever behavior contracts, public APIs, data shape, or UI contracts change.
 
-Maintain ALL existing functionality. This is a refactor, not a rewrite.
-Add or update tests if the refactored code changes behavior contracts.
-```
-
-## Extract Module Prompt
-
-```
-Extract [FEATURE_NAME] into its own module following .agent-context/rules/architecture.md:
-
-1. Create the module directory: src/modules/[feature-name]/
-2. Separate into layers:
-   - controller (transport — HTTP in/out only)
-   - service (business logic — no HTTP, no SQL)
-   - repository (data access — no business rules)
-   - dto (Zod schemas for input validation)
-   - types (type definitions)
-3. Create barrel export (index.ts) exposing ONLY the public API
-4. Update imports in consuming modules to use the new module path
-5. Add unit tests for the service layer
-
-Follow naming-conv.md for all file and variable names.
-Provide a Reasoning Chain for every structural decision.
+For every meaningful change, explain:
+- what risk or friction existed
+- what changed
+- why the new shape is safer or easier to maintain
 ```

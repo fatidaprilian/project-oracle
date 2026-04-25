@@ -25,15 +25,15 @@ export function DashboardPage({ data, uiState, controls }: DashboardPageProps) {
       <div className="oracle-grid">
         <header className="oracle-command-band">
           <div className="space-y-4">
-            <p className="oracle-kicker">Ruang kendali oracle</p>
+            <p className="oracle-kicker">Risk console oracle</p>
             <div className="space-y-3">
               <h1 className="font-display text-4xl text-white md:text-6xl">
-                Oracle Ruang Kendali Bursa
+                Oracle Proteksi Modal
               </h1>
               <p className="max-w-3xl text-sm leading-7 text-white/66 md:text-base">
-                Dashboard ini memisahkan radar sesi berikutnya dari sinyal eksekusi.
-                Watchlist screener hanya untuk pantauan awal, sedangkan sinyal resmi
-                memuat alasan, price plan, dan estimasi durasi dalam hari bursa.
+                Dashboard ini sekarang mengutamakan seleksi defensif. Radar tetap
+                memantau anomali, tetapi ruang aksi hanya menerima setup yang lolos
+                entry plan kuantitatif dan konfirmasi berita.
               </p>
             </div>
           </div>

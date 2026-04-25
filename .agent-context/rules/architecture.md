@@ -1,17 +1,16 @@
-# Architecture — Separation of Concerns & Structure
+# Architecture - Separation of Concerns and Structure
 
-> If your service file imports an HTTP library, your architecture is broken.
-> If your controller contains SQL, you've already lost.
+> If a service imports transport concerns or raw persistence concerns directly, the architecture is already drifting.
 
 ## Universal Backend Principles (Mandatory)
 
 These principles are mandatory for backend and shared core modules.
 
-- No clever hacks. Prefer explicit control flow over language tricks that hide intent.
-- No premature abstraction. Extract shared utilities or base types only after repeated, stable patterns appear.
-- Readability over brevity. Reject compressed one-liners when clearer multi-line logic is easier to review.
-
-If a short and a clear implementation are functionally equivalent, choose the clear implementation.
+- No clever hacks.
+- No premature abstraction.
+- Readability over brevity.
+- Keep transport, application, domain, and infrastructure concerns separated.
+- Favor explicit module boundaries over hidden cross-layer shortcuts.
 
 ## Universal SOP Baseline (Mandatory)
 
@@ -26,6 +25,7 @@ The `.agent-context/rules/` directory is the default guidance source for impleme
   - If the project uses persistent data, `docs/database-schema.md` must exist.
   - If the project exposes API or web application flows, `docs/api-contract.md` must exist.
   - For UI scope, `docs/DESIGN.md` and `docs/design-intent.json` must exist.
+- Required docs coverage must include feature plan, architecture rationale, public contracts, data model when relevant, UI/design when relevant, security assumptions, testing strategy, delivery flow, and next validation actions.
 - If required project context docs are missing, stop implementation and bootstrap docs before writing application code.
 - Bootstrap flow: analyze the real repo plus the latest user prompt before authoring those docs.
 - Bootstrap docs must be adaptive and project-specific. Do not create generic placeholder templates.
@@ -33,234 +33,67 @@ The `.agent-context/rules/` directory is the default guidance source for impleme
 
 ## Rules as Guardian (Cross-Session Consistency)
 
-These guardrails are mandatory to preserve architecture direction across sessions.
-
 - Session handoff must include active architecture contract summary.
-- Contract summary must include declared stack, blueprint, profile, and active core patterns.
-- Detect drift before changing declared stack or core patterns.
+- Contract summary must include explicit user constraints, runtime/architecture decision status, active project docs, and the core patterns currently evidenced by the repo.
+- Detect drift before changing runtime choices, topology, public contracts, or core patterns.
 - Direction changes require explicit user confirmation before applying changes.
 - When confirmation is provided, record the rationale in session notes or PR context.
 
 ## Invisible State Management with Explain-on-Demand
 
-State internals must stay invisible by default.
-
 - Default responses must avoid unnecessary state-file internals.
 - State internals are exposed only on explicit user request.
 - Diagnostic mode explains relevant state decisions when needed.
-- Keep default explanations concise and outcome-first; show raw state details only in diagnostic mode.
+- Keep default explanations concise and outcome-first.
 
 ## Single Source of Truth and Lazy Rule Loading
 
 - Canonical rule source is .instructions.md.
 - Adapter entry files stay thin and must point to the canonical source.
-- Load language-specific stack guidance lazily based on detected scope.
-- Do not preload unrelated stack profiles during normal flow.
+- Load global domain rules lazily based on touched scope.
+- Do not create or load stack-specific governance adapters as the baseline.
+- Runtime or framework evidence can clarify implementation details, but it must not replace the global architecture, security, data, API, error, event, and testing boundaries.
 - Keep rule-loading output deterministic for init and release validation.
 
-## The Core Principle
+## Architecture Decision Boundary
 
-**Every layer has ONE job. Layer leaks are bugs — not "pragmatic shortcuts."**
+Do not force a default architecture label before the repo, delivery model, and boundary evidence are clear.
 
-```
-┌─────────────────────────────────────────┐
-│         TRANSPORT / CONTROLLER          │  ← Parse input, validate shape, return response
-│         (HTTP, CLI, WebSocket, Queue)   │  ← NO business logic here. EVER.
-├─────────────────────────────────────────┤
-│         APPLICATION / SERVICE           │  ← Business rules, orchestration, transactions
-│         (Use cases, workflows)          │  ← NO HTTP, NO SQL, NO framework imports
-├─────────────────────────────────────────┤
-│         DOMAIN / ENTITY                 │  ← Pure business objects, value objects
-│         (Models, rules, calculations)   │  ← ZERO external dependencies
-├─────────────────────────────────────────┤
-│         INFRASTRUCTURE / REPOSITORY     │  ← Database, external APIs, file system
-│         (Data access, adapters)         │  ← NO business logic
-└─────────────────────────────────────────┘
-```
+Do not split into distributed services without evidence. Do not keep everything in one process by habit either.
 
-## Layer Rules (Enforced)
+Service separation only makes sense when multiple signals are true, such as:
 
-### Transport Layer (Controller / Handler / Route)
-**Allowed:**
-- Parse and validate incoming request (DTO/schema validation)
-- Call application/service layer
-- Format and return HTTP response (status code, headers)
-- Handle authentication/authorization middleware
+- frequent deploy conflicts across domains
+- clear scale mismatch between domains
+- separate team ownership causing repeated coupling pain
+- hard fault-isolation requirements
+- already-stable contracts and data boundaries
 
-**BANNED:**
-- Database queries or ORM calls
-- Business logic (if/else on business rules)
-- Direct calls to external APIs
-- Transaction management
+## Layer Boundaries (Mandatory)
 
-### Application Layer (Service / Use Case)
-**Allowed:**
-- Orchestrate business operations
-- Call repository layer for data
-- Apply business rules and validations
-- Manage transactions
-- Emit domain events
-
-**BANNED:**
-- HTTP request/response objects
-- Framework-specific decorators (keep framework coupling minimal)
-- Direct SQL or raw database calls
-- UI/presentation logic
-
-### Domain Layer (Entity / Value Object)
-**Allowed:**
-- Business calculations and rules
-- Validation of domain invariants
-- Type definitions and interfaces
-
-**BANNED:**
-- ANY external dependency (database, HTTP, framework)
-- Side effects (logging, API calls, file I/O)
-- Infrastructure concerns
-
-### Infrastructure Layer (Repository / Adapter)
-**Allowed:**
-- Database queries (SQL, ORM, document queries)
-- External API calls (wrapped in adapters)
-- File system operations
-- Cache operations
-
-**BANNED:**
-- Business logic (no if/else on business rules in queries)
-- HTTP response formatting
-- Direct exposure to transport layer
-
----
+- Transport or controller layer: parse input, validate shape, enforce auth at the edge, return protocol responses. No business policy, no raw SQL, no external workflow orchestration.
+- Application or service layer: business rules, orchestration, transactions, and use-case flow. No request or response objects, no UI formatting, no raw transport dependencies.
+- Domain layer: pure business invariants, calculations, value objects, and policies. No framework, network, database, or file-system coupling.
+- Infrastructure or repository layer: database, queue, cache, file system, and external API adapters. No business policy hidden in queries or adapters.
 
 ## Dependency Direction
 
-Dependencies flow **inward only**:
+- Dependencies flow inward: transport to application to domain.
+- Infrastructure depends inward through interfaces or well-defined ports.
+- Domain must not depend on infrastructure.
+- Application must not depend on transport details.
 
-```
-Transport → Application → Domain ← Infrastructure
-                ↓
-          Infrastructure
+## Project Structure and File Size Discipline
 
-NEVER: Domain → Infrastructure (use interfaces/ports)
-NEVER: Application → Transport
-NEVER: Infrastructure → Application (except through interfaces)
-```
-
-The Domain layer depends on NOTHING. Everything depends on the Domain.
-
----
-
-## Default Architecture: Modular Monolith
-
-Start with a **Modular Monolith**. Do NOT start with microservices.
-
-**Switch to microservices ONLY if 2+ of these triggers exist:**
-1. Frequent deploy conflicts across domains (teams blocking each other)
-2. Clear scale mismatch (one module needs 100x resources of another)
-3. Team ownership collision (multiple teams editing same module)
-4. Fault isolation requirement (one module crashing must not kill others)
-5. Stable contracts with clear data boundaries already exist
-
-If these triggers don't exist, microservices are **premature complexity**.
-
----
-
-## Project Structure: Feature-Based Grouping
-
-## Code Organization and File Size Discipline
-
-Keep modules small enough to understand in one focused read.
-
-- Prefer grouping by responsibility, not by convenience.
-- One folder should represent one clear area of responsibility.
-- Split discovery, validation, prompt building, persistence, and contract logic into separate modules when they grow.
-- Avoid mixed-purpose mega-files that combine constants, parsing, orchestration, validation, and I/O in one place.
-- Treat files above roughly 1000 lines as a refactor trigger, not a badge of completeness.
-- If a file grows past that threshold, extract stable submodules with clear names before adding more behavior.
-- Preserve one public entrypoint when it helps callers, but move the real implementation behind focused modules.
-- Tests may aggregate scenarios, but shared helpers and repeated setup should move into dedicated support files when the suite becomes hard to scan.
-
-### ❌ BANNED: Technical Grouping
-```
-src/
-  controllers/          ← 50 controllers in one flat folder?
-    userController.ts
-    orderController.ts
-    paymentController.ts
-  services/             ← Good luck finding related code
-    userService.ts
-    orderService.ts
-  repositories/
-    userRepository.ts
-    orderRepository.ts
-```
-
-### ✅ REQUIRED: Feature/Domain Grouping
-```
-src/
-  modules/                              ← Backend
-    user/
-      user.controller.ts               ← Transport
-      user.service.ts                   ← Application
-      user.repository.ts               ← Infrastructure
-      user.entity.ts                    ← Domain
-      user.dto.ts                       ← Data Transfer Objects
-      user.module.ts                    ← Module registration
-      __tests__/
-        user.service.test.ts
-    order/
-      order.controller.ts
-      order.service.ts
-      ...
-  shared/                               ← Cross-cutting concerns
-    config/
-    errors/
-    logging/
-    middleware/
-
-src/
-  features/                             ← Frontend
-    payment/
-      api/                              ← HTTP client + DTOs
-      hooks/                            ← React hooks / state
-      components/                       ← UI components
-      types/                            ← Type definitions
-      utils/                            ← Feature-specific utils
-      index.ts                          ← Public API barrel
-  components/
-    ui/                                 ← Shared UI primitives
-    layout/                             ← Layout components
-  lib/                                  ← Shared utilities
-  config/                               ← App configuration
-```
-
----
+- Group code by feature or domain, not by one giant technical folder per type.
+- Backend feature modules use `src/modules/<feature>/...` when the repo has no stronger existing convention.
+- Frontend feature modules use `src/features/<feature>/...` when the repo has no stronger existing convention.
+- Cross-cutting utilities belong in explicit shared locations, not scattered feature internals.
+- Files above roughly 1000 lines are a refactor trigger, not a success signal.
+- Preserve one clear public entrypoint per module when helpful, but move implementation into smaller focused files.
 
 ## Module Communication
 
-### Within a Monolith
-Modules communicate through **public interfaces only**:
-```
-// ✅ CORRECT: Import from module's public API
-import { UserService } from '@/modules/user';
-
-// ❌ BANNED: Reach into another module's internals
-import { UserRepository } from '@/modules/user/user.repository';
-```
-
-### Between Services (if microservices)
-- Use well-defined contracts (REST, gRPC, events)
-- Never share databases between services
-- Define schemas at boundaries (Protobuf, JSON Schema, Zod)
-
----
-
-## The Architecture Smell Test
-
-Ask yourself these questions. If ANY answer is "yes", your architecture is broken:
-
-1. Can I change the database without touching business logic? (Must be YES)
-2. Can I switch from REST to GraphQL without rewriting services? (Must be YES)
-3. Can I test business logic without a running database? (Must be YES)
-4. Does each module have a clear, single responsibility? (Must be YES)
-5. Can a new developer find all related code in one directory? (Must be YES)
+- Import through a module's public API instead of reaching into internal files.
+- Keep contracts explicit at boundaries between modules.
+- If a new developer cannot find the full flow of a feature in one clear area, the structure is too diffuse.

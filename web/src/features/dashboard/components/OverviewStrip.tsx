@@ -25,8 +25,25 @@ export function OverviewStrip({
   activePositionCount,
   anomalyCount,
 }: OverviewStripProps) {
+  const isDefensiveMode = stats.total >= 3 && (stats.avgPnl < 0 || stats.winRate < 40);
+  const riskModeLabel = isDefensiveMode ? 'Mode defensif aktif' : 'Mode seleksi normal';
+  const riskModeDescription = isDefensiveMode
+    ? 'Generator sekarang menunggu entry plan kuantitatif valid sebelum meminta konfirmasi AI.'
+    : 'Sinyal tetap melewati gate kuantitatif sebelum masuk ruang aksi.';
+
   return (
     <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <article className="oracle-risk-console md:col-span-2 xl:col-span-5">
+        <div>
+          <p className="oracle-kicker">Kontrol risiko 2026</p>
+          <h2 className="mt-2 text-2xl font-black text-white">{riskModeLabel}</h2>
+        </div>
+        <p className="max-w-3xl text-sm leading-6 text-white/68">
+          {riskModeDescription} Radar boleh ramai, tapi sinyal aksi hanya naik ketika
+          pullback, confluence, dan price plan sudah sejalan.
+        </p>
+      </article>
+
       <article className="oracle-stat-card">
         <p className="oracle-kicker">Fokus saat ini</p>
         <h2 className="mt-3 text-4xl font-black text-white">{pendingSignalCount}</h2>

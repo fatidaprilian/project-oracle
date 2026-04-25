@@ -72,7 +72,7 @@ export function SignalCard({
 
       <div className="grid gap-6 pt-5 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-5">
-          <div className="h-72 overflow-hidden rounded-[24px] border border-white/8 bg-black/30">
+          <div className="h-72 overflow-hidden rounded-lg border border-white/8 bg-black/30">
             <iframe
               src={`https://s.tradingview.com/widgetembed/?symbol=${chartSymbol}&interval=D&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=101822&studies=%5B%5D&theme=dark&style=1`}
               title={`Chart ${signal.ticker}`}
@@ -84,7 +84,7 @@ export function SignalCard({
             />
           </div>
 
-          <div className="rounded-[24px] border border-white/8 bg-black/20 p-4">
+          <div className="rounded-lg border border-white/8 bg-black/20 p-4">
             <p className="oracle-kicker">Analisis Oracle</p>
             <p className="mt-3 text-sm leading-7 text-white/78">{signal.aiReasoning}</p>
           </div>

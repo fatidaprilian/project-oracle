@@ -1,28 +1,11 @@
-description: Run a comprehensive code review using PR and architecture checklists
+---
+description: Review code with project contracts and risk-first findings
 ---
 
 ## Workflow: Review Code
 
-1. Read `.agent-context/review-checklists/pr-checklist.md` and apply every item against the current codebase.
-
-2. Read `.agent-context/review-checklists/architecture-review.md` and apply every item against the current codebase.
-
-3. For every violation found, provide a Reasoning Chain:
-   - State the exact file and line
-   - Reference the specific rule (file + section from `.agent-context/rules/`)
-   - Explain WHY it's a problem
-   - Provide the corrected code
-
-4. Output results in this format:
-
-```
-## PR REVIEW RESULTS
-- PASS or FAIL for each item
-- Reasoning Chain for each failure
-
-## ARCHITECTURE REVIEW RESULTS
-- Boundary violation summary and risk level for each finding
-- Specific remediation for each finding
-
-## VERDICT: PASS or FAIL
-```
+1. Read `AGENTS.md`.
+2. Use `.agent-context/prompts/review-code.md` as the canonical review prompt.
+3. Apply `.agent-context/review-checklists/pr-checklist.md`.
+4. Load architecture, frontend, security, testing, API, event, realtime, or Docker rules only when the changed scope needs them.
+5. Report findings first, ordered by severity, with file/line references and concrete fixes.

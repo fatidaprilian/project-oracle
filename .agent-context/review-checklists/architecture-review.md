@@ -1,76 +1,57 @@
 # Architecture Review Checklist
 
-> Run this when reviewing module structure, new feature design, or refactoring.
-> Bad architecture is invisible until it becomes unmaintainable.
+Use this when module structure, feature shape, public contracts, topology, or refactoring are in scope.
 
-## Instructions for Agent
+## Boundary Review
 
-Evaluate every item against the current project structure. For each violation, explain:
-1. What layer or boundary is broken
-2. Why it leads to maintenance or scalability problems
-3. The correct architectural pattern to apply
+- [ ] The changed code has clear transport, application, domain, and infrastructure boundaries where those layers exist.
+- [ ] Business policy is not hidden in transport handlers, UI adapters, database queries, framework glue, or generated code.
+- [ ] Controllers and route handlers only translate protocol input/output, enforce edge checks, and delegate business flow.
+- [ ] Service or use-case code owns orchestration, transactions, state transitions, and idempotency decisions.
+- [ ] Repository or adapter code owns persistence and external IO details without hiding product policy in queries.
+- [ ] Global backend/API governance is used directly; no stack-specific adapter or framework-specific rule fork was introduced.
+- [ ] Internal models do not leak across public API, event, CLI, library, or UI contracts without a deliberate mapping.
+- [ ] Modules import through public entrypoints instead of deep internal paths.
+- [ ] Circular dependencies are absent or explicitly removed.
 
----
-
-## Layer Separation
-
-- [ ] **Controllers/Handlers contain NO business logic** — Only parsing input, calling service, formatting response
-- [ ] **Services contain NO HTTP concepts** — No `Request`, `Response`, `HttpStatus` imports
-- [ ] **Services contain NO raw SQL or direct DB access** — Use repository/DAO layer
-- [ ] **Repositories contain NO business rules** — Only CRUD and query operations
-- [ ] **Domain entities have NO framework dependencies** — Pure language types only
-- [ ] **Dependencies flow inward** — Transport → Service → Repository → Domain (never reverse)
-
-## Module Boundaries
-
-- [ ] **Modules don't import from each other's internal files** — Only public exports
-- [ ] **No circular dependencies between modules** — A → B → A is forbidden
-- [ ] **Each module has a clear single responsibility** — Not a "kitchen sink" module
-- [ ] **Shared code is genuinely shared** — Not domain-specific code disguised as "common"
-- [ ] **Module size is reasonable** — If a module has 20+ files, consider splitting
+## Structure Review
 
 ## Backend Universal Principles
 
-- [ ] **No clever hacks in backend and shared core modules** — Prefer explicit flow over language tricks that hide intent
-- [ ] **No premature abstraction** — Introduce shared abstractions only after repeated, stable patterns emerge
-- [ ] **Readability over brevity** — Prefer clear multi-line logic over compressed one-liners
+- [ ] No clever hacks in backend and shared core modules
+- [ ] No premature abstraction (base classes/util layers created only after repeated stable patterns)
+- [ ] Readability over brevity for maintainability
+- [ ] The project structure follows existing repo conventions unless a change was approved.
+- [ ] New structure is feature/domain-oriented when that improves discoverability.
+- [ ] Large files or modules are split around real responsibilities, not arbitrary layers.
+- [ ] Shared code is genuinely shared and not domain-specific behavior disguised as utility.
+- [ ] Names describe product meaning, not generic plumbing.
 
-## Dependency Management
+## Topology Review
 
-- [ ] **No God classes** — No class/file with 500+ lines or 10+ dependencies
-- [ ] **Constructor injection only** — No service locator, no field injection, no global state
-- [ ] **Interfaces defined where consumed** — Not in the implementation module
-- [ ] **External services abstracted behind interfaces** — Swappable, testable
-- [ ] **Configuration injected, not hardcoded** — No magic strings for URLs, ports, keys
+- [ ] Monolith remains acceptable when boundaries, team size, consistency needs, and operations favor one deployable.
+- [ ] Service extraction is backed by current evidence: ownership, scaling, compliance, fault isolation, or deploy cadence.
+- [ ] Service boundaries define ownership, contract, data boundary, observability, timeouts, retry, and recovery behavior.
+- [ ] Event or realtime architecture is justified by product need, not trend pressure.
 
-## Data Flow
+## Contract Review
 
-- [ ] **DTOs at boundaries** — Internal models don't leak to external interfaces
-- [ ] **Validation at entry points** — Zod / Pydantic / Bean Validation at transport layer
-- [ ] **No raw request objects passed deep** — Transform to domain types ASAP
-- [ ] **Response transformation explicit** — Dedicated serializers / resources / mappers
-- [ ] **Sensitive data excluded from responses** — Passwords, tokens, internal IDs
+- [ ] API, event, CLI, library, data, and UI contracts are documented before or alongside implementation.
+- [ ] Schema and validation strategy matches the project’s chosen runtime and official docs.
+- [ ] Error contracts are safe, stable, and do not leak internals.
+- [ ] List endpoints have bounded pagination, limits, or streaming behavior documented.
+- [ ] Sensitive mutations have documented idempotency, retry, and duplicate-submit behavior.
+- [ ] Error contracts document stable codes, safe trace or correlation identifiers, and any Problem Details-style fields when exposed.
+- [ ] Async/event contracts document retry, ordering, duplicate handling, and dead-letter or recovery behavior.
+- [ ] Migration and rollback plans exist for risky data or public contract changes.
 
-## Database Design
+## Operational Review
 
-- [ ] **Migrations are incremental** — No destructive changes without migration plan
-- [ ] **Foreign keys for data integrity** — Relations enforced at DB level
-- [ ] **Indexes for query patterns** — Not just primary keys
-- [ ] **No business logic in DB** — Triggers and stored procs used sparingly
-- [ ] **Soft delete considered** — For audit-sensitive entities
-
-## Error Architecture
-
-- [ ] **Error hierarchy defined** — Base error class with domain-specific subtypes
-- [ ] **Global error handler exists** — Catches unhandled errors, returns safe responses
-- [ ] **Error codes are typed** — Enum or const, not arbitrary strings
-- [ ] **Client errors vs server errors distinguished** — 4xx vs 5xx with different handling
-- [ ] **Errors don't leak internals** — No stack traces, SQL errors, or file paths to client
-
-## Scalability Readiness
-
-- [ ] **Stateless services** — No in-memory session or request state across requests
-- [ ] **Background jobs for heavy work** — Long operations don't block HTTP responses
-- [ ] **Idempotent endpoints where needed** — POST with idempotency keys for payment/creation
-- [ ] **Feature flags for gradual rollout** — New features can be toggled without deploy
-- [ ] **Health check endpoint exists** — `/health` returning service status
+- [ ] Critical flows have tests at the right level.
+- [ ] Observability, logging, and health checks match the project’s runtime and risk level.
+- [ ] Security assumptions are documented and enforced at trust boundaries.
+- [ ] Performance-sensitive paths avoid avoidable repeated work, unbounded lists, and hidden blocking operations.
+- [ ] Relational reads avoid N+1 patterns or include an explicit query-shape rationale.
+- [ ] Multi-table or cross-resource writes are transactional or include a documented compensating recovery path.
+- [ ] Dual-write database plus message flows use an outbox or equivalent atomicity and replay strategy.
+- [ ] Cross-service consistency avoids default two-phase commit and defines saga, compensation, or recovery behavior when needed.

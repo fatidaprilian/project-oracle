@@ -18,6 +18,7 @@ from oracle.application.signal_timing import (
     format_bias_label,
     normalize_estimated_duration_window,
 )
+from oracle.application.auto_signal_policy import is_conservative_entry_candidate
 from oracle.infrastructure.postgres_repository import (
     get_watchlist,
     has_pending_signal_for_any,
@@ -37,8 +38,13 @@ _INVALID_TICKER_UNTIL: dict[str, datetime] = {}
 _LAST_ANALYSIS_DAY_BY_TICKER: dict[str, date] = {}
 
 class AutoSignalDecision(BaseModel):
-    bias: str = Field(description="Must be BUY, SELL, or IGNORE")
-    reason: str = Field(description="Max 3 sentences of reasoning incorporating both quantitative and fundamental analysis")
+    bias: str = Field(description="Must be BUY or IGNORE")
+    reason: str = Field(
+        description=(
+            "Max 3 sentences of reasoning incorporating both quantitative "
+            "and fundamental analysis"
+        )
+    )
     entry_price: float = Field(description="Suggested entry price", default=0.0)
     target_price: float = Field(description="Suggested take profit price", default=0.0)
     stop_loss: float = Field(description="Suggested stop loss price", default=0.0)
@@ -414,10 +420,7 @@ async def generate_auto_signals():
 
         print(f"Analyzing {ticker} for auto-signal...")
 
-        # 2. Fetch Fundamental News
-        news = fetch_news_for_ticker(ticker, max_headlines=5)
-
-        # 3. Fetch Market Data and build MarketSnapshot
+        # 2. Fetch Market Data and build MarketSnapshot
         resolved_ticker, snapshot, basic_context, data_label = _load_market_data(yf, ticker)
         if resolved_ticker is None or snapshot is None:
             print(f"No price data for {ticker}. Details: {basic_context}")
@@ -427,16 +430,37 @@ async def generate_auto_signals():
         if resolved_ticker != ticker:
             print(f"Using fallback symbol {resolved_ticker} for {ticker}")
 
-        # 4. Run Quantitative Analysis Pipeline
+        # 3. Run Quantitative Analysis Pipeline
         quant_results = _run_quantitative_pipeline(snapshot)
         quant_summary = quant_results["summary"]
         entry_plan = quant_results["entry_plan"]
 
-        print(f"  Quant summary for {resolved_ticker}:\n    " + quant_summary.replace("\n", "\n    "))
+        print(
+            f"  Quant summary for {resolved_ticker}:\n    "
+            + quant_summary.replace("\n", "\n    ")
+        )
 
-        # 5. Synthesize with Gemini (AI sees both raw data + quantitative analysis)
+        is_entry_candidate, rejection_reasons = is_conservative_entry_candidate(
+            quant_results
+        )
+        if not is_entry_candidate:
+            print(
+                f"Skipping Gemini for {resolved_ticker}: conservative gate rejected "
+                f"({', '.join(rejection_reasons)})"
+            )
+            _mark_analyzed_today(
+                [resolved_ticker, *ticker_candidates],
+                current_day,
+            )
+            await asyncio.sleep(1)
+            continue
+
+        # 4. Fetch news only after the math setup is actionable.
+        news = fetch_news_for_ticker(ticker, max_headlines=5)
+
+        # 5. Synthesize with Gemini as a news/reasoning veto, not as an override engine.
         prompt = f"""
-You are Oracle Pro 2026, an elite quantitative analyst with access to both fundamental and technical analysis modules.
+You are Oracle Risk Console 2026, a conservative Indonesian equity analyst.
 Analyze the following stock: {resolved_ticker}
 
 PRICE DATA:
@@ -449,18 +473,22 @@ FUNDAMENTAL NEWS:
 {news}
 
 INSTRUCTIONS:
-1. Consider the quantitative analysis heavily. If the quant entry plan is VALID with a high confluence score, that is a strong BUY signal.
-2. However, if fundamental news is severely negative (bankruptcy, fraud, SEC probe), override to IGNORE regardless of quant signals.
-3. If quant says REJECTED, carefully evaluate the context. If the stock is in a massive breakout/momentum phase (e.g. limit-up/ARA in Indonesian market) or has extremely bullish news/volume anomalies, you MAY override the quant rejection and issue a BUY.
-4. If you override and issue a BUY, you MUST estimate realistic entry_price, stop_loss, and target_price based on the price data provided. Do not set them to 0.
-5. If bias is BUY or SELL, you MUST also estimate a realistic holding window in trading days using estimated_duration_min_days and estimated_duration_max_days.
-6. The duration estimate is for target timing in trading days, not exact clock hours. Never promise that the target will be hit tomorrow.
-7. Keep the duration estimate inside a practical swing-trading window of 2 to 15 trading days.
-8. If quant says REJECTED and there is no strong bullish catalyst or momentum, output IGNORE.
+1. The quantitative gate has already passed before this prompt is sent.
+   Do not invent a BUY when the math setup is absent.
+2. Your job is only to confirm BUY or veto to IGNORE using the news
+   and data freshness.
+3. Output IGNORE if news is negative, contradictory, too promotional,
+   unclear, or if the setup looks crowded/late.
+4. Output BUY only when news is neutral-to-positive and does not weaken the pullback thesis.
+5. Do not output SELL from this auto-screener. Sell alerts belong to the active-position tracker.
+6. If bias is BUY, provide explicit entry_price, target_price, stop_loss,
+   estimated_duration_min_days, and estimated_duration_max_days.
+7. The duration estimate is for target timing in trading days, not exact
+   clock hours. Never promise that the target will be hit tomorrow.
+8. Keep the duration estimate inside a practical swing-trading window of 2 to 15 trading days.
 9. Write the reason in professional Bahasa Indonesia.
 
-Determine if this is a BUY, SELL, or IGNORE.
-If BUY or SELL, you MUST provide explicit entry_price, target_price (Take Profit), stop_loss, estimated_duration_min_days, and estimated_duration_max_days.
+Determine if this is a BUY or IGNORE.
 Keep reasoning under 3 sentences. Reference the quantitative signals in your reasoning.
 """
         try:
@@ -475,13 +503,15 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
             )
             decision = json.loads(response.text)
             bias = _normalize_bias(decision.get("bias"))
+            if bias != "BUY":
+                bias = "IGNORE"
             entry_price = _safe_float(decision.get("entry_price"))
             target_price = _safe_float(decision.get("target_price"))
             stop_loss = _safe_float(decision.get("stop_loss"))
             reason = str(decision.get("reason", "Alasan tidak tersedia."))
             confluence_score = quant_results["confluence"].confluence_score
             estimated_duration_min_days, estimated_duration_max_days = (
-                _normalize_estimated_duration_window(
+                normalize_estimated_duration_window(
                     raw_min_days=decision.get("estimated_duration_min_days"),
                     raw_max_days=decision.get("estimated_duration_max_days"),
                     bias=bias,
@@ -495,20 +525,6 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
                 entry_price = round(entry_plan.entry_price, 2)
                 stop_loss = round(entry_plan.stop_loss, 2)
                 target_price = round(entry_plan.take_profit_primary, 2)
-
-            # Only send SELL signals if ticker is actively tracked
-            if bias == "SELL":
-                any_tracked = False
-                if postgres_enabled:
-                    try:
-                        any_tracked = any(
-                            is_ticker_actively_tracked(c) for c in [resolved_ticker, *ticker_candidates]
-                        )
-                    except Exception:
-                        pass
-                if not any_tracked:
-                    print(f"Suppressing SELL for {resolved_ticker}: not in active portfolio")
-                    bias = "IGNORE"
 
             # Build signal_type descriptor
             pullback = quant_results["pullback"]
@@ -544,8 +560,8 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
                 current_day,
             )
 
-            # 6. Push if strong bias
-            if bias in ["BUY", "SELL"]:
+            # 6. Push only confirmed BUY signals from the conservative screener.
+            if bias == "BUY":
                 actionable_signals += 1
                 _LAST_ACTIONABLE_SIGNAL_AT = _utc_now()
 
@@ -554,8 +570,8 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
                 buy_callback = f"buy_{resolved_ticker}"
                 ignore_callback = f"ignore_{resolved_ticker}"
 
-                bias_emoji = "✅" if bias == "BUY" else "🔴"
-                bias_label = _format_bias_label(bias)
+                bias_emoji = "✅"
+                bias_label = format_bias_label(bias)
 
                 # Build quant badge for the message
                 quant_badge = ""
@@ -575,7 +591,7 @@ Keep reasoning under 3 sentences. Reference the quantitative signals in your rea
                         f"Confluence {confluence_score:.0f}/100_\n"
                     )
 
-                message = f"🤖 *Sinyal Oracle Pro*\n"
+                message = f"🤖 *Sinyal Oracle Risk Console*\n"
                 message += f"Saham: `{resolved_ticker}`\n\n"
                 message += f"*Bias:* {bias_emoji} {bias_label}\n"
                 message += (

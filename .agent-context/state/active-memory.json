@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "active-memory-v1",
+  "snapshotPurpose": "compact-cross-session-continuity",
+  "updatePolicy": {
+    "writeWhen": "natural-task-boundary",
+    "overwriteOnlyWithCurrentRepoEvidence": true,
+    "preserveUserOwnedContent": true
+  },
+  "project": {
+    "name": "project-oracle-frontend",
+    "currentFocus": "",
+    "durableFacts": []
+  },
+  "progress": {
+    "lastAchievements": [],
+    "pendingIssues": [],
+    "nextBestActions": [],
+    "validationState": []
+  },
+  "designContinuity": {
+    "visualLanguageContinuity": "opt-in-only",
+    "currentConceptualAnchor": "",
+    "forbiddenCarryover": [
+      "prior-project-style-memory",
+      "old-ui-visual-dna-without-user-approval",
+      "generic-dashboard-defaults"
+    ]
+  },
+  "privacy": {
+    "storeSecrets": false,
+    "storeRawChatLogs": false,
+    "redactSensitiveTextBeforeWriting": true
+  },
+  "generatedAt": "2026-04-25T10:26:23.589Z",
+  "lastUpdatedAt": null
+}

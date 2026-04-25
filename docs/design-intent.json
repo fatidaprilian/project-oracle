@@ -3,16 +3,17 @@
   "status": "active",
   "project": {
     "name": "project-oracle-frontend",
-    "context": "Indonesian stock signal command board for Oracle screener, signal review, and active tracking.",
+    "context": "Indonesian stock risk console for Oracle screener, quant-confirmed signal review, and active tracking.",
     "domain": "Web application dashboard",
     "stack": "React, Vite, Tailwind CSS",
-    "blueprint": "Single-page command board"
+    "blueprint": "Single-page capital protection console"
   },
-  "designPhilosophy": "Author a market-operations surface that feels specific to Indonesian equity monitoring instead of a reusable SaaS dashboard shell.",
+  "designPhilosophy": "Author a defensive market-operations surface that makes selectivity visible before scanner volume.",
   "brandAdjectives": [
     "tajam",
     "otoritatif",
-    "terarah"
+    "terarah",
+    "defensif"
   ],
   "antiAdjectives": [
     "generik",
@@ -22,17 +23,31 @@
   "visualDirection": {
     "trendStance": "context-first-not-template-first",
     "distinctiveMoves": [
-      "Use a command-board composition with a market tape rhythm instead of a generic hero-plus-cards layout.",
-      "Separate watchlist radar from executable signals through copy, framing, and semantic color shifts.",
-      "Use copper as the authored accent budget against graphite, emerald, ember, and ice-blue semantics."
+    "Use a risk-console composition with an instrument-grid background instead of a generic hero-plus-cards layout.",
+    "Surface defensive mode before KPI counts so weak win-rate and negative PnL become operating context.",
+    "Separate watchlist radar from executable signals through copy, framing, and semantic color shifts.",
+    "Use emerald as the protection rail, copper as caution, ember as loss/risk, and ice-blue as analysis metadata."
     ],
     "copiedReferenceAllowed": false
+  },
+  "conceptualAnchor": {
+    "agentResearchMode": "repo-evidence-plus-current-brief",
+    "sourceDomain": "industrial risk instrumentation and trading-floor control systems",
+    "rationale": "The operator is losing money from low-selectivity signals, so the interface should behave like a protection console that filters noise before inviting action.",
+    "derivedTokenLogic": "Dark instrument neutrals create low-glare persistence; emerald marks protection and confirmed action; copper marks caution; ember marks loss; ice-blue marks analysis metadata.",
+    "visualRiskBudget": "Use squared panels, instrument-grid rhythm, and one full-width risk band; avoid decorative surfaces that make scanner volume feel celebratory.",
+    "motionRiskBudget": "Use short reveals and state emphasis only; avoid ambient motion while the system is in defensive selection mode.",
+    "cohesionChecks": [
+      "Risk state appears before ticker counts.",
+      "Radar and execution surfaces use visibly different hierarchy.",
+      "Rejected quant setups cannot appear as actionable BUY signals."
+    ]
   },
   "mathSystems": {
     "typographyScaleRatio": "1.200",
     "baseGridUnit": 8,
-    "spacingPattern": "dense-command-grid",
-    "densityMode": "high-density-authored"
+    "spacingPattern": "instrument-console-grid",
+    "densityMode": "high-density-defensive"
   },
   "tokenSystem": {
     "sourceOfTruth": "docs/design-intent.json",
@@ -77,21 +92,21 @@
       "surface",
       "accent"
     ],
-    "intent": "Keep the palette restrained and desk-like, with one authored copper accent budget over stable market semantics."
+    "intent": "Keep the palette restrained and desk-like, with emerald protection rails and copper caution accents over stable market semantics."
   },
   "crossViewportAdaptation": {
     "adaptByRecomposition": true,
     "touchTargetMinPx": 44,
     "mutationRules": {
-      "mobile": "Collapse the command board into a single narrative stack, convert tables into cards, and promote actions to full-width controls.",
-      "tablet": "Retain two-column grouping for radar and signals, but push lower-priority reporting surfaces below active operations.",
-      "desktop": "Expose the full command-board grid with radar, controls, signal review, portfolio, and history visible without tab switching."
+      "mobile": "Put risk mode, pending actions, and active positions first, then disclose radar and history lower in the stack.",
+      "tablet": "Retain two-column grouping for radar and signals while keeping the risk console full-width above them.",
+      "desktop": "Expose the full risk-console grid with radar, controls, signal review, portfolio, and history visible without tab switching."
     }
   },
   "motionSystem": {
     "allowMeaningfulMotion": true,
     "purpose": "Use motion for continuity, urgency, and authored polish without compromising performance.",
-    "choreography": "Fast reveals, border emphasis on actionable cards, and restrained ambient tape motion where it helps orientation.",
+    "choreography": "Fast instrument reveals and border emphasis on actionable cards; avoid ambient motion that rewards over-scanning.",
     "desktopDurationMs": 180,
     "mobileDurationMs": 220,
     "respectReducedMotion": true,
@@ -151,7 +166,8 @@
   },
   "designExecutionHandoff": {
     "surfacePlan": [
-      "Header command band with actions and operating context",
+      "Header risk band with actions and operating context",
+      "Risk console strip that names defensive or normal mode",
       "Today summary strip",
       "Radar panel for screener anomalies and manual watchlist",
       "Pending signal review board",
@@ -171,7 +187,7 @@
       "Radar context",
       "Performance history"
     ],
-    "signatureMoveRationale": "The command-board framing and market tape separators visually distinguish watchlist radar from execution surfaces and reduce confusion about daily anomaly lists."
+    "signatureMoveRationale": "The risk-console framing visually distinguishes scanner noise from executable signals and turns poor recent performance into a visible selectivity constraint."
   },
   "reviewRubric": {
     "dimensions": [
@@ -189,9 +205,9 @@
       "watchlist-copy-implying-one-day-target"
     ],
     "validBoldSignals": [
-      "editorial command-band layout",
+      "risk-console status band",
       "clear semantic separation of radar versus execution",
-      "authored typography and accent budget"
+      "authored typography and protection-first accent budget"
     ],
     "reportingRule": "Every genericity finding must name the exact drift signal."
   },
@@ -212,7 +228,8 @@
   "experiencePrinciples": [
     "Product copy must stay fully Indonesian on user-facing surfaces.",
     "Daily screener radar must never imply one-day profit certainty.",
-    "Signal execution surfaces should feel urgent and operational without becoming noisy.",
+    "Signal execution surfaces should feel strict and operational without becoming noisy.",
+    "Weak win-rate or negative average PnL should activate defensive language instead of encouraging more trades.",
     "Every current data surface must survive the redesign.",
     "Responsive behavior must reorganize content, not merely shrink it."
   ],
@@ -221,6 +238,7 @@
     "mixed-language-ui",
     "one-day-target-implication",
     "tab-only-information-architecture",
+    "ai-override-of-rejected-quant-setup",
     "unstyled-monolithic-component"
   ],
   "validationHints": {

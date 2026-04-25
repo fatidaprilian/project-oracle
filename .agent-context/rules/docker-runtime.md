@@ -4,16 +4,16 @@ Use this rule when Docker is enabled in project context.
 
 ## 0. Latest Official Docker Guidance First
 - Before generating or changing Dockerfiles, Compose files, or container runbooks, verify the latest official Docker documentation first.
-- Prefer official Docker sources such as [Docker Compose Quickstart](https://docs.docker.com/compose/gettingstarted/), [Compose file reference](https://docs.docker.com/reference/compose-file/), and [Dockerfile best practices](https://docs.docker.com/build/building/best-practices/).
-- Prefer current `docker compose` workflows and `compose.yaml`. Do not default to legacy `docker-compose` commands or stale file naming unless backward compatibility is a stated project requirement.
+- Use official Docker sources such as [Docker Compose Quickstart](https://docs.docker.com/compose/gettingstarted/), [Compose file reference](https://docs.docker.com/reference/compose-file/), and [Dockerfile best practices](https://docs.docker.com/build/building/best-practices/).
+- Use current `docker compose` workflows and `compose.yaml`. Do not default to legacy `docker-compose` commands or stale file naming unless backward compatibility is a stated project requirement.
 - Do not add the top-level Compose `version` field by default. The current Compose reference treats it as obsolete. Use it only when a compatibility requirement is explicit and documented.
-- Prefer the latest stable compatible Docker base image, package-manager flow, and Compose syntax first. If the latest compatible path fails, step down intentionally and document the exact reason for the fallback.
+- Use the latest stable compatible Docker base image, package-manager flow, and Compose syntax first. If the latest compatible path fails, step down intentionally and document the exact reason for the fallback.
 
 ## 1. Dynamic Generation Only
 - Do not copy generic Docker templates blindly.
 - Generate Docker assets based on actual stack, package manager, and runtime dependencies in the repository.
 - Re-evaluate Docker instructions when dependencies, build tools, or runtime assumptions change.
-- Prefer the latest stable compatible dependency line first. If an older dependency or base image must be pinned, explain the runtime or compatibility constraint that forced it.
+- Use the latest stable compatible dependency line first. If an older dependency or base image must be pinned, explain the runtime or compatibility constraint that forced it.
 
 ## 2. Separate Development and Production Lanes
 - Development lane and production lane are separate concerns.
@@ -25,7 +25,7 @@ Use this rule when Docker is enabled in project context.
 - Use multi-stage builds for production images when possible.
 - Avoid baking secrets into image layers.
 - Keep runtime image free from build-only tooling.
-- Prefer fresh base-image validation with `docker build --pull` and use `--no-cache` when a clean dependency refresh is required.
+- Use fresh base-image validation with `docker build --pull` and use `--no-cache` when a clean dependency refresh is required.
 - Keep a `.dockerignore` strategy in mind so build contexts stay small and do not leak unnecessary files into the image.
 
 ## 4. Operational Clarity

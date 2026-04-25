@@ -1,16 +1,27 @@
 {
-  "generatedAt": "2026-04-11T12:21:37.776Z",
+  "generatedAt": "2026-04-25T09:59:20.980Z",
   "reportName": "weekly-governance-report",
   "methodology": {
     "qualityTrendSource": "state-file",
     "qualityTrendGeneratedAt": "2026-04-11T12:21:35.779Z",
     "commitWindowDays": 7,
     "requiredVerifiedDomains": [
-      "cli",
-      "frontend",
-      "fullstack",
-      "distribution",
-      "review-quality"
+      "canonical-instructions",
+      "frontend-design-contract",
+      "frontend-architecture",
+      "backend-architecture",
+      "backend-security",
+      "backend-data-access",
+      "backend-error-handling",
+      "backend-api-contract",
+      "backend-testing",
+      "backend-performance",
+      "backend-idempotency",
+      "backend-risk-map",
+      "pr-checklist",
+      "architecture-review",
+      "mcp-server",
+      "state-continuity"
     ]
   },
   "qualitySignals": {
@@ -31,64 +42,236 @@
   "skillTrust": {
     "domains": [
       {
-        "domain": "backend",
-        "tier": "experimental",
-        "score": 25
+        "domain": "architecture-review",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": ".agent-context/review-checklists/architecture-review.md"
       },
       {
-        "domain": "cli",
+        "domain": "backend-api-contract",
         "tier": "verified",
-        "score": 100
+        "score": 100,
+        "sourcePath": ".agent-context/rules/api-docs.md"
       },
       {
-        "domain": "distribution",
+        "domain": "backend-architecture",
         "tier": "verified",
-        "score": 100
+        "score": 100,
+        "sourcePath": ".agent-context/rules/architecture.md"
       },
       {
-        "domain": "frontend",
+        "domain": "backend-data-access",
         "tier": "verified",
-        "score": 100
+        "score": 100,
+        "sourcePath": ".agent-context/rules/database-design.md"
       },
       {
-        "domain": "fullstack",
+        "domain": "backend-error-handling",
         "tier": "verified",
-        "score": 100
+        "score": 100,
+        "sourcePath": ".agent-context/rules/error-handling.md"
       },
       {
-        "domain": "review-quality",
+        "domain": "backend-idempotency",
         "tier": "verified",
-        "score": 100
+        "score": 100,
+        "sourcePath": ".agent-context/rules/event-driven.md"
+      },
+      {
+        "domain": "backend-performance",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": ".agent-context/rules/performance.md"
+      },
+      {
+        "domain": "backend-risk-map",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": ".agent-context/state/architecture-map.md"
+      },
+      {
+        "domain": "backend-security",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": ".agent-context/rules/security.md"
+      },
+      {
+        "domain": "backend-testing",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": ".agent-context/rules/testing.md"
+      },
+      {
+        "domain": "canonical-instructions",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": ".instructions.md"
+      },
+      {
+        "domain": "frontend-architecture",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": ".agent-context/rules/frontend-architecture.md"
+      },
+      {
+        "domain": "frontend-design-contract",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": ".agent-context/prompts/bootstrap-design.md"
+      },
+      {
+        "domain": "mcp-server",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": "scripts/mcp-server.mjs"
+      },
+      {
+        "domain": "pr-checklist",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": ".agent-context/review-checklists/pr-checklist.md"
+      },
+      {
+        "domain": "state-continuity",
+        "tier": "verified",
+        "score": 100,
+        "sourcePath": ".agent-context/state"
       }
     ],
     "tierCounts": {
-      "verified": 5,
+      "verified": 16,
       "community": 0,
-      "experimental": 1
+      "experimental": 0
     },
     "requiredVerifiedDomains": [
-      "cli",
-      "frontend",
-      "fullstack",
-      "distribution",
-      "review-quality"
+      "canonical-instructions",
+      "frontend-design-contract",
+      "frontend-architecture",
+      "backend-architecture",
+      "backend-security",
+      "backend-data-access",
+      "backend-error-handling",
+      "backend-api-contract",
+      "backend-testing",
+      "backend-performance",
+      "backend-idempotency",
+      "backend-risk-map",
+      "pr-checklist",
+      "architecture-review",
+      "mcp-server",
+      "state-continuity"
     ],
     "requiredVerifiedDomainFailures": [],
     "allRequiredVerified": true
   },
+  "backendGovernance": {
+    "status": "verified",
+    "summary": "Backend governance is verified across architecture, security, data access, error handling, API contracts, testing, performance, idempotency, and risk-map surfaces.",
+    "requiredSurfaceCount": 9,
+    "verifiedSurfaceCount": 9,
+    "missingSurfaceNames": [],
+    "coverage": [
+      {
+        "constraint": "Layered architecture and separation of concerns",
+        "status": "covered",
+        "sourcePaths": [
+          ".agent-context/rules/architecture.md",
+          ".agent-context/review-checklists/architecture-review.md"
+        ],
+        "signal": "Transport, application, domain, and infrastructure boundaries are explicit."
+      },
+      {
+        "constraint": "Global backend/API rule routing",
+        "status": "strengthened",
+        "sourcePaths": [
+          ".instructions.md",
+          ".agent-context/rules/architecture.md",
+          ".agent-context/prompts/refactor.md"
+        ],
+        "signal": "Backend/API governance routes by problem domain and stays stack-agnostic; no stack-specific governance adapters are created."
+      },
+      {
+        "constraint": "Zero-trust input validation",
+        "status": "strengthened",
+        "sourcePaths": [
+          ".agent-context/rules/security.md",
+          ".agent-context/review-checklists/pr-checklist.md"
+        ],
+        "signal": "User-controlled body, query, params, headers, cookies, files, webhooks, and job payloads must be validated before service logic."
+      },
+      {
+        "constraint": "Data access performance and integrity",
+        "status": "strengthened",
+        "sourcePaths": [
+          ".agent-context/rules/database-design.md",
+          ".agent-context/rules/performance.md",
+          ".agent-context/state/architecture-map.md"
+        ],
+        "signal": "Backend reads must avoid N+1 and unbounded list responses; multi-write mutations need transaction or recovery evidence."
+      },
+      {
+        "constraint": "Distributed consistency and outbox safety",
+        "status": "strengthened",
+        "sourcePaths": [
+          ".agent-context/rules/event-driven.md",
+          ".agent-context/rules/database-design.md",
+          ".agent-context/rules/microservices.md"
+        ],
+        "signal": "Dual-write flows need outbox or equivalent replay safety, and cross-service consistency must define saga, compensation, or recovery behavior instead of defaulting to two-phase commit."
+      },
+      {
+        "constraint": "Safe centralized API errors",
+        "status": "strengthened",
+        "sourcePaths": [
+          ".agent-context/rules/error-handling.md",
+          ".agent-context/rules/api-docs.md"
+        ],
+        "signal": "HTTP/API responses use safe machine-readable error shapes, may align with RFC 9457 Problem Details, and preserve safe trace/correlation identifiers without leaking internals."
+      },
+      {
+        "constraint": "Sensitive mutation idempotency",
+        "status": "strengthened",
+        "sourcePaths": [
+          ".agent-context/rules/api-docs.md",
+          ".agent-context/rules/testing.md",
+          ".agent-context/rules/event-driven.md"
+        ],
+        "signal": "Payments, orders, status changes, and other risky mutations must document and test duplicate-submit behavior."
+      },
+      {
+        "constraint": "API contract and behavior testing",
+        "status": "strengthened",
+        "sourcePaths": [
+          ".agent-context/rules/testing.md",
+          ".agent-context/review-checklists/pr-checklist.md"
+        ],
+        "signal": "API tests cover validation, auth, documented error shapes, pagination defaults, empty states, and mutation retry safety."
+      }
+    ],
+    "developmentFocus": [
+      {
+        "focus": "Keep backend guidance global and stack-agnostic.",
+        "reason": "The repo should enforce architecture, security, API, data, error, event, and testing thinking without building Nest, Laravel, FastAPI, Express, Go, or other stack-specific governance adapters."
+      },
+      {
+        "focus": "Use framework facts only when implementing inside an existing project.",
+        "reason": "LLMs can apply current ecosystem knowledge directly; governance should route the relevant global constraints instead of acting as a stack detector."
+      }
+    ]
+  },
   "commitSignals": {
     "windowDays": 7,
-    "commitCount": 18,
-    "releaseCommitCount": 7,
+    "commitCount": 30,
+    "releaseCommitCount": 18,
     "rollbackCommitCount": 1,
-    "releaseFrequencyPercent": 38.89,
-    "rollbackFrequencyPercent": 5.56,
+    "releaseFrequencyPercent": 60,
+    "rollbackFrequencyPercent": 3.33,
     "error": null
   },
   "releaseReadiness": {
     "isReady": true,
     "blockers": [],
-    "summary": "Weekly governance posture is ready for maintenance releases."
+    "summary": "Weekly governance posture is ready for maintenance releases with frontend and backend governance surfaces verified."
   },
   "artifact": {
     "path": "E:\\Project\\Agentic-Senior-Core\\.agent-context\\state\\weekly-governance-report.json",
@@ -121,6 +304,26 @@
       "verifiedSkillDomainCount": 5,
       "releaseFrequencyPercent": 38.89,
       "rollbackFrequencyPercent": 5.56
+    },
+    {
+      "generatedAt": "2026-04-25T06:41:17.654Z",
+      "readinessStatus": "ready",
+      "blockerCount": 0,
+      "gatePassRatePercent": 100,
+      "verifiedSkillDomainCount": 16,
+      "backendVerifiedSurfaceCount": 9,
+      "releaseFrequencyPercent": 60,
+      "rollbackFrequencyPercent": 3.33
+    },
+    {
+      "generatedAt": "2026-04-25T09:59:20.980Z",
+      "readinessStatus": "ready",
+      "blockerCount": 0,
+      "gatePassRatePercent": 100,
+      "verifiedSkillDomainCount": 16,
+      "backendVerifiedSurfaceCount": 9,
+      "releaseFrequencyPercent": 60,
+      "rollbackFrequencyPercent": 3.33
     }
   ]
 }

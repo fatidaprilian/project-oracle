@@ -1,23 +1,38 @@
 {
-  "cliVersion": "3.0.19",
-  "generatedAt": "2026-04-23T10:23:04.722Z",
+  "cliVersion": "3.0.27",
+  "generatedAt": "2026-04-25T10:26:23.596Z",
   "operationMode": "upgrade",
   "selectedProfile": "balanced",
   "projectScope": null,
   "projectTopology": null,
-  "selectedStack": "typescript.md",
+  "runtimeDecision": {
+    "mode": "agent-decision-required",
+    "explicitStack": null,
+    "detectedStackEvidence": "typescript.md",
+    "detectedAdditionalStackEvidence": [
+      "python.md"
+    ]
+  },
+  "architectureDecision": {
+    "mode": "agent-decision-required",
+    "explicitBlueprint": null,
+    "detectedBlueprintEvidence": null
+  },
+  "selectedStack": null,
   "selectedAdditionalStacks": [],
-  "selectedBlueprint": "api-nextjs.md",
+  "selectedBlueprint": null,
   "selectedAdditionalBlueprints": [],
   "ruleLoadingPolicy": {
     "canonicalSource": ".instructions.md",
     "stackLoadingMode": "lazy",
+    "domainRuleLoadingMode": "lazy",
     "loadedOnDemand": true,
-    "primaryStack": "typescript.md",
-    "additionalStacks": []
+    "primaryStack": null,
+    "additionalStacks": [],
+    "agentDecisionRequired": true
   },
   "ciGuardrailsEnabled": true,
-  "setupDurationMs": 168,
+  "setupDurationMs": 220,
   "runtimeEnvironment": null,
   "tokenOptimization": {
     "schemaVersion": "token-optimization-v1",
@@ -99,16 +114,13 @@
     "generatedAt": "2026-04-12T02:59:20.510Z"
   },
   "memoryContinuity": null,
-  "architectRecommendation": null,
   "autoDetection": {
-    "recommendedStack": "typescript.md",
-    "recommendedAdditionalStacks": [
+    "detectedStack": "typescript.md",
+    "detectedAdditionalStacks": [
       "python.md"
     ],
-    "recommendedBlueprint": "api-nextjs.md",
-    "recommendedAdditionalBlueprints": [
-      "fastapi-service.md"
-    ],
+    "detectedBlueprint": null,
+    "detectedAdditionalBlueprints": [],
     "confidenceLabel": "high",
     "confidenceScore": 0.97,
     "confidenceGap": 0.01,
@@ -138,7 +150,7 @@
       "multiple stack signals detected"
     ],
     "detectionTransparency": {
-      "declaredAt": "2026-04-23T10:23:04.602Z",
+      "declaredAt": "2026-04-25T10:26:23.444Z",
       "declarationType": "existing-project",
       "declarationShown": true,
       "detectionSummary": "This folder looks like Typescript with high confidence based on web: package.json, web: tsconfig.json, web: Vite config, multiple stack signals detected. Confidence gap: 0.01. Secondary stack signals: Python.",
@@ -149,6 +161,7 @@
           ".windsurfrules"
         ],
         "stackLoadingMode": "lazy",
+        "domainRuleLoadingMode": "lazy",
         "selectedProfile": "balanced",
         "selectedProfileDisplayName": "Balanced",
         "blockingSeverities": [
@@ -159,8 +172,8 @@
       },
       "majorConstraints": [
         "Preserve existing project markers and avoid forced stack migration.",
-        "Keep stack rule loading lazy and scoped to touched code.",
-        "Upgrade keeps prior onboarding choices unless user overrides them."
+        "Use runtime markers as evidence only unless the user already recorded an explicit runtime constraint.",
+        "Upgrade keeps prior explicit onboarding constraints but does not create new stack or blueprint decisions."
       ],
       "quickConfirmation": {
         "offered": false,
@@ -169,8 +182,8 @@
       },
       "decision": {
         "mode": "upgrade-auto",
-        "selectedStackFileName": "typescript.md",
-        "selectedBlueprintFileName": "api-nextjs.md"
+        "selectedStackFileName": "agent-decision-runtime.md",
+        "selectedBlueprintFileName": "agent-decision-architecture.md"
       }
     },
     "uiScope": {
@@ -197,13 +210,18 @@
         }
       ],
       "frontendEvidenceMetrics": {
-        "scannedFileCount": 7,
-        "hardcodedColorCount": 10,
+        "scannedFileCount": 19,
+        "hardcodedColorCount": 97,
         "propDrillingCandidateCount": 0,
         "mediaQueryCount": 0,
-        "tailwindBreakpointUsageCount": 5,
+        "tailwindBreakpointUsageCount": 42,
         "arbitraryBreakpointCount": 0,
-        "uniqueMediaWidthCount": 0
+        "uniqueMediaWidthCount": 0,
+        "structuredClassAttributeCount": 147,
+        "boundClassExpressionCount": 7,
+        "inlineStyleObjectCount": 0,
+        "inlineStyleBindingCount": 0,
+        "inlineStyleTokenBypassCount": 0
       },
       "designEvidenceSummary": {
         "summaryVersion": "v1",
@@ -211,170 +229,259 @@
         "scanRootRelativePaths": [
           "web"
         ],
-        "scannedFileCount": 7,
+        "scannedFileCount": 19,
         "cssVariables": {
-          "definitionCount": 0,
-          "referenceCount": 0,
-          "sampleNames": [],
+          "definitionCount": 18,
+          "referenceCount": 28,
+          "sampleNames": [
+            "color-positive-strong",
+            "color-danger-strong",
+            "color-ice-strong",
+            "font-display",
+            "font-body",
+            "color-canvas",
+            "color-canvas-glow",
+            "color-panel",
+            "color-panel-strong",
+            "color-border",
+            "color-border-strong",
+            "color-text"
+          ],
           "categoryCounts": {
-            "color": 0,
+            "color": 16,
             "spacing": 0,
             "radius": 0,
             "shadow": 0,
-            "typography": 0,
+            "typography": 2,
             "motion": 0,
             "other": 0
           }
         },
         "colors": {
-          "hardcodedCount": 10,
+          "hardcodedCount": 97,
           "kindCounts": {
             "hex": 10,
-            "rgb": 0,
+            "rgb": 68,
             "hsl": 0,
-            "oklch": 0,
+            "oklch": 19,
             "other": 0
           },
           "sampleValues": [
-            "#f8fafc",
-            "#f1f5f9",
-            "#e2e8f0",
-            "#cbd5e1",
-            "#94a3b8",
-            "#64748b",
-            "#475569",
-            "#334155",
-            "#1e293b",
-            "#0f172a"
+            "oklch(0.17 0.018 252)",
+            "oklch(0.27 0.06 50 / 0.22)",
+            "oklch(0.23 0.02 252 / 0.9)",
+            "oklch(0.26 0.025 252 / 0.96)",
+            "oklch(0.38 0.02 252 / 0.35)",
+            "oklch(0.58 0.09 60 / 0.48)",
+            "oklch(0.96 0.01 250)",
+            "oklch(0.72 0.015 250)",
+            "oklch(0.74 0.12 62)",
+            "oklch(0.62 0.08 62 / 0.18)",
+            "oklch(0.79 0.16 152)",
+            "oklch(0.74 0.1 152 / 0.18)"
           ]
         },
         "spacing": {
-          "rawValueCount": 0,
-          "sampleValues": []
+          "rawValueCount": 9,
+          "sampleValues": [
+            "100vh",
+            "1px",
+            "18px"
+          ]
         },
         "radius": {
           "rawValueCount": 0,
           "sampleValues": []
         },
         "shadow": {
-          "rawValueCount": 0,
-          "sampleValues": []
+          "rawValueCount": 10,
+          "sampleValues": [
+            "0 28px 70px rgba(0, 0, 0, 0.28)",
+            "0 18px 48px rgba(0, 0, 0, 0.18)",
+            "0 20px 50px rgba(76, 48, 0, 0.18)",
+            "0 20px 50px rgba(13, 54, 103, 0.16)",
+            "0 20px 50px rgba(14, 79, 54, 0.16)",
+            "0 12px 30px rgba(24, 96, 78, 0.28)",
+            "0 18px 36px rgba(24, 96, 78, 0.34)",
+            "0 0 0 3px rgba(201, 160, 99, 0.16)",
+            "0 22px 48px rgba(0, 0, 0, 0.22)"
+          ]
         },
         "typography": {
-          "fontFamilyCount": 0,
+          "fontFamilyCount": 2,
           "fontSizeCount": 0,
           "lineHeightCount": 0,
           "letterSpacingCount": 0,
-          "fontFamilySamples": [],
+          "fontFamilySamples": [
+            "var(--font-body)",
+            "var(--font-display)"
+          ],
           "fontSizeSamples": [],
           "lineHeightSamples": [],
           "letterSpacingSamples": []
         },
         "motion": {
-          "transitionCount": 14,
+          "transitionCount": 7,
           "animationCount": 0,
           "durationCount": 0,
           "durationSamples": []
         },
         "tailwind": {
-          "breakpointUsageCount": 5,
+          "breakpointUsageCount": 42,
           "arbitraryBreakpointCount": 0,
           "utilityFamilyCounts": {
-            "scan": 1,
-            "min-h": 1,
-            "bg-neutral": 34,
-            "text-neutral": 42,
-            "font": 70,
-            "p": 49,
-            "max-w": 2,
-            "mx": 1,
-            "mb": 19,
-            "border": 11,
-            "border-neutral": 32,
-            "pb": 1,
-            "flex": 16,
-            "items": 15,
-            "justify": 7,
-            "gap": 19,
-            "text": 104,
-            "tracking": 17,
-            "bg-gradient": 1,
-            "from-emerald": 1,
-            "to-cyan": 1,
-            "bg-clip": 1,
-            "mt": 3,
-            "rounded": 38,
-            "px": 21,
-            "py": 27,
-            "outline": 1,
-            "border-emerald": 2,
-            "transition": 14,
-            "w": 3,
-            "bg-emerald": 9,
-            "shadow": 7,
-            "shadow-emerald": 2,
-            "bg-indigo": 6,
-            "shadow-indigo": 1,
-            "text-rose": 13,
-            "border-indigo": 4,
-            "text-indigo": 4,
-            "animate": 2,
-            "grid-cols": 6,
-            "text-emerald": 12,
-            "ml": 1,
+            "grid": 21,
+            "gap": 25,
+            "space": 11,
+            "oracle": 82,
+            "h": 5,
+            "font": 19,
+            "text": 70,
+            "max": 4,
+            "leading": 8,
+            "flex": 32,
+            "items": 8,
+            "justify": 6,
+            "hidden": 4,
             "overflow": 3,
-            "bg-amber": 3,
-            "text-amber": 4,
-            "bg-rose": 6,
-            "h": 1,
-            "opacity": 2,
-            "bg-cyan": 2,
-            "text-cyan": 5,
-            "border-cyan": 2,
-            "bg-violet": 1,
-            "text-violet": 1,
-            "border-violet": 1,
-            "border-rose": 2,
-            "leading": 1,
-            "overflow-x": 2,
-            "bg-slate": 4,
-            "text-slate": 3,
-            "btn": 2,
-            "bg-blue": 2,
-            "border-slate": 1,
-            "card": 1,
-            "react": 1,
-            "plugin": 1
+            "block": 2,
+            "truncate": 1,
+            "${resolveHistoryToneClass(item.resolvedAction)}": 2,
+            "mt": 26,
+            "col": 2,
+            "${resolvePnlTone(stats.avgPnl)}": 1,
+            "${resolvePnlToneClass(position.pnlPercent)}": 1,
+            "w": 3,
+            "rounded": 5,
+            "border": 14,
+            "bg": 5,
+            "p": 4,
+            "transition": 1,
+            "${resolveToneClass(header.tone)}": 1,
+            "mb": 1,
+            "pb": 2,
+            "${resolveBiasToneClass(signal.bias)}": 1,
+            "pt": 1
           },
           "utilityFamilySamples": [
-            "scan",
-            "min-h",
-            "bg-neutral",
-            "text-neutral",
+            "grid",
+            "gap",
+            "space",
+            "oracle",
+            "h",
             "font",
-            "p",
-            "max-w",
-            "mx",
-            "mb",
-            "border",
-            "border-neutral",
-            "pb"
+            "text",
+            "max",
+            "leading",
+            "flex",
+            "items",
+            "justify"
           ]
         },
         "componentInventory": {
-          "componentFileCount": 1,
+          "componentFileCount": 9,
           "pageFileCount": 1,
           "layoutFileCount": 0,
           "surfaceFileSamples": [
             "web/src/App.tsx",
+            "web/src/features/dashboard/components/DashboardPage.tsx",
+            "web/src/features/dashboard/components/HistoryPanel.tsx",
+            "web/src/features/dashboard/components/OverviewStrip.tsx",
+            "web/src/features/dashboard/components/PortfolioPanel.tsx",
+            "web/src/features/dashboard/components/RadarPanel.tsx",
+            "web/src/features/dashboard/components/SectionShell.tsx",
+            "web/src/features/dashboard/components/SignalBoard.tsx",
+            "web/src/features/dashboard/components/SignalCard.tsx",
             "web/src/index.css"
           ]
         },
+        "structuredInspection": {
+          "mode": "attribute-aware-static-scan",
+          "classAttributeCount": 147,
+          "boundClassExpressionCount": 7,
+          "inlineStyleObjectCount": 0,
+          "inlineStyleBindingCount": 0,
+          "classAttributeSamples": [
+            "grid gap-4 xl:grid-cols-[0.95fr_1.05fr]",
+            "space-y-4",
+            "oracle-loading-block h-72",
+            "oracle-loading-block h-64",
+            "oracle-loading-block h-[32rem]",
+            "oracle-shell",
+            "oracle-grid",
+            "oracle-command-band",
+            "oracle-kicker",
+            "space-y-3",
+            "font-display text-4xl text-white md:text-6xl",
+            "max-w-3xl text-sm leading-7 text-white/66 md:text-base"
+          ],
+          "inlineStyleSamples": [],
+          "utilityFamilyCounts": {
+            "grid": 21,
+            "gap": 25,
+            "space": 11,
+            "oracle": 82,
+            "h": 5,
+            "font": 19,
+            "text": 70,
+            "max": 4,
+            "leading": 8,
+            "flex": 32,
+            "items": 8,
+            "justify": 6,
+            "hidden": 4,
+            "overflow": 3,
+            "block": 2,
+            "truncate": 1,
+            "${resolveHistoryToneClass(item.resolvedAction)}": 2,
+            "mt": 26,
+            "col": 2,
+            "${resolvePnlTone(stats.avgPnl)}": 1,
+            "${resolvePnlToneClass(position.pnlPercent)}": 1,
+            "w": 3,
+            "rounded": 5,
+            "border": 14,
+            "bg": 5,
+            "p": 4,
+            "transition": 1,
+            "${resolveToneClass(header.tone)}": 1,
+            "mb": 1,
+            "pb": 2,
+            "${resolveBiasToneClass(signal.bias)}": 1,
+            "pt": 1
+          },
+          "utilityFamilySamples": [
+            "grid",
+            "gap",
+            "space",
+            "oracle",
+            "h",
+            "font",
+            "text",
+            "max",
+            "leading",
+            "flex",
+            "items",
+            "justify"
+          ],
+          "inlineTokenBypassSignals": {
+            "hardcodedColorCount": 0,
+            "rawSpacingCount": 0,
+            "rawRadiusCount": 0,
+            "rawShadowCount": 0,
+            "cssVariableReferenceCount": 0
+          }
+        },
         "tokenBypassSignals": {
-          "hardcodedColorCount": 10,
-          "rawSpacingCount": 0,
+          "hardcodedColorCount": 97,
+          "rawSpacingCount": 9,
           "rawRadiusCount": 0,
-          "rawShadowCount": 0
+          "rawShadowCount": 10,
+          "inlineHardcodedColorCount": 0,
+          "inlineRawSpacingCount": 0,
+          "inlineRawRadiusCount": 0,
+          "inlineRawShadowCount": 0,
+          "inlineCssVariableReferenceCount": 0
         }
       }
     }

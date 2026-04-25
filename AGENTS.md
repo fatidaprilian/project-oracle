@@ -2,7 +2,7 @@
 
 Adapter Mode: thin
 Adapter Source: .instructions.md
-Canonical Snapshot SHA256: 3ddc44d1c3cad20aa06e31c45b5d7289b1b4cde46decb668b0347817222fb022
+Canonical Snapshot SHA256: 11eeafb3ff6a0977785e3668a704c6bba543b515d2828c02de8276f6cf1c391c
 
 This file is an adapter entrypoint for agent discovery.
 The canonical policy source is [.instructions.md](.instructions.md).
@@ -15,8 +15,9 @@ If your host stops at this file instead of following the full chain, obey the Cr
 - Memory continuity does not replace bootstrap loading. It is host-dependent project memory, not a guarantee that instructions were reloaded for this session.
 - For UI, UX, layout, screen, tailwind, frontend, or redesign requests: load [.agent-context/prompts/bootstrap-design.md](.agent-context/prompts/bootstrap-design.md) and [.agent-context/rules/frontend-architecture.md](.agent-context/rules/frontend-architecture.md) before editing code.
 - For UI scope: if `docs/DESIGN.md` or `docs/design-intent.json` is missing, materialize or refine them before implementing UI changes.
+- For backend, API, data, auth, error, event, queue, worker, or distributed-system requests: load the relevant global rules from [.agent-context/rules/](.agent-context/rules); do not create stack-specific governance adapters.
 - For refactor, improve, clean up, or fix requests: inspect the active rules and propose a plan before editing.
-- For new project or module requests: propose architecture before generating code.
+- For new project or module requests: clarify constraints, runtime decisions, and required docs before generating code.
 - For ecosystem, framework, dependency, or Docker claims: perform live web research instead of relying on stale local heuristics.
 
 ## Mandatory Bootstrap Chain
@@ -28,11 +29,11 @@ If your host stops at this file instead of following the full chain, obey the Cr
 5. Enforce review contracts from [.agent-context/review-checklists/](.agent-context/review-checklists).
 6. Read change-risk maps and continuity state from [.agent-context/state/](.agent-context/state).
 7. Enforce policy thresholds from [.agent-context/policies/](.agent-context/policies).
-8. Use dynamic stack and architecture reasoning from project context docs and live research signals.
+8. Use runtime evidence, structure, and live research signals from project context docs.
 
 ## Trigger Rules
 
-- New project or module requests: propose architecture first and wait for approval.
+- New project or module requests: propose scope, constraints, and required docs first, then wait for approval.
 - Refactor or fix requests: propose plan first, then execute safely.
 - Completion: run [.agent-context/review-checklists/pr-checklist.md](.agent-context/review-checklists/pr-checklist.md) before declaring done.
 

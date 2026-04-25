@@ -26,7 +26,7 @@
 
 ### Rules
 1. **Type is mandatory.** No commits without a type prefix.
-2. **Scope is recommended.** Use the module/feature name.
+2. **Scope is required for module or feature changes.** Use the module/feature name.
 3. **Description is imperative mood.** "add", not "added" or "adds".
 4. **Max 72 characters** for the subject line.
 5. **Body explains WHY,** not what. The diff shows what.

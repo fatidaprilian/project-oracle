@@ -77,7 +77,7 @@
       "our_above_line": [
         "Unified design system → code → deployed component library workflow",
         "Anti-slop enforcer with measurable aesthetic rules",
-        "Automated accessibility audit with auto-remediation suggestions",
+        "Automated accessibility audit with required remediation actions",
         "Performance budgeting integrated from design phase",
         "Component API contract validation (props, variants, logic)"
       ]
@@ -225,7 +225,7 @@
       ],
       "our_above_line": [
         "Interactive CLI initialization with live-reload preview",
-        "Configuration validator & fix suggestions",
+        "Configuration validator and required fix actions",
         "Skill selector CLI with auto-detection",
         "Automated upgrade CLI with dry-run & rollback",
         "Plugin ecosystem for skill extensions"
@@ -314,7 +314,7 @@
       ],
       "our_above_line": [
         "AI-assisted code review with benchmark comparison (detect regressions vs 3 repos)",
-        "Automated security vulnerability scanner + remediation suggestions",
+        "Automated security vulnerability scanner plus required remediation actions",
         "Performance regression gate (before/after benchmarks, SLO enforcement)",
         "Accessibility auto-audit + remediation",
         "Dependency audit with license compliance checking"

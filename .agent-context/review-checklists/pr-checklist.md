@@ -1,138 +1,112 @@
-# PR Checklist — The Quality Gate
+# PR Checklist - Quality Gate
 
-> Run this before declaring any task "done."
-> If ANY item fails, the task is NOT complete.
+Run this before declaring a task done. Apply only the sections relevant to the changed scope, but do not skip correctness, security, testing, or docs checks when the change touches them.
 
-## Instructions for Agent
+## 1. Repo Context
 
-When asked to review code using this checklist, evaluate EVERY item below.
-For each failed item, provide a Reasoning Chain (see `.cursorrules` → Reasoning Clause).
-Output format:
+- [ ] The agent read `AGENTS.md` and the smallest relevant rule set.
+- [ ] Existing project context came from real files, docs, package metadata, and changed code, not folder name alone.
+- [ ] Runtime, framework, library, topology, and design choices are explicit user constraints or agent recommendations from current evidence.
+- [ ] No offline default stack, blueprint, vendor, or visual style was treated as authoritative.
 
-```
-## PR REVIEW RESULTS
-━━━━━━━━━━━━━━━━━━━
+## 2. Correctness
 
-PASS [Item]
-FAIL [Item]
-   Rule: [rule file + section]
-   Problem: [specific issue found]
-   Fix: [what to change]
+- [ ] The changed behavior matches the user request.
+- [ ] Existing behavior is preserved unless the user approved a behavior change.
+- [ ] Edge cases, empty states, error paths, and rollback/recovery paths are handled.
+- [ ] Public contracts remain stable or are versioned and documented.
 
-VERDICT: PASS / FAIL (X/Y items passed)
-```
-
----
-
-## The Checklist
-
-### 1. Naming (→ rules/naming-conv.md)
-- [ ] All variables are descriptive nouns (no `data`, `temp`, `val`, `x`)
-- [ ] All functions start with a verb (no `userData()`, `orderLogic()`)
-- [ ] All booleans use `is/has/can/should` prefix
-- [ ] Constants use SCREAMING_SNAKE_CASE with unit suffix
-- [ ] No single-letter variables (except `i` in classic for-loops)
-- [ ] File names follow the project's chosen convention consistently
+## 3. Architecture
 
 ### 2. Architecture (→ rules/architecture.md)
-- [ ] No layer leaks (controllers don't query DB, services don't return HTTP responses)
-- [ ] Feature-based file organization (not technical grouping)
-- [ ] Dependencies flow inward (transport → service → repository)
-- [ ] Module boundaries respected (no reaching into another module's internals)
-- [ ] Domain layer has zero external dependencies
-- [ ] No clever hacks in backend and shared core modules (prefer explicit control flow)
+
+- [ ] Layer and module boundaries are clear for the project’s chosen structure.
+- [ ] No clever hacks in backend and shared core modules
 - [ ] No premature abstraction (base classes/util layers created only after repeated stable patterns)
-- [ ] Readability over brevity for maintainability (no compressed one-liners that hide intent)
+- [ ] Readability over brevity for maintainability
+- [ ] Controllers, route handlers, and transport adapters do not contain business policy, raw queries, or cross-resource orchestration.
+- [ ] Services or use cases own business flow, transaction boundaries, and mutation safety.
+- [ ] Repositories or adapters own persistence/external IO details without hiding business decisions.
+- [ ] Backend/API governance was applied through global domain rules, not stack-specific adapters or framework-only branches.
+- [ ] Code is grouped by feature/domain where that improves maintainability.
+- [ ] Cross-module access uses public contracts instead of internal file reach-through.
+- [ ] Files above roughly 1000 lines were split or explicitly justified.
+- [ ] Monolith/service split decisions are evidence-backed, not fashion-driven.
 
-### 3. Type Safety (→ dynamic TypeScript stack guidance)
-- [ ] No `any` type anywhere (use `unknown` + narrowing)
-- [ ] No `// @ts-ignore` (use `@ts-expect-error` with justification comment)
-- [ ] All function return types are explicit
-- [ ] Zod schemas validate ALL external input at boundaries
-- [ ] Types derived from Zod schemas (single source of truth)
+## 4. Security And Privacy
 
-### 4. Error Handling (→ rules/error-handling.md)
-- [ ] No empty catch blocks
-- [ ] No `catch(e) { console.log(e) }` without re-throw or recovery
-- [ ] Typed error classes used (not generic `new Error('...')`)
-- [ ] Error responses don't leak internal details to clients
-- [ ] Structured logging with context (traceId, userId, action)
+- [ ] External input is validated at trust boundaries using the project’s chosen validation approach.
+- [ ] Body, query, params, headers, cookies, uploads, webhooks, and job payloads are treated as untrusted until validated and normalized.
+- [ ] Secrets, tokens, credentials, and private data are not committed or logged.
+- [ ] Authorization is enforced at a trusted boundary.
+- [ ] Error responses and logs do not leak internals.
+- [ ] Least privilege, resource-level authorization, and secret handling are preserved where sensitive data or privileged actions are touched.
+- [ ] Dependency or platform security claims are based on current official docs or repo evidence.
 
-### 5. Security (→ rules/security.md)
-- [ ] All user input validated at boundaries (Zod/schema)
-- [ ] No SQL/command string concatenation with user input
-- [ ] No secrets hardcoded in source code
-- [ ] Auth checked server-side (not client-side only)
-- [ ] Error messages don't reveal internal system details
-- [ ] CORS configured (not `*` in production)
+## 5. Testing
 
-### 6. Performance (→ rules/performance.md)
-- [ ] No N+1 queries (no queries inside loops)
-- [ ] All list queries have LIMIT/pagination
-- [ ] No `SELECT *` (only needed columns)
-- [ ] No synchronous I/O in async context
-- [ ] Cache has documented invalidation strategy (if caching used)
+- [ ] Changed behavior has appropriate tests at the smallest useful level.
+- [ ] API changes cover validation, authorization, documented error shape, pagination defaults, and empty states where relevant.
+- [ ] Sensitive mutations include idempotency or duplicate-submit coverage where duplicate side effects would be harmful.
+- [ ] Tests assert behavior and contracts, not implementation trivia.
+- [ ] Critical flows include failure-path coverage.
+- [ ] Test fixtures are readable and do not hide the behavior under test.
 
-### 7. Testing (→ rules/testing.md)
-- [ ] Business logic has unit tests
-- [ ] Test names follow `should [behavior] when [condition]`
-- [ ] Tests follow AAA pattern (Arrange → Act → Assert)
-- [ ] No implementation detail testing (test behavior, not structure)
-- [ ] Test data uses factories (no copy-pasted objects)
-
-### 8. Dependencies (→ rules/efficiency-vs-hype.md)
-- [ ] No new dependencies added without justification
-- [ ] No dependency that replaces < 20 lines of code
-- [ ] New packages checked for maintenance health
-- [ ] Bundle impact considered (frontend)
-
-### 9. Git (→ rules/git-workflow.md)
-- [ ] Commit messages follow Conventional Commits
-- [ ] No `console.log` debugging statements
-- [ ] No `// TODO` without a linked issue
-- [ ] No commented-out code blocks
-- [ ] `.env` not committed
+## 6. Docs And Contracts
 
 ### 10. Documentation
+
 - [ ] Scope applied: This applies to documentation, release notes, onboarding text, review summaries, and agent-facing explanations
 - [ ] Style scope review is advisory and does not block merge when API docs are synced in the same commit and contract details are correct
+- [ ] Required docs exist before implementation: project brief, architecture decision, flow overview, API/public contract when relevant, data model when relevant, and UI design contract when relevant.
+- [ ] Docs cover feature plan, architecture rationale, public contracts, data model, UI/design, security assumptions, testing strategy, delivery flow, and next validation actions where relevant.
+- [ ] API, event, CLI, library, data, and UI contract changes update docs in the same scope.
 - [ ] Public surface changes fail review if documentation updates are missing or stale in the same scope
-- [ ] API endpoint/contract changes include synchronized API/OpenAPI documentation updates
-- [ ] Database structure changes include synchronized schema or migration documentation updates
 - [ ] Documentation checks stay boundary-aware and only enforce touched scopes
-- [ ] API endpoints have OpenAPI/Swagger documentation
-- [ ] Complex business logic has comments explaining WHY
-- [ ] Public functions/methods have JSDoc/docstrings
-- [ ] README updated if new setup steps required
+- [ ] Facts, assumptions, and next actions are separated when context is incomplete.
 - [ ] No emoji in formal documentation or review summaries
 - [ ] Documentation uses plain English and avoids AI cliches
-- [ ] Performance/quality claims include source and timestamp
-- [ ] Acronyms are expanded on first use
-- [ ] Facts and assumptions are explicitly separated
+
+## 7. UI And Accessibility
+
+- [ ] UI work follows `docs/DESIGN.md` and `docs/design-intent.json`.
+- [ ] Visual direction is project-specific and not a template/default component-kit habit.
+- [ ] Responsive behavior recomposes content and priority, not only shrinking desktop layout.
+- [ ] Accessibility hard requirements are preserved: keyboard access, focus visibility, contrast, target size, status feedback, and no color-only meaning.
+- [ ] Motion is treated as part of the design language for modern UI work, with reduced-motion and performance safeguards instead of defaulting to static screens.
+
+## 8. Dependencies And Runtime
+
+- [ ] New dependencies are justified by capability, maintenance health, bundle/runtime cost, and current official docs.
+- [ ] Official setup flows are preferred when they produce better-supported current defaults.
+- [ ] Docker, framework, package, and ecosystem claims were checked live when they could be stale.
+- [ ] Token optimization and memory continuity defaults remain enabled unless the user explicitly opts out.
+
+## 9. State And Governance
 
 ### 11. Context-Triggered Audit Mode
+
 - [ ] Strict audit mode activates automatically on review and PR-intent workflows
 - [ ] Small edits avoid heavy checks by default unless strict mode is explicitly requested
 - [ ] User can always force strict audit mode manually
-
-### 12. Rules as Guardian (Cross-Session Consistency)
-- [ ] Session handoff includes active architecture contract summary
-- [ ] Drift detection warns before direction changes
-- [ ] Direction changes require explicit user confirmation
-
-### 13. Invisible State Management (Explain-on-Demand)
-- [ ] Default responses avoid unnecessary state-file internals
-- [ ] State internals are exposed only on explicit request
-- [ ] Diagnostic mode can explain relevant state decisions when needed
-
-### 14. Single Source and Lazy Rule Loading
+- [ ] Session handoff includes active architecture contract summary.
+- [ ] Drift detection warns before direction changes.
+- [ ] Direction changes require explicit user confirmation.
+- [ ] Default responses avoid unnecessary state-file internals.
+- [ ] State internals are exposed only on explicit request.
+- [ ] Diagnostic mode can explain relevant state decisions when needed.
 - [ ] Canonical rule source is explicitly defined and enforced
-- [ ] Language-specific guidance is loaded lazily based on detected scope
+- [ ] Global domain governance is loaded lazily based on touched scope
 - [ ] No conflicting duplicate rule instructions during normal flow
+- [ ] Canonical rule source is explicit and duplicate/conflicting instructions are avoided.
 
 ### 15. Universal SOP Consolidation
-- [ ] `.agent-context/rules/` remains the default guidance source for implementation and review
-- [ ] Backend and frontend mindset checks are both applied when scope spans API and UI boundaries
-- [ ] Security and testing requirements remain mandatory after static template purge
+
+- [ ] `.agent-context/rules/` remains the default guidance source for implementation and review.
+- [ ] Security and testing requirements remain mandatory after static template purge.
 - [ ] Coding flow is blocked if `docs/architecture-decision-record.md` (or `docs/Architecture-Decision-Record.md`) is missing
 - [ ] UI implementation flow is blocked if `docs/DESIGN.md` or `docs/design-intent.json` is missing
+
+## Verdict
+
+Report findings first, ordered by severity, with file/line references and concrete fixes. If no findings exist, say that explicitly and name any residual risk.
