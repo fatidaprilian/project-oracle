@@ -5,6 +5,7 @@ import type {
   DashboardSnapshot,
   HistoryEntry,
   PortfolioPosition,
+  RadarAnomaly,
   SignalItem,
   TradingStats,
 } from './types';
@@ -72,6 +73,18 @@ interface RawStats {
   avg_pnl?: number;
 }
 
+interface RawRadarAnomaly {
+  ticker: string;
+  lane?: RadarAnomaly['lane'] | null;
+  discovery_score?: number | null;
+  volume_ratio?: number | null;
+  change_pct?: number | null;
+  close_price?: number | null;
+  reason?: string | null;
+  source?: string | null;
+  scanned_at?: string | null;
+}
+
 function mapSignalItem(rawSignal: RawSignalItem): SignalItem {
   return {
     id: rawSignal.id,
@@ -137,6 +150,34 @@ function mapTradingStats(rawStats: RawStats): TradingStats {
   };
 }
 
+function mapRadarAnomaly(rawAnomaly: RawRadarAnomaly | string): RadarAnomaly {
+  if (typeof rawAnomaly === 'string') {
+    return {
+      ticker: rawAnomaly,
+      lane: 'RADAR_ONLY',
+      discoveryScore: null,
+      volumeRatio: null,
+      changePct: null,
+      closePrice: null,
+      reason: null,
+      source: null,
+      scannedAt: null,
+    };
+  }
+
+  return {
+    ticker: rawAnomaly.ticker,
+    lane: rawAnomaly.lane ?? 'RADAR_ONLY',
+    discoveryScore: rawAnomaly.discovery_score ?? null,
+    volumeRatio: rawAnomaly.volume_ratio ?? null,
+    changePct: rawAnomaly.change_pct ?? null,
+    closePrice: rawAnomaly.close_price ?? null,
+    reason: rawAnomaly.reason ?? null,
+    source: rawAnomaly.source ?? null,
+    scannedAt: rawAnomaly.scanned_at ?? null,
+  };
+}
+
 export async function fetchDashboardSnapshot(): Promise<DashboardSnapshot> {
   const [
     signalsResponse,
@@ -150,7 +191,10 @@ export async function fetchDashboardSnapshot(): Promise<DashboardSnapshot> {
     dashboardClient.get<{ watchlist: string[] }>('/api/v1/dashboard/watchlist'),
     dashboardClient.get<{ portfolio: RawPortfolioPosition[] }>('/api/v1/dashboard/portfolio'),
     dashboardClient.get<{ history: RawHistoryEntry[] }>('/api/v1/dashboard/history'),
-    dashboardClient.get<{ anomalies: string[] }>('/api/v1/dashboard/anomalies'),
+    dashboardClient.get<{
+      anomalies: string[];
+      anomaly_details?: RawRadarAnomaly[];
+    }>('/api/v1/dashboard/anomalies'),
     dashboardClient.get<RawStats>('/api/v1/dashboard/stats'),
   ]);
 
@@ -159,7 +203,11 @@ export async function fetchDashboardSnapshot(): Promise<DashboardSnapshot> {
     watchlist: watchlistResponse.data.watchlist || [],
     portfolio: (portfolioResponse.data.portfolio || []).map(mapPortfolioPosition),
     history: (historyResponse.data.history || []).map(mapHistoryEntry),
-    anomalies: anomaliesResponse.data.anomalies || [],
+    anomalies: (
+      anomaliesResponse.data.anomaly_details?.length
+        ? anomaliesResponse.data.anomaly_details
+        : anomaliesResponse.data.anomalies || []
+    ).map(mapRadarAnomaly),
     stats: mapTradingStats(statsResponse.data),
   };
 }

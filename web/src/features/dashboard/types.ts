@@ -1,6 +1,19 @@
 export type SignalBias = 'BUY' | 'SELL' | 'IGNORE';
 export type SignalStatus = 'PENDING' | 'TRACKING' | 'IGNORED' | 'EXPIRED';
 export type DashboardAction = 'buy' | 'ignore' | 'sell';
+export type RadarLane = 'MOMENTUM_WATCH' | 'EXTENDED_RISK' | 'RADAR_ONLY' | 'IPO_WATCH';
+
+export interface RadarAnomaly {
+  ticker: string;
+  lane: RadarLane;
+  discoveryScore: number | null;
+  volumeRatio: number | null;
+  changePct: number | null;
+  closePrice: number | null;
+  reason: string | null;
+  source: string | null;
+  scannedAt: string | null;
+}
 
 export interface SignalItem {
   id: string;
@@ -64,7 +77,7 @@ export interface DashboardSnapshot {
   portfolio: PortfolioPosition[];
   history: HistoryEntry[];
   watchlist: string[];
-  anomalies: string[];
+  anomalies: RadarAnomaly[];
   stats: TradingStats;
 }
 

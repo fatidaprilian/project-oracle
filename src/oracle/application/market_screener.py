@@ -3,12 +3,23 @@ import asyncio
 from datetime import datetime, timezone, timedelta
 import os
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from oracle.application.anomaly_policy import classify_volume_anomaly
 from oracle.application.message_formats import format_daily_broadcast_message
 
-def fetch_anomalous_stocks() -> list[str]:
+
+def _screener_result_limit() -> int:
+    raw_limit = os.getenv("ORACLE_MARKET_SCREENER_LIMIT", "12")
+    try:
+        parsed_limit = int(raw_limit)
+    except (TypeError, ValueError):
+        parsed_limit = 12
+    return max(5, min(parsed_limit, 30))
+
+
+def fetch_anomalous_stock_candidates() -> list[dict]:
     """
     Fetch Indonesian stocks from TradingView screener that have unusual volume.
-    Returns a list of ticker symbols (e.g. ['WBSA.JK', 'GOTO.JK']).
+    Returns anomaly candidates with discovery lane metadata.
     """
     url = "https://scanner.tradingview.com/indonesia/scan"
     
@@ -34,7 +45,7 @@ def fetch_anomalous_stocks() -> list[str]:
         response.raise_for_status()
         data = response.json()
         
-        anomalies_with_ratio = []
+        anomaly_candidates = []
         for item in data.get("data", []):
             d = item.get("d", [])
             if len(d) >= 5:
@@ -52,13 +63,32 @@ def fetch_anomalous_stocks() -> list[str]:
                 if avg_vol_10d > 100000 and volume > (avg_vol_10d * 2.5):
                     ratio = volume / avg_vol_10d
                     yf_ticker = f"{ticker}.JK"
-                    anomalies_with_ratio.append((yf_ticker, ratio))
+                    lane_decision = classify_volume_anomaly(
+                        close_price=float(close_price),
+                        volume_ratio=float(ratio),
+                        change_pct=float(change_pct),
+                    )
+                    anomaly_candidates.append({
+                        "ticker": yf_ticker,
+                        "lane": lane_decision.lane,
+                        "reason": lane_decision.reason,
+                        "discovery_score": lane_decision.discovery_score,
+                        "volume_ratio": round(float(ratio), 2),
+                        "change_pct": round(float(change_pct), 2),
+                        "close_price": float(close_price),
+                        "source": "TRADINGVIEW_VOLUME_SCREENER",
+                    })
                     
-        # Sort by highest volume spike ratio
-        anomalies_with_ratio.sort(key=lambda x: x[1], reverse=True)
+        # Sort by the discovery score first, then the highest volume spike ratio.
+        anomaly_candidates.sort(
+            key=lambda candidate: (
+                candidate["discovery_score"],
+                candidate["volume_ratio"],
+            ),
+            reverse=True,
+        )
         
-        # Take ONLY the TOP 5 best anomalies to avoid double/spam
-        anomalies = [x[0] for x in anomalies_with_ratio[:5]]
+        anomalies = anomaly_candidates[:_screener_result_limit()]
         
         print(f"[Market Screener] Found {len(anomalies)} top anomalies.")
         return anomalies
@@ -66,16 +96,25 @@ def fetch_anomalous_stocks() -> list[str]:
         print(f"[Market Screener] Error fetching screener data: {e}")
         return []
 
+
+def fetch_anomalous_stocks() -> list[str]:
+    return [
+        candidate["ticker"]
+        for candidate in fetch_anomalous_stock_candidates()
+    ]
+
+
 def run_market_screener() -> list[str]:
     print("[Market Screener] Scanning IDX for volume anomalies...")
-    anomalies = fetch_anomalous_stocks()
+    anomaly_candidates = fetch_anomalous_stock_candidates()
+    anomalies = [candidate["ticker"] for candidate in anomaly_candidates]
     
     if not anomalies:
         return []
         
     try:
         from oracle.infrastructure.postgres_repository import save_daily_anomalies
-        save_daily_anomalies(anomalies)
+        save_daily_anomalies(anomaly_candidates)
     except Exception as e:
         print(f"[Market Screener] Failed to save daily anomalies to DB: {e}")
         

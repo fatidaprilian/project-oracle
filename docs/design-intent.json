@@ -23,9 +23,10 @@
   "visualDirection": {
     "trendStance": "context-first-not-template-first",
     "distinctiveMoves": [
-    "Use a risk-console composition with an instrument-grid background instead of a generic hero-plus-cards layout.",
-    "Surface defensive mode before KPI counts so weak win-rate and negative PnL become operating context.",
-    "Separate watchlist radar from executable signals through copy, framing, and semantic color shifts.",
+      "Use a risk-console composition with an instrument-grid background instead of a generic hero-plus-cards layout.",
+      "Surface defensive mode before KPI counts so weak win-rate and negative PnL become operating context.",
+      "Render anomaly discovery as lane cards with score, volume ratio, and reason before any action affordance.",
+      "Separate watchlist radar from executable signals through copy, framing, and semantic color shifts.",
     "Use emerald as the protection rail, copper as caution, ember as loss/risk, and ice-blue as analysis metadata."
     ],
     "copiedReferenceAllowed": false
@@ -41,6 +42,8 @@
       "Risk state appears before ticker counts.",
       "Radar and execution surfaces use visibly different hierarchy.",
       "Rejected quant setups cannot appear as actionable BUY signals."
+      ,
+      "Momentum watch items remain discovery cards until a separate execution setup confirms."
     ]
   },
   "mathSystems": {
@@ -169,7 +172,7 @@
       "Header risk band with actions and operating context",
       "Risk console strip that names defensive or normal mode",
       "Today summary strip",
-      "Radar panel for screener anomalies and manual watchlist",
+      "Radar panel for lane-based screener anomalies and manual watchlist",
       "Pending signal review board",
       "Active portfolio monitor",
       "History and outcome reporting"

@@ -69,9 +69,34 @@ def init_db() -> None:
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS daily_anomalies (
                     ticker TEXT PRIMARY KEY,
-                    date_added DATE DEFAULT CURRENT_DATE
+                    date_added DATE DEFAULT CURRENT_DATE,
+                    lane TEXT DEFAULT 'RADAR_ONLY',
+                    discovery_score NUMERIC,
+                    volume_ratio NUMERIC,
+                    change_pct NUMERIC,
+                    close_price NUMERIC,
+                    reason TEXT,
+                    source TEXT,
+                    scanned_at TIMESTAMPTZ DEFAULT NOW()
                 )
             """)
+            anomaly_columns = [
+                ("lane", "TEXT DEFAULT 'RADAR_ONLY'"),
+                ("discovery_score", "NUMERIC"),
+                ("volume_ratio", "NUMERIC"),
+                ("change_pct", "NUMERIC"),
+                ("close_price", "NUMERIC"),
+                ("reason", "TEXT"),
+                ("source", "TEXT"),
+                ("scanned_at", "TIMESTAMPTZ DEFAULT NOW()"),
+            ]
+            for col_name, col_type in anomaly_columns:
+                try:
+                    cur.execute(
+                        f"ALTER TABLE daily_anomalies ADD COLUMN IF NOT EXISTS {col_name} {col_type}"
+                    )
+                except Exception:
+                    pass
             # Insert default watchlist if empty
             cur.execute("SELECT COUNT(*) FROM watchlist")
             if cur.fetchone()[0] == 0:
@@ -469,7 +494,33 @@ def remove_from_watchlist(ticker: str) -> None:
         conn.commit()
 
 
-def save_daily_anomalies(tickers: list[str]) -> None:
+def _normalize_anomaly_record(raw_anomaly: object) -> dict:
+    if isinstance(raw_anomaly, dict):
+        ticker = str(raw_anomaly.get("ticker", "")).strip().upper()
+        return {
+            "ticker": ticker,
+            "lane": str(raw_anomaly.get("lane") or "RADAR_ONLY").strip().upper(),
+            "discovery_score": raw_anomaly.get("discovery_score"),
+            "volume_ratio": raw_anomaly.get("volume_ratio"),
+            "change_pct": raw_anomaly.get("change_pct"),
+            "close_price": raw_anomaly.get("close_price"),
+            "reason": raw_anomaly.get("reason"),
+            "source": raw_anomaly.get("source"),
+        }
+
+    return {
+        "ticker": str(raw_anomaly).strip().upper(),
+        "lane": "RADAR_ONLY",
+        "discovery_score": None,
+        "volume_ratio": None,
+        "change_pct": None,
+        "close_price": None,
+        "reason": None,
+        "source": None,
+    }
+
+
+def save_daily_anomalies(tickers: list[object]) -> None:
     dsn = get_dsn()
     if not dsn:
         return
@@ -478,9 +529,36 @@ def save_daily_anomalies(tickers: list[str]) -> None:
             # Delete anomalies that are not from today
             cur.execute("DELETE FROM daily_anomalies WHERE date_added < CURRENT_DATE")
             for ticker in tickers:
+                anomaly = _normalize_anomaly_record(ticker)
+                if not anomaly["ticker"]:
+                    continue
                 cur.execute(
-                    "INSERT INTO daily_anomalies (ticker, date_added) VALUES (%s, CURRENT_DATE) ON CONFLICT (ticker) DO UPDATE SET date_added = CURRENT_DATE",
-                    (ticker,)
+                    """
+                    INSERT INTO daily_anomalies
+                        (ticker, date_added, lane, discovery_score, volume_ratio,
+                         change_pct, close_price, reason, source, scanned_at)
+                    VALUES (%s, CURRENT_DATE, %s, %s, %s, %s, %s, %s, %s, NOW())
+                    ON CONFLICT (ticker) DO UPDATE SET
+                        date_added = CURRENT_DATE,
+                        lane = EXCLUDED.lane,
+                        discovery_score = EXCLUDED.discovery_score,
+                        volume_ratio = EXCLUDED.volume_ratio,
+                        change_pct = EXCLUDED.change_pct,
+                        close_price = EXCLUDED.close_price,
+                        reason = EXCLUDED.reason,
+                        source = EXCLUDED.source,
+                        scanned_at = NOW()
+                    """,
+                    (
+                        anomaly["ticker"],
+                        anomaly["lane"],
+                        anomaly["discovery_score"],
+                        anomaly["volume_ratio"],
+                        anomaly["change_pct"],
+                        anomaly["close_price"],
+                        anomaly["reason"],
+                        anomaly["source"],
+                    ),
                 )
         conn.commit()
 
@@ -493,6 +571,38 @@ def get_daily_anomalies() -> list[str]:
         with conn.cursor() as cur:
             cur.execute("SELECT ticker FROM daily_anomalies WHERE date_added = CURRENT_DATE")
             return [r[0] for r in cur.fetchall()]
+
+
+def get_daily_anomaly_details() -> list[dict]:
+    dsn = get_dsn()
+    if not dsn:
+        return []
+    with psycopg.connect(dsn) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    ticker, lane, discovery_score, volume_ratio, change_pct,
+                    close_price, reason, source, scanned_at
+                FROM daily_anomalies
+                WHERE date_added = CURRENT_DATE
+                ORDER BY discovery_score DESC NULLS LAST, volume_ratio DESC NULLS LAST, ticker
+                """
+            )
+            return [
+                {
+                    "ticker": row[0],
+                    "lane": row[1] or "RADAR_ONLY",
+                    "discovery_score": float(row[2]) if row[2] is not None else None,
+                    "volume_ratio": float(row[3]) if row[3] is not None else None,
+                    "change_pct": float(row[4]) if row[4] is not None else None,
+                    "close_price": float(row[5]) if row[5] is not None else None,
+                    "reason": row[6],
+                    "source": row[7],
+                    "scanned_at": row[8].isoformat() if row[8] else None,
+                }
+                for row in cur.fetchall()
+            ]
 
 
 def track_symbol(

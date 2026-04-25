@@ -1,12 +1,34 @@
-import type { PortfolioPosition, RadarControls } from '../types';
+import {
+  formatCompactPercent,
+  formatRadarLaneLabel,
+  formatRadarReason,
+  formatVolumeRatio,
+} from '../formatters';
+import type { PortfolioPosition, RadarAnomaly, RadarControls } from '../types';
 import { SectionShell } from './SectionShell';
 
 interface RadarPanelProps {
-  anomalies: string[];
+  anomalies: RadarAnomaly[];
   watchlist: string[];
   portfolio: PortfolioPosition[];
   controls: RadarControls;
   activeActionKey: string | null;
+}
+
+function resolveLaneToneClass(lane: RadarAnomaly['lane']): string {
+  if (lane === 'MOMENTUM_WATCH') {
+    return 'oracle-chip-positive';
+  }
+
+  if (lane === 'EXTENDED_RISK') {
+    return 'oracle-chip-danger';
+  }
+
+  if (lane === 'IPO_WATCH') {
+    return 'oracle-chip-warning';
+  }
+
+  return 'oracle-chip-copper';
 }
 
 export function RadarPanel({
@@ -17,7 +39,7 @@ export function RadarPanel({
   activeActionKey,
 }: RadarPanelProps) {
   const activeTickers = new Set(portfolio.map((position) => position.ticker));
-  const visibleAnomalies = anomalies.filter((ticker) => !activeTickers.has(ticker));
+  const visibleAnomalies = anomalies.filter((anomaly) => !activeTickers.has(anomaly.ticker));
   const visibleWatchlist = watchlist.filter((ticker) => !activeTickers.has(ticker));
 
   return (
@@ -44,10 +66,37 @@ export function RadarPanel({
 
           <div className="mt-4 flex flex-wrap gap-2">
             {visibleAnomalies.length > 0 ? (
-              visibleAnomalies.map((ticker) => (
-                <span key={ticker} className="oracle-ticker-pill oracle-ticker-pill-copper">
-                  {ticker.replace('.JK', '')}
-                </span>
+              visibleAnomalies.map((anomaly) => (
+                <article key={anomaly.ticker} className="oracle-radar-card">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h4 className="font-display text-xl text-white">
+                        {anomaly.ticker.replace('.JK', '')}
+                      </h4>
+                      <p className="mt-2 text-xs leading-5 text-white/58">
+                        {formatRadarReason(anomaly.reason)}
+                      </p>
+                    </div>
+                    <span className={`oracle-chip ${resolveLaneToneClass(anomaly.lane)}`}>
+                      {formatRadarLaneLabel(anomaly.lane)}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+                    <div className="oracle-radar-metric">
+                      <span>Volume</span>
+                      <strong>{formatVolumeRatio(anomaly.volumeRatio)}</strong>
+                    </div>
+                    <div className="oracle-radar-metric">
+                      <span>Change</span>
+                      <strong>{formatCompactPercent(anomaly.changePct)}</strong>
+                    </div>
+                    <div className="oracle-radar-metric">
+                      <span>Score</span>
+                      <strong>{anomaly.discoveryScore ?? '—'}</strong>
+                    </div>
+                  </div>
+                </article>
               ))
             ) : (
               <p className="text-sm leading-6 text-white/58">

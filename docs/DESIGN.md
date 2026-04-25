@@ -11,6 +11,7 @@ The redesigned Oracle dashboard is an Indonesian-language capital protection con
 ## 3. Visual Direction and Distinctive Moves
 - Default surface: dark instrument-grid background with emerald risk rails, copper caution accents, ice-blue analysis markers, and ember danger states.
 - Signature move: a "risk console" band above the stats that names the current selection mode before the operator sees any ticker count.
+- Discovery move: anomaly radar cards show lane, volume ratio, change, and score so fresh momentum is visible without becoming a BUY signal.
 - Product tone: Indonesian copy everywhere on user-facing surfaces, with direct language that separates radar noise from actionable execution.
 
 ## 4. Color Science and Semantic Roles
@@ -47,6 +48,7 @@ The redesigned Oracle dashboard is an Indonesian-language capital protection con
 ## 10. Component Language, Morphology, and Shared Patterns
 - Shared section shell with title, context line, and optional side action.
 - Risk console banner exposes defensive/normal mode from win-rate and average PnL before the operator sees scanner counts.
+- Radar anomaly cards use `MOMENTUM_WATCH`, `EXTENDED_RISK`, and `RADAR_ONLY` labels to separate discovery from execution.
 - Signal cards combine ticker identity, source, expiry, duration window, price plan, embedded chart, reasoning, and action row.
 - Portfolio cards and tables must expose entry, current price, target, stop-loss, PnL, tracking age, review cadence, and estimated duration.
 - History surfaces must preserve outcome context and source attribution without hiding reasoning.
@@ -66,6 +68,7 @@ The redesigned Oracle dashboard is an Indonesian-language capital protection con
 - No mixed-language user-facing copy.
 - No generic KPI cards floating over a startup gradient.
 - No AI override copy that implies a rejected quant setup can become a BUY because of hype or volume alone.
+- No treating `MOMENTUM_WATCH` as a buy instruction; it is a discovery lane until a separate execution setup confirms.
 - No hidden critical reasoning behind tooltips or expandable-only affordances.
 - No implication that the daily screener list is a one-day profit target.
 
@@ -73,5 +76,6 @@ The redesigned Oracle dashboard is an Indonesian-language capital protection con
 - Preserve every current data surface: stats, anomalies, manual watchlist, pending signals, active portfolio, history, reasoning, source tags, timestamps, expiry, and price levels.
 - Treat "daily radar" and "execution signal" as separate content types with separate copy rules.
 - When recent performance is weak, the UI should make selectivity visible rather than celebrating scan volume.
+- Anomaly metadata should preserve lane, volume ratio, change percent, discovery score, and reason.
 - Estimated target duration is expressed in trading days, never in exact hours.
 - Tracking reviews may happen hourly for risk detection, but target timing should remain day-based in the UI.

@@ -120,6 +120,38 @@ Dashboard API untuk Oracle saham sekarang mengekspos konteks tambahan berikut:
 
 Field tersebut muncul pada payload sinyal dan portfolio ketika tersedia, dan harus dibaca sebagai estimasi menuju target dalam **hari bursa**, bukan janji target tercapai pada sesi berikutnya.
 
+### Dashboard Anomaly Radar
+
+```http
+GET /api/v1/dashboard/anomalies
+```
+
+Response tetap menyertakan `anomalies` sebagai daftar ticker untuk kompatibilitas lama. Field baru `anomaly_details` berisi metadata discovery agar UI bisa membedakan radar biasa dari momentum watch tanpa mengubahnya menjadi sinyal beli.
+
+```json
+{
+  "anomalies": ["NAYZ.JK"],
+  "anomaly_details": [
+    {
+      "ticker": "NAYZ.JK",
+      "lane": "MOMENTUM_WATCH",
+      "discovery_score": 52.8,
+      "volume_ratio": 11.16,
+      "change_pct": 6.9,
+      "close_price": 78.0,
+      "reason": "VOLUME_EXPANSION_WITH_PRICE_CONFIRMATION",
+      "source": "TRADINGVIEW_VOLUME_SCREENER",
+      "scanned_at": "2026-04-25T10:45:52Z"
+    }
+  ]
+}
+```
+
+Lane saat ini:
+- `MOMENTUM_WATCH`: volume mengembang dan harga ikut mengonfirmasi, tetapi belum menjadi sinyal beli.
+- `EXTENDED_RISK`: pergerakan sudah terlalu jauh untuk dikejar.
+- `RADAR_ONLY`: anomali volume yang masih butuh konfirmasi harga atau punya risiko likuiditas.
+
 ### Weekly Workflow
 
 ```http

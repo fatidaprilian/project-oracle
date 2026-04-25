@@ -254,6 +254,29 @@
     color: rgba(255, 255, 255, 0.82);
   }
 
+  .oracle-radar-card {
+    @apply w-full rounded-lg border p-4;
+    border-color: rgba(255, 255, 255, 0.08);
+    background:
+      linear-gradient(90deg, rgba(201, 160, 99, 0.08), transparent),
+      rgba(255, 255, 255, 0.035);
+  }
+
+  .oracle-radar-metric {
+    @apply rounded-md border px-3 py-2;
+    border-color: rgba(255, 255, 255, 0.07);
+    background: rgba(0, 0, 0, 0.18);
+  }
+
+  .oracle-radar-metric span {
+    @apply block uppercase tracking-[0.2em];
+    color: rgba(255, 255, 255, 0.42);
+  }
+
+  .oracle-radar-metric strong {
+    @apply mt-1 block text-sm text-white;
+  }
+
   .oracle-signal-card {
     @apply rounded-lg border p-5 transition duration-200;
     border-color: rgba(255, 255, 255, 0.08);

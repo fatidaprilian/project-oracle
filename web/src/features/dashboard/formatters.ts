@@ -63,6 +63,23 @@ export function formatSignedPercent(value: number | null | undefined): string {
   return `${prefix}${value.toFixed(2)}%`;
 }
 
+export function formatCompactPercent(value: number | null | undefined): string {
+  if (value == null) {
+    return '—';
+  }
+
+  const prefix = value > 0 ? '+' : '';
+  return `${prefix}${value.toFixed(2)}%`;
+}
+
+export function formatVolumeRatio(value: number | null | undefined): string {
+  if (value == null) {
+    return '—';
+  }
+
+  return `${value.toFixed(2)}x`;
+}
+
 export function formatDurationWindow(
   minDays: number | null | undefined,
   maxDays: number | null | undefined,
@@ -190,4 +207,40 @@ export function formatDataTimestampLabel(dataTimestamp: string | null | undefine
   return dataTimestamp
     .replace('End of Day (EOD)', 'Akhir sesi')
     .replace('Closing', 'Penutupan');
+}
+
+export function formatRadarLaneLabel(lane: string): string {
+  if (lane === 'MOMENTUM_WATCH') {
+    return 'Momentum watch';
+  }
+
+  if (lane === 'EXTENDED_RISK') {
+    return 'Risiko lanjut';
+  }
+
+  if (lane === 'IPO_WATCH') {
+    return 'IPO watch';
+  }
+
+  return 'Radar only';
+}
+
+export function formatRadarReason(reason: string | null | undefined): string {
+  if (reason === 'VOLUME_EXPANSION_WITH_PRICE_CONFIRMATION') {
+    return 'Volume mengembang dan harga ikut konfirmasi.';
+  }
+
+  if (reason === 'PRICE_ALREADY_EXTENDED') {
+    return 'Harga sudah terlalu jauh untuk dikejar.';
+  }
+
+  if (reason === 'LOW_PRICE_LIQUIDITY_RISK') {
+    return 'Harga terlalu rendah, risiko likuiditas dan volatilitas lebih besar.';
+  }
+
+  if (reason === 'VOLUME_ANOMALY_NEEDS_PRICE_CONFIRMATION') {
+    return 'Volume anomali, tetapi harga belum cukup mengonfirmasi.';
+  }
+
+  return 'Butuh konfirmasi lanjutan sebelum masuk ruang aksi.';
 }

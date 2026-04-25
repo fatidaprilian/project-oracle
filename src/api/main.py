@@ -511,13 +511,22 @@ async def get_portfolio_endpoint():
 @app.get("/api/v1/dashboard/anomalies")
 async def get_anomalies_endpoint():
     try:
-        from oracle.infrastructure.postgres_repository import get_daily_anomalies
+        from oracle.infrastructure.postgres_repository import (
+            get_daily_anomalies,
+            get_daily_anomaly_details,
+        )
         if os.getenv("ORACLE_ENABLE_POSTGRES", "false").lower() != "true":
-            return {"anomalies": []}
-        return {"anomalies": get_daily_anomalies()}
+            return {"anomalies": [], "anomaly_details": []}
+        anomaly_details = get_daily_anomaly_details()
+        anomalies = (
+            [item["ticker"] for item in anomaly_details]
+            if anomaly_details
+            else get_daily_anomalies()
+        )
+        return {"anomalies": anomalies, "anomaly_details": anomaly_details}
     except Exception as e:
         print(f"Error fetching anomalies: {e}")
-        return {"anomalies": []}
+        return {"anomalies": [], "anomaly_details": []}
 
 
 # Fix 6: Signal history endpoint
